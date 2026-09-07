@@ -1,0 +1,10 @@
+node_modules/
+.git/
+server/
+server_dist/
+static-build/
+attached_assets/
+.local/
+.cache/
+/tmp/
+*.log
