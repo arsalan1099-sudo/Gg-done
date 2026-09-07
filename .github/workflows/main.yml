@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Regenerate package-lock.json
+      - name: install --package-lock-only --ignore-scripts
         run: npm install --package-lock-only --ignore-scripts
       - name: Commit updated lockfile
         run: |
