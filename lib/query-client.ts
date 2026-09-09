@@ -33,7 +33,7 @@ export function getApiUrl(): string {
   // On the hosted web app, the API lives on the same origin as the frontend.
   // This avoids baking a Replit-specific hostname into the production bundle.
   if (Platform.OS === "web" && typeof window !== "undefined" && window.location?.origin) {
-    return window.location.origin;
+    return `${window.location.origin}/`;
   }
 
   const configured = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_DOMAIN;
