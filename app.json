@@ -2,7 +2,7 @@
   "expo": {
     "name": "Go Bharat",
     "slug": "go-bharat",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gobharat",
@@ -90,7 +90,7 @@
     },
     "android": {
       "package": "co.median.android.odmalem",
-      "versionCode": 7,
+      "versionCode": 14,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
