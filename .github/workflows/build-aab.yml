@@ -17,6 +17,10 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Fix Replit package URLs
+        run: |
+          sed -i 's#http://package-firewall.replit.local/npm/#https://registry.npmjs.org/#g' package-lock.json
+
       - name: Install dependencies
         run: |
           npm config set registry https://registry.npmjs.org/
