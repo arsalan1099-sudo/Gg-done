@@ -58,7 +58,7 @@ jobs:
             --non-interactive \
             --wait
 
-            - name: Download AAB
+      - name: Download AAB
         run: |
           BUILD_ID=$(eas build:list --platform android --status finished --limit 1 --json --non-interactive | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s)[0].id))")
 
