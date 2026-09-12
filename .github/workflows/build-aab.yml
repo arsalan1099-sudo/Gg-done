@@ -19,7 +19,17 @@ jobs:
 
       - name: Fix Replit package URLs
         run: |
-          sed -i 's#http://package-firewall.replit.local/npm/#https://registry.npmjs.org/#g' package-lock.json
+          if [ -f package-lock.json ]; then
+            sed -E -i 's#https?://package-firewall\.replit\.local/npm/#https://registry.npmjs.org/#g' package-lock.json
+          fi
+          if [ -f package.json ]; then
+            sed -E -i 's#https?://package-firewall\.replit\.local/npm/#https://registry.npmjs.org/#g' package.json
+          fi
+
+          if grep -R "package-firewall\.replit\.local" package-lock.json package.json 2>/dev/null; then
+            echo "ERROR: Replit package URL still exists."
+            exit 1
+          fi
 
       - name: Install dependencies
         run: |
