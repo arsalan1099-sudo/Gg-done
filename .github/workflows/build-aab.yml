@@ -62,10 +62,9 @@ jobs:
         run: |
           BUILD_ID=$(eas build:list --platform android --status finished --limit 1 --json --non-interactive | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s)[0].id))")
 
-          eas build:download --build-id "$BUILD_ID" --non-interactive
+                    ARTIFACT_URL=$(eas build:view "$BUILD_ID" --json | node -e 'let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).artifacts.buildUrl))')
 
-          AAB=$(find . -type f -name "*.aab" | head -n 1)
-          mv "$AAB" ./Go-Bharat.aab
+        curl -L "$ARTIFACT_URL" -o ./Go-Bharat.aab
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
