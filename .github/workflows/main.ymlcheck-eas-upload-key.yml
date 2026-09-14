@@ -1,61 +1,47 @@
-name: Check EAS Upload Key Fingerprint
-
-on:
-  workflow_dispatch:
-
-jobs:
-  check-key:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install EAS CLI
-        run: npm install -g eas-cli
-
-      - name: Find exact Android build
+- name: Find exact Android build
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
+          echo "Searching EAS Android builds..."
+
           eas build:list \
             --platform android \
             --status finished \
-            --app-identifier com.median.android.odmalem \
-            --app-build-version 19 \
-            --limit 1 \
+            --limit 10 \
             --json > build.json
 
-          echo "Build found:"
-          node -e "
-            const data=require('./build.json');
-            const b=Array.isArray(data) ? data[0] : data.builds?.[0];
-            if (!b || !b.id) {
-              console.error('No matching build found');
-              process.exit(1);
-            }
-            console.log('BUILD ID:', b.id);
-            console.log('VERSION:', b.appVersion);
-            console.log('BUILD VERSION:', b.appBuildVersion);
-          "
+          node <<'NODE'
+          const fs = require('fs');
 
-      - name: Download exact build
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          BUILD_ID=$(node -e "
-            const data=require('./build.json');
-            const b=Array.isArray(data) ? data[0] : data.builds?.[0];
-            console.log(b.id);
-          ")
+          const data = JSON.parse(fs.readFileSync('build.json', 'utf8'));
+          const builds = Array.isArray(data) ? data : (data.builds || []);
 
-          eas build:download \
-            --build-id "$BUILD_ID" \
-            --output ./Go-Bharat.aab
+          const matches = builds.filter(b =>
+            b.appIdentifier === 'com.median.android.odmalem' &&
+            String(b.appBuildVersion) === '19'
+          );
 
-      - name: Check AAB signing certificate
-        run: |
-          echo "===== AAB SIGNING CERTIFICATE ====="
-          jarsigner -verify -verbose -certs ./Go-Bharat.aab 2>&1 | grep -E "SHA1:|SHA-256:"
+          if (!matches.length) {
+            console.error('No matching Android build found.');
+            console.log('Available builds:');
+
+            builds.forEach(b => {
+              console.log(
+                b.id,
+                b.appIdentifier,
+                b.appBuildVersion
+              );
+            });
+
+            process.exit(1);
+          }
+
+          const b = matches[0];
+
+          console.log('MATCHING BUILD FOUND');
+          console.log('Build ID:', b.id);
+          console.log('Package:', b.appIdentifier);
+          console.log('Version:', b.appBuildVersion);
+
+          fs.writeFileSync('build-id.txt', b.id);
+          NODE
