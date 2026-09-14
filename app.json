@@ -90,7 +90,7 @@
     },
     "android": {
       "package": "co.median.android.odmalem",
-      "versionCode": 14,
+      "versionCode": 16,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
