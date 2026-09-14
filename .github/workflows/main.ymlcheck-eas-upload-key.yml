@@ -1,0 +1,61 @@
+name: Check EAS Upload Key Fingerprint
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-key:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Get latest finished Android build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build:list \
+            --platform android \
+            --status finished \
+            --limit 1 \
+            --json > build.json
+
+          cat build.json
+
+      - name: Download exact EAS build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          BUILD_ID=$(node -e "
+            const b=require('./build.json')[0];
+            if (!b || !b.id) throw new Error('No finished Android build found');
+            console.log(b.id);
+          ")
+
+          echo "Build ID: $BUILD_ID"
+
+          eas build:download \
+            --build-id "$BUILD_ID" \
+            --output ./Go-Bharat.aab
+
+      - name: Check signing certificate
+        run: |
+          echo "======================================"
+          echo "EAS AAB SIGNING CERTIFICATE"
+          echo "======================================"
+
+          keytool -printcert -jarfile ./Go-Bharat.aab
+
+          echo "======================================"
+          echo "Compare this with Google Play Console"
+          echo "Upload key certificate"
+          echo "======================================"
