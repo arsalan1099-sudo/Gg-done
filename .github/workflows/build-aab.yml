@@ -7,67 +7,70 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
-
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org/
-
-      - name: Fix package-lock
-        run: |
-          if [ -f package-lock.json ]; then
-            sed -i 's#https\?://package-firewall\.replit\.local/npm/#https://registry.npmjs.org/#g' package-lock.json
-            sed -i 's#https\?://package-firewall\.replit\.local#https://registry.npmjs.org#g' package-lock.json
-          fi
-
-          if grep -q "package-firewall.replit.local" package-lock.json 2>/dev/null; then
-            echo "Replit URL still exists"
-            exit 1
-          fi
-
-          npm config set registry https://registry.npmjs.org/
+          cache: npm
 
       - name: Install dependencies
-        run: |
-          npm ci \
-            --registry=https://registry.npmjs.org/ \
-            --fetch-retries=5 \
-            --fetch-retry-mintimeout=20000 \
-            --fetch-retry-maxtimeout=120000 \
-            --no-audit \
-            --no-fund
+        run: npm ci
 
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Setup Expo/EAS
+        run: npm install -g eas-cli
+
+      - name: Verify app configuration
+        run: |
+          echo "Checking app configuration..."
+          node -e "const a=require('./app.json'); console.log('Package:', a.expo.android.package); console.log('Version:', a.expo.version); console.log('Version Code:', a.expo.android.versionCode)"
 
       - name: Build Android AAB
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           eas build \
             --platform android \
             --profile production \
             --non-interactive \
+            --clear-cache \
             --wait
 
       - name: Download AAB
+        if: success()
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          BUILD_ID=$(eas build:list --platform android --status finished --limit 1 --json --non-interactive | node -e 'let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s)[0].id))')
+          mkdir -p dist
+          eas build:list \
+            --platform android \
+            --status finished \
+            --limit 1 \
+            --json > build.json
 
-          ARTIFACT_URL=$(eas build:view "$BUILD_ID" --json | node -e 'let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).artifacts.buildUrl))')
+          node - <<'NODE'
+          const fs = require('fs');
+          const builds = JSON.parse(fs.readFileSync('build.json', 'utf8'));
+          const build = builds[0];
 
-          curl -L "$ARTIFACT_URL" -o ./Go-Bharat.aab
+          if (!build || !build.artifacts || !build.artifacts.buildUrl) {
+            throw new Error('Finished AAB URL not found');
+          }
 
-      - name: Upload AAB
+          console.log('Downloading AAB...');
+          console.log(build.artifacts.buildUrl);
+          NODE
+
+          curl -L "$(node -e "const b=require('./build.json')[0]; console.log(b.artifacts.buildUrl)")" \
+            -o dist/Go-Bharat.aab
+
+      - name: Upload AAB artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Go-Bharat-AAB
-          path: ./Go-Bharat.aab
+          path: dist/Go-Bharat.aab
+          retention-days: 7
