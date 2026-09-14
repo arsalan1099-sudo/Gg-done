@@ -1,0 +1,52 @@
+name: Check EAS Upload Key Fingerprint
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-key:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Find Android build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build:list --platform android --status finished --limit 10 --json > build.json
+
+          node -e "
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('build.json','utf8'));
+          const builds = Array.isArray(data) ? data : (data.builds || []);
+          const b = builds.find(x =>
+            x.appIdentifier === 'com.median.android.odmalem' &&
+            String(x.appBuildVersion) === '19'
+          );
+          if (!b) {
+            console.error('Matching build not found');
+            process.exit(1);
+          }
+          console.log('BUILD ID:', b.id);
+          fs.writeFileSync('build-id.txt', b.id);
+          "
+
+      - name: Download AAB
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build:download \
+            --build-id "$(cat build-id.txt)" \
+            --output ./Go-Bharat.aab
+
+      - name: Check signing certificate
+        run: |
+          echo "===== SIGNING CERTIFICATE ====="
+          jarsigner -verify -verbose -certs ./Go-Bharat.aab 2>&1 | grep -E "SHA1:|SHA-256:" || true
