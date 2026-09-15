@@ -6,28 +6,113 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
 
     steps:
+      # ---------------------------------------------------------
+      # 1. Checkout repository
+      # ---------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ---------------------------------------------------------
+      # 2. Setup Node.js
+      # ---------------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
 
+      # ---------------------------------------------------------
+      # 3. Force npm to use official npm registry
+      # ---------------------------------------------------------
+      - name: Configure npm registry
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm config delete proxy || true
+          npm config delete https-proxy || true
+
+          echo "Current npm registry:"
+          npm config get registry
+
+      # ---------------------------------------------------------
+      # 4. Install dependencies
+      #    Retry npm ci if temporary network/DNS error occurs
+      # ---------------------------------------------------------
       - name: Install dependencies
-        run: npm ci
+        shell: bash
+        run: |
+          set -e
 
+          echo "Installing dependencies..."
+
+          for attempt in 1 2 3; do
+            echo "npm ci attempt $attempt..."
+
+            if npm ci --no-audit --no-fund; then
+              echo "Dependencies installed successfully."
+              exit 0
+            fi
+
+            echo "npm ci failed on attempt $attempt."
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "Waiting 15 seconds before retry..."
+              sleep 15
+            fi
+          done
+
+          echo "npm ci failed 3 times."
+          echo "Trying npm install as fallback..."
+
+          npm install --no-audit --no-fund
+
+      # ---------------------------------------------------------
+      # 5. Install EAS CLI
+      # ---------------------------------------------------------
       - name: Setup Expo/EAS
-        run: npm install -g eas-cli
+        run: npm install --global eas-cli
 
+      # ---------------------------------------------------------
+      # 6. Check EAS
+      # ---------------------------------------------------------
+      - name: Check EAS CLI
+        run: |
+          node --version
+          npm --version
+          eas --version
+
+      # ---------------------------------------------------------
+      # 7. Verify app.json
+      # ---------------------------------------------------------
       - name: Verify app configuration
         run: |
           echo "Checking app configuration..."
-          node -e "const a=require('./app.json'); console.log('Package:', a.expo.android.package); console.log('Version:', a.expo.version); console.log('Version Code:', a.expo.android.versionCode)"
 
+          node - <<'NODE'
+          const app = require('./app.json');
+
+          if (!app.expo) {
+            throw new Error("expo configuration missing from app.json");
+          }
+
+          console.log("App Name:", app.expo.name);
+          console.log("Slug:", app.expo.slug);
+          console.log("Version:", app.expo.version);
+          console.log(
+            "Package:",
+            app.expo.android && app.expo.android.package
+          );
+          console.log(
+            "Version Code:",
+            app.expo.android && app.expo.android.versionCode
+          );
+          NODE
+
+      # ---------------------------------------------------------
+      # 8. Build Android AAB on EAS
+      # ---------------------------------------------------------
       - name: Build Android AAB
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -39,12 +124,15 @@ jobs:
             --clear-cache \
             --wait
 
-      - name: Download AAB
-        if: success()
+      # ---------------------------------------------------------
+      # 9. Get latest completed Android build information
+      # ---------------------------------------------------------
+      - name: Get AAB download URL
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           mkdir -p dist
+
           eas build:list \
             --platform android \
             --status finished \
@@ -52,25 +140,72 @@ jobs:
             --json > build.json
 
           node - <<'NODE'
-          const fs = require('fs');
-          const builds = JSON.parse(fs.readFileSync('build.json', 'utf8'));
-          const build = builds[0];
+          const fs = require("fs");
 
-          if (!build || !build.artifacts || !build.artifacts.buildUrl) {
-            throw new Error('Finished AAB URL not found');
+          const builds = JSON.parse(
+            fs.readFileSync("build.json", "utf8")
+          );
+
+          if (!builds || builds.length === 0) {
+            throw new Error("No finished Android build found.");
           }
 
-          console.log('Downloading AAB...');
-          console.log(build.artifacts.buildUrl);
+          const build = builds[0];
+
+          const url =
+            build.artifacts?.buildUrl ||
+            build.artifacts?.applicationArchiveUrl;
+
+          if (!url) {
+            console.log(JSON.stringify(build, null, 2));
+            throw new Error("AAB download URL not found.");
+          }
+
+          fs.writeFileSync("aab-url.txt", url);
+
+          console.log("AAB download URL found.");
           NODE
 
-          curl -L "$(node -e "const b=require('./build.json')[0]; console.log(b.artifacts.buildUrl)")" \
-            -o dist/Go-Bharat.aab
+      # ---------------------------------------------------------
+      # 10. Download AAB
+      # ---------------------------------------------------------
+      - name: Download AAB
+        run: |
+          AAB_URL="$(cat aab-url.txt)"
 
+          echo "Downloading Android AAB..."
+
+          curl \
+            --fail \
+            --location \
+            --retry 5 \
+            --retry-delay 10 \
+            "$AAB_URL" \
+            --output dist/Go-Bharat.aab
+
+          echo "Downloaded file:"
+          ls -lh dist/Go-Bharat.aab
+
+      # ---------------------------------------------------------
+      # 11. Verify AAB exists
+      # ---------------------------------------------------------
+      - name: Verify AAB
+        run: |
+          if [ ! -f "dist/Go-Bharat.aab" ]; then
+            echo "ERROR: AAB file was not created."
+            exit 1
+          fi
+
+          echo "AAB created successfully."
+          ls -lh dist/Go-Bharat.aab
+
+      # ---------------------------------------------------------
+      # 12. Upload to GitHub Actions Artifacts
+      # ---------------------------------------------------------
       - name: Upload AAB artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Go-Bharat-AAB
           path: dist/Go-Bharat.aab
+          if-no-files-found: error
           retention-days: 7
