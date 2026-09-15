@@ -1,6 +1,28 @@
-- name: Find exact Android build
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+name: Find exact Android build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  find-build:
+    runs-on: ubuntu-latest
+
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Search EAS Android builds
         run: |
           echo "Searching EAS Android builds..."
 
@@ -13,11 +35,16 @@
           node <<'NODE'
           const fs = require('fs');
 
-          const data = JSON.parse(fs.readFileSync('build.json', 'utf8'));
-          const builds = Array.isArray(data) ? data : (data.builds || []);
+          const data = JSON.parse(
+            fs.readFileSync('build.json', 'utf8')
+          );
+
+          const builds = Array.isArray(data)
+            ? data
+            : (data.builds || []);
 
           const matches = builds.filter(b =>
-            b.appIdentifier === 'com.median.android.odmalem' &&
+            b.appIdentifier === 'com.media.android.odemal' &&
             String(b.appBuildVersion) === '19'
           );
 
@@ -45,3 +72,9 @@
 
           fs.writeFileSync('build-id.txt', b.id);
           NODE
+
+      - name: Upload build ID
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-id
+          path: build-id.txt
