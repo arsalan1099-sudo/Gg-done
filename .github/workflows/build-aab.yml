@@ -1,203 +1,106 @@
-name: Build Android AAB Locally
+name: Build Android AAB
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build Go-Bharat AAB
+    name: Build Android AAB
     runs-on: ubuntu-latest
-    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: 20
           cache: npm
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
         with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        run: |
-          sdkmanager --install \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.0"
-
-      - name: Configure npm
-        run: |
-          npm config set registry https://registry.npmjs.org/
-          npm config delete proxy || true
-          npm config delete https-proxy || true
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
-        run: |
-          npm ci --no-audit --no-fund
+        run: npm ci
 
-      - name: Install EAS CLI
-        run: |
-          npm install --global eas-cli
-
-      - name: Check tools
-        run: |
-          node --version
-          npm --version
-          java -version
-          adb --version
-          eas --version
-
-      - name: Verify Expo configuration
-        run: |
-          test -f app.json
-          test -f eas.json
-          node -e "const a=require('./app.json'); console.log('App:',a.expo.name); console.log('Package:',a.expo.android.package); console.log('Version:',a.expo.version); console.log('VersionCode:',a.expo.android.versionCode)"
-          node -e "const e=require('./eas.json'); console.log('Production buildType:',e.build.production.android.buildType); console.log('Credentials:',e.build.production.android.credentialsSource)"
-
-      - name: Build Android AAB locally
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Build Android AAB
         run: |
           eas build \
             --platform android \
             --profile production \
-            --local \
             --non-interactive \
-            --output ./Go-Bharat.aab
+            --wait \
+            --json > build.json
+
+      - name: Get build ID
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const data = JSON.parse(
+            fs.readFileSync('build.json', 'utf8')
+          );
+
+          const builds = Array.isArray(data) ? data : [data];
+
+          const build = builds.find(
+            b => b.id
+          );
+
+          if (!build) {
+            console.error('Build ID not found.');
+            console.error(data);
+            process.exit(1);
+          }
+
+          console.log('Build ID:', build.id);
+
+          fs.writeFileSync(
+            'build-id.txt',
+            build.id
+          );
+          NODE
+
+      - name: Download AAB
+        run: |
+          mkdir -p output
+
+          BUILD_ID=$(cat build-id.txt)
+
+          eas build:download \
+            --build-id "$BUILD_ID" \
+            --non-interactive
+
+          AAB=$(find . -type f -name "*.aab" | head -n 1)
+
+          if [ -z "$AAB" ]; then
+            echo "ERROR: AAB file not found."
+            find . -type f | grep -E '\.(aab|apk)$' || true
+            exit 1
+          fi
+
+          echo "AAB found: $AAB"
+
+          cp "$AAB" output/Go-Bharat.aab
 
       - name: Verify AAB
         run: |
-          if [ ! -f "./Go-Bharat.aab" ]; then
+          if [ ! -f "output/Go-Bharat.aab" ]; then
             echo "ERROR: Go-Bharat.aab was not created."
-            echo "Searching for generated AAB files..."
-            find . -type f -name "*.aab" -print
             exit 1
           fi
 
           echo "AAB created successfully:"
-          ls -lh ./Go-Bharat.aab
-          file ./Go-Bharat.aab
+          ls -lh output/Go-Bharat.aab
 
-      - name: Upload AAB artifact
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: Go-Bharat-AAB
-          path: ./Go-Bharat.aab
-          if-no-files-found: error
-          retention-days: 7          );
-          console.log(
-            "Version Code:",
-            app.expo.android && app.expo.android.versionCode
-          );
-          NODE
-
-      # ---------------------------------------------------------
-      # 8. Build Android AAB on EAS
-      # ---------------------------------------------------------
-      - name: Build Android AAB
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          eas build \
-            --platform android \
-            --profile production \
-            --non-interactive \
-            --clear-cache \
-            --wait
-
-      # ---------------------------------------------------------
-      # 9. Get latest completed Android build information
-      # ---------------------------------------------------------
-      - name: Get AAB download URL
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          mkdir -p dist
-
-          eas build:list \
-            --platform android \
-            --status finished \
-            --limit 1 \
-            --json > build.json
-
-          node - <<'NODE'
-          const fs = require("fs");
-
-          const builds = JSON.parse(
-            fs.readFileSync("build.json", "utf8")
-          );
-
-          if (!builds || builds.length === 0) {
-            throw new Error("No finished Android build found.");
-          }
-
-          const build = builds[0];
-
-          const url =
-            build.artifacts?.buildUrl ||
-            build.artifacts?.applicationArchiveUrl;
-
-          if (!url) {
-            console.log(JSON.stringify(build, null, 2));
-            throw new Error("AAB download URL not found.");
-          }
-
-          fs.writeFileSync("aab-url.txt", url);
-
-          console.log("AAB download URL found.");
-          NODE
-
-      # ---------------------------------------------------------
-      # 10. Download AAB
-      # ---------------------------------------------------------
-      - name: Download AAB
-        run: |
-          AAB_URL="$(cat aab-url.txt)"
-
-          echo "Downloading Android AAB..."
-
-          curl \
-            --fail \
-            --location \
-            --retry 5 \
-            --retry-delay 10 \
-            "$AAB_URL" \
-            --output dist/Go-Bharat.aab
-
-          echo "Downloaded file:"
-          ls -lh dist/Go-Bharat.aab
-
-      # ---------------------------------------------------------
-      # 11. Verify AAB exists
-      # ---------------------------------------------------------
-      - name: Verify AAB
-        run: |
-          if [ ! -f "dist/Go-Bharat.aab" ]; then
-            echo "ERROR: AAB file was not created."
-            exit 1
-          fi
-
-          echo "AAB created successfully."
-          ls -lh dist/Go-Bharat.aab
-
-      # ---------------------------------------------------------
-      # 12. Upload to GitHub Actions Artifacts
-      # ---------------------------------------------------------
-      - name: Upload AAB artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Go-Bharat-AAB
-          path: dist/Go-Bharat.aab
+          path: output/Go-Bharat.aab
           if-no-files-found: error
           retention-days: 7
