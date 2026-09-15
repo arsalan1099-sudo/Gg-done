@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    name: Build AAB Locally
+    name: Build AAB With Correct Play Key
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
@@ -31,22 +31,96 @@ jobs:
       - name: Install EAS CLI
         run: npm install --global eas-cli
 
+      - name: Prepare correct Android keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          mkdir -p .github-signing
+
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > .github-signing/upload.jks
+
+          node <<'NODE'
+          const fs = require('fs');
+
+          const credentials = {
+            android: {
+              keystore: {
+                keystorePath: ".github-signing/upload.jks",
+                keystorePassword: process.env.ANDROID_KEYSTORE_PASSWORD,
+                keyAlias: process.env.ANDROID_KEY_ALIAS,
+                keyPassword: process.env.ANDROID_KEY_PASSWORD
+              }
+            }
+          };
+
+          fs.writeFileSync("credentials.json", JSON.stringify(credentials, null, 2));
+
+          const eas = JSON.parse(fs.readFileSync("eas.json", "utf8"));
+          eas.build = eas.build || {};
+          eas.build.production = eas.build.production || {};
+          eas.build.production.credentialsSource = "local";
+          fs.writeFileSync("eas.json", JSON.stringify(eas, null, 2));
+          NODE
+
+      - name: Verify Play upload key BEFORE build
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          ACTUAL_SHA1=$(keytool -list -v \
+            -keystore .github-signing/upload.jks \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            | awk '/SHA1:/{print $2; exit}')
+
+          EXPECTED_SHA1="4F:68:A1:0F:E3:F5:3A:8C:A8:44:9F:C0:96:26:69:B8:81:22:03:E1"
+
+          echo "AAB signing key SHA1: $ACTUAL_SHA1"
+
+          if [ "$ACTUAL_SHA1" != "$EXPECTED_SHA1" ]; then
+            echo "ERROR: Wrong Android signing key."
+            exit 1
+          fi
+
+          echo "Correct Google Play upload key confirmed."
+
       - name: Build Android AAB locally
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas build --platform android --profile production --local --non-interactive --output ./Go-Bharat.aab
+          eas build \
+            --platform android \
+            --profile production \
+            --local \
+            --non-interactive \
+            --output ./Go-Bharat.aab
 
-      - name: Verify AAB signing
+      - name: Verify finished AAB certificate
         run: |
           test -f ./Go-Bharat.aab
+
+          ACTUAL_SHA1=$(keytool -printcert -jarfile ./Go-Bharat.aab \
+            | awk '/SHA1:/{print $2; exit}')
+
+          EXPECTED_SHA1="4F:68:A1:0F:E3:F5:3A:8C:A8:44:9F:C0:96:26:69:B8:81:22:03:E1"
+
+          echo "FINAL AAB SHA1: $ACTUAL_SHA1"
+
+          if [ "$ACTUAL_SHA1" != "$EXPECTED_SHA1" ]; then
+            echo "ERROR: Final AAB was signed with the wrong key."
+            exit 1
+          fi
+
+          echo "FINAL AAB SIGNING KEY IS CORRECT."
           ls -lh ./Go-Bharat.aab
-          keytool -printcert -jarfile ./Go-Bharat.aab
 
       - name: Upload Go Bharat AAB
         uses: actions/upload-artifact@v4
         with:
-          name: Go-Bharat-AAB
+          name: Go-Bharat-CORRECT-SIGNED-AAB
           path: ./Go-Bharat.aab
           if-no-files-found: error
           retention-days: 7
