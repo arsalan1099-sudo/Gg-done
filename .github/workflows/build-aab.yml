@@ -18,8 +18,13 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
+
+      - name: Install EAS CLI
+        run: npm install --global eas-cli
+
       - name: Build Android AAB
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -29,46 +34,4 @@ jobs:
             --profile production \
             --non-interactive \
             --clear-cache \
-            --wait \
-            --json > build.json
-
-      - name: Get AAB URL
-        run: |
-          node - <<'NODE'
-          const fs = require("fs");
-          const data = JSON.parse(fs.readFileSync("build.json", "utf8"));
-          const build = Array.isArray(data) ? data[0] : data;
-          const url =
-            build?.artifacts?.buildUrl ||
-            build?.artifacts?.applicationArchiveUrl;
-
-          if (!url) {
-            console.error(JSON.stringify(build, null, 2));
-            throw new Error("AAB download URL not found");
-          }
-
-          fs.writeFileSync("aab-url.txt", url);
-          console.log("AAB URL found successfully");
-          NODE
-
-      - name: Download AAB
-        run: |
-          mkdir -p dist
-          curl --fail --location \
-            --retry 5 \
-            --retry-delay 10 \
-            "$(cat aab-url.txt)" \
-            --output dist/Go-Bharat.aab
-
-      - name: Verify AAB exists
-        run: |
-          test -f dist/Go-Bharat.aab
-          ls -lh dist/Go-Bharat.aab
-
-      - name: Upload AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: Go-Bharat-AAB
-          path: dist/Go-Bharat.aab
-          if-no-files-found: error
-          retention-days: 7
+            --wait
