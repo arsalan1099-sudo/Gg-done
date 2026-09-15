@@ -7,6 +7,7 @@ jobs:
   build:
     name: Build Android AAB
     runs-on: ubuntu-latest
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
@@ -18,89 +19,61 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Setup Expo and EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Setup EAS CLI
+        run: npm install --global eas-cli
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Build Android AAB
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           eas build \
             --platform android \
             --profile production \
             --non-interactive \
+            --clear-cache \
             --wait \
             --json > build.json
 
-      - name: Get build ID
+      - name: Get AAB URL
         run: |
-          node <<'NODE'
-          const fs = require('fs');
+          node - <<'NODE'
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("build.json", "utf8"));
+          const build = Array.isArray(data) ? data[0] : data;
+          const url =
+            build?.artifacts?.buildUrl ||
+            build?.artifacts?.applicationArchiveUrl;
 
-          const data = JSON.parse(
-            fs.readFileSync('build.json', 'utf8')
-          );
-
-          const builds = Array.isArray(data) ? data : [data];
-
-          const build = builds.find(
-            b => b.id
-          );
-
-          if (!build) {
-            console.error('Build ID not found.');
-            console.error(data);
-            process.exit(1);
+          if (!url) {
+            console.error(JSON.stringify(build, null, 2));
+            throw new Error("AAB download URL not found");
           }
 
-          console.log('Build ID:', build.id);
-
-          fs.writeFileSync(
-            'build-id.txt',
-            build.id
-          );
+          fs.writeFileSync("aab-url.txt", url);
+          console.log("AAB URL found successfully");
           NODE
 
       - name: Download AAB
         run: |
-          mkdir -p output
+          mkdir -p dist
+          curl --fail --location \
+            --retry 5 \
+            --retry-delay 10 \
+            "$(cat aab-url.txt)" \
+            --output dist/Go-Bharat.aab
 
-          BUILD_ID=$(cat build-id.txt)
-
-          eas build:download \
-            --build-id "$BUILD_ID" \
-            --non-interactive
-
-          AAB=$(find . -type f -name "*.aab" | head -n 1)
-
-          if [ -z "$AAB" ]; then
-            echo "ERROR: AAB file not found."
-            find . -type f | grep -E '\.(aab|apk)$' || true
-            exit 1
-          fi
-
-          echo "AAB found: $AAB"
-
-          cp "$AAB" output/Go-Bharat.aab
-
-      - name: Verify AAB
+      - name: Verify AAB exists
         run: |
-          if [ ! -f "output/Go-Bharat.aab" ]; then
-            echo "ERROR: Go-Bharat.aab was not created."
-            exit 1
-          fi
-
-          echo "AAB created successfully:"
-          ls -lh output/Go-Bharat.aab
+          test -f dist/Go-Bharat.aab
+          ls -lh dist/Go-Bharat.aab
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: Go-Bharat-AAB
-          path: output/Go-Bharat.aab
+          path: dist/Go-Bharat.aab
           if-no-files-found: error
           retention-days: 7
