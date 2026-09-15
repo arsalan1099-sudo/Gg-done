@@ -18,7 +18,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -30,27 +30,21 @@ jobs:
       - name: Install EAS CLI
         run: npm install --global eas-cli
 
-      - name: Build AAB locally on GitHub
+      - name: Build AAB locally
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas build \
-            --platform android \
-            --profile production \
-            --local \
-            --non-interactive \
-            --output ./Go-Bharat.aab
+          eas build --platform android --profile production --local --non-interactive --output ./Go-Bharat.aab
 
-      - name: Verify AAB
+      - name: Verify AAB signing
         run: |
-          test -f Go-Bharat.aab
-          ls -lh Go-Bharat.aab
-          keytool -printcert -jarfile Go-Bharat.aab
+          test -f ./Go-Bharat.aab
+          ls -lh ./Go-Bharat.aab
+          keytool -printcert -jarfile ./Go-Bharat.aab
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: Go-Bharat-AAB
-          path: Go-Bharat.aab
+          path: ./Go-Bharat.aab
           if-no-files-found: error
-          retention-days: 7
