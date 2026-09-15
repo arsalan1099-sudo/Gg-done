@@ -1,109 +1,101 @@
-name: Build Android AAB
+name: Build Android AAB Locally
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
+    name: Build Go-Bharat AAB
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
     steps:
-      # ---------------------------------------------------------
-      # 1. Checkout repository
-      # ---------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ---------------------------------------------------------
-      # 2. Setup Node.js
-      # ---------------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
 
-      # ---------------------------------------------------------
-      # 3. Force npm to use official npm registry
-      # ---------------------------------------------------------
-      - name: Configure npm registry
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      - name: Configure npm
         run: |
           npm config set registry https://registry.npmjs.org/
           npm config delete proxy || true
           npm config delete https-proxy || true
 
-          echo "Current npm registry:"
-          npm config get registry
-
-      # ---------------------------------------------------------
-      # 4. Install dependencies
-      #    Retry npm ci if temporary network/DNS error occurs
-      # ---------------------------------------------------------
       - name: Install dependencies
-        shell: bash
         run: |
-          set -e
+          npm ci --no-audit --no-fund
 
-          echo "Installing dependencies..."
+      - name: Install EAS CLI
+        run: |
+          npm install --global eas-cli
 
-          for attempt in 1 2 3; do
-            echo "npm ci attempt $attempt..."
-
-            if npm ci --no-audit --no-fund; then
-              echo "Dependencies installed successfully."
-              exit 0
-            fi
-
-            echo "npm ci failed on attempt $attempt."
-
-            if [ "$attempt" -lt 3 ]; then
-              echo "Waiting 15 seconds before retry..."
-              sleep 15
-            fi
-          done
-
-          echo "npm ci failed 3 times."
-          echo "Trying npm install as fallback..."
-
-          npm install --no-audit --no-fund
-
-      # ---------------------------------------------------------
-      # 5. Install EAS CLI
-      # ---------------------------------------------------------
-      - name: Setup Expo/EAS
-        run: npm install --global eas-cli
-
-      # ---------------------------------------------------------
-      # 6. Check EAS
-      # ---------------------------------------------------------
-      - name: Check EAS CLI
+      - name: Check tools
         run: |
           node --version
           npm --version
+          java -version
+          adb --version
           eas --version
 
-      # ---------------------------------------------------------
-      # 7. Verify app.json
-      # ---------------------------------------------------------
-      - name: Verify app configuration
+      - name: Verify Expo configuration
         run: |
-          echo "Checking app configuration..."
+          test -f app.json
+          test -f eas.json
+          node -e "const a=require('./app.json'); console.log('App:',a.expo.name); console.log('Package:',a.expo.android.package); console.log('Version:',a.expo.version); console.log('VersionCode:',a.expo.android.versionCode)"
+          node -e "const e=require('./eas.json'); console.log('Production buildType:',e.build.production.android.buildType); console.log('Credentials:',e.build.production.android.credentialsSource)"
 
-          node - <<'NODE'
-          const app = require('./app.json');
+      - name: Build Android AAB locally
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build \
+            --platform android \
+            --profile production \
+            --local \
+            --non-interactive \
+            --output ./Go-Bharat.aab
 
-          if (!app.expo) {
-            throw new Error("expo configuration missing from app.json");
-          }
+      - name: Verify AAB
+        run: |
+          if [ ! -f "./Go-Bharat.aab" ]; then
+            echo "ERROR: Go-Bharat.aab was not created."
+            echo "Searching for generated AAB files..."
+            find . -type f -name "*.aab" -print
+            exit 1
+          fi
 
-          console.log("App Name:", app.expo.name);
-          console.log("Slug:", app.expo.slug);
-          console.log("Version:", app.expo.version);
-          console.log(
-            "Package:",
-            app.expo.android && app.expo.android.package
-          );
+          echo "AAB created successfully:"
+          ls -lh ./Go-Bharat.aab
+          file ./Go-Bharat.aab
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Go-Bharat-AAB
+          path: ./Go-Bharat.aab
+          if-no-files-found: error
+          retention-days: 7          );
           console.log(
             "Version Code:",
             app.expo.android && app.expo.android.versionCode
