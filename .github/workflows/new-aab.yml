@@ -1,11 +1,11 @@
-name: New FREE Android AAB
+name: Go Bharat Correct Signed AAB
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build AAB With Correct Play Key
+    name: Build Correct Signed AAB
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
@@ -28,99 +28,145 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      - name: Install EAS CLI
-        run: npm install --global eas-cli
-
-      - name: Prepare correct Android keystore
+      - name: Decode correct Play keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           mkdir -p .github-signing
-
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > .github-signing/upload.jks
 
-          node <<'NODE'
-          const fs = require('fs');
-
-          const credentials = {
-            android: {
-              keystore: {
-                keystorePath: ".github-signing/upload.jks",
-                keystorePassword: process.env.ANDROID_KEYSTORE_PASSWORD,
-                keyAlias: process.env.ANDROID_KEY_ALIAS,
-                keyPassword: process.env.ANDROID_KEY_PASSWORD
-              }
-            }
-          };
-
-          fs.writeFileSync("credentials.json", JSON.stringify(credentials, null, 2));
-
-          const eas = JSON.parse(fs.readFileSync("eas.json", "utf8"));
-          eas.build = eas.build || {};
-          eas.build.production = eas.build.production || {};
-          eas.build.production.credentialsSource = "local";
-          fs.writeFileSync("eas.json", JSON.stringify(eas, null, 2));
-          NODE
-
-      - name: Verify Play upload key BEFORE build
+      - name: Verify correct key before build
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          ACTUAL_SHA1=$(keytool -list -v \
+          SHA1=$(keytool -list -v \
             -keystore .github-signing/upload.jks \
             -storepass "$ANDROID_KEYSTORE_PASSWORD" \
             -alias "$ANDROID_KEY_ALIAS" \
             | awk '/SHA1:/{print $2; exit}')
 
-          EXPECTED_SHA1="4F:68:A1:0F:E3:F5:3A:8C:A8:44:9F:C0:96:26:69:B8:81:22:03:E1"
+          echo "Keystore SHA1: $SHA1"
 
-          echo "AAB signing key SHA1: $ACTUAL_SHA1"
+          test "$SHA1" = "4F:68:A1:0F:E3:F5:3A:8C:A8:44:9F:C0:96:26:69:B8:81:22:03:E1"
 
-          if [ "$ACTUAL_SHA1" != "$EXPECTED_SHA1" ]; then
-            echo "ERROR: Wrong Android signing key."
-            exit 1
-          fi
-
-          echo "Correct Google Play upload key confirmed."
-
-      - name: Build Android AAB locally
+      - name: Generate Android project
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          CI: "1"
         run: |
-          eas build \
-            --platform android \
-            --profile production \
-            --local \
-            --non-interactive \
-            --output ./Go-Bharat.aab
+          npx expo prebuild --platform android --clean --no-install
 
-      - name: Verify finished AAB certificate
+      - name: Configure release signing
+        env:
+          VERSION_CODE: ${{ github.run_number }}
         run: |
-          test -f ./Go-Bharat.aab
+          export VERSION_CODE=$((100000 + VERSION_CODE))
 
-          ACTUAL_SHA1=$(keytool -printcert -jarfile ./Go-Bharat.aab \
-            | awk '/SHA1:/{print $2; exit}')
+          python3 <<'PY'
+          from pathlib import Path
+          import os
+          import re
 
-          EXPECTED_SHA1="4F:68:A1:0F:E3:F5:3A:8C:A8:44:9F:C0:96:26:69:B8:81:22:03:E1"
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
 
-          echo "FINAL AAB SHA1: $ACTUAL_SHA1"
+          marker = "    buildTypes {"
 
-          if [ "$ACTUAL_SHA1" != "$EXPECTED_SHA1" ]; then
-            echo "ERROR: Final AAB was signed with the wrong key."
-            exit 1
-          fi
+          if marker not in s:
+              raise SystemExit("buildTypes block not found")
 
-          echo "FINAL AAB SIGNING KEY IS CORRECT."
+          release_signing = '''    signingConfigs {
+              release {
+                  storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
+                  storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                  keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                  keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+              }
+          }
+
+          '''
+
+          s = s.replace(marker, release_signing + marker, 1)
+
+          build_pos = s.index(marker)
+          before = s[:build_pos]
+          after = s[build_pos:]
+
+          release_pos = after.find("release {")
+          if release_pos == -1:
+              raise SystemExit("release buildType not found")
+
+          head = after[:release_pos]
+          tail = after[release_pos:]
+
+          if "signingConfig signingConfigs.debug" in tail:
+              tail = tail.replace(
+                  "signingConfig signingConfigs.debug",
+                  "signingConfig signingConfigs.release",
+                  1
+              )
+          else:
+              tail = tail.replace(
+                  "release {",
+                  "release {\n            signingConfig signingConfigs.release",
+                  1
+              )
+
+          s = before + head + tail
+
+          version_code = os.environ["VERSION_CODE"]
+          s, count = re.subn(
+              r'\bversionCode\s+\d+',
+              f'versionCode {version_code}',
+              s,
+              count=1
+          )
+
+          if count == 0:
+              raise SystemExit("versionCode not found")
+
+          p.write_text(s)
+
+          print("Release signing configured.")
+          print("Version code:", version_code)
+          PY
+
+      - name: Build release AAB with correct key
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.github-signing/upload.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon
+
+      - name: Prepare final AAB
+        run: |
+          cp android/app/build/outputs/bundle/release/app-release.aab ./Go-Bharat.aab
           ls -lh ./Go-Bharat.aab
 
-      - name: Upload Go Bharat AAB
+      - name: Verify FINAL AAB signing certificate
+        run: |
+          SHA1=$(keytool -printcert -jarfile ./Go-Bharat.aab \
+            | awk '/SHA1:/{print $2; exit}')
+
+          EXPECTED="4F:68:A1:0F:E3:F5:3A:8C:A8:44:9F:C0:96:26:69:B8:81:22:03:E1"
+
+          echo "FINAL AAB SHA1: $SHA1"
+
+          if [ "$SHA1" != "$EXPECTED" ]; then
+            echo "ERROR: Wrong signing certificate"
+            exit 1
+          fi
+
+          echo "CORRECT PLAY STORE SIGNING KEY CONFIRMED"
+
+      - name: Upload final AAB
         uses: actions/upload-artifact@v4
         with:
-          name: Go-Bharat-CORRECT-SIGNED-AAB
+          name: Go-Bharat-PlayStore-AAB
           path: ./Go-Bharat.aab
           if-no-files-found: error
           retention-days: 7
