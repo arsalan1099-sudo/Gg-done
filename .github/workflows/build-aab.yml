@@ -21,10 +21,6 @@ jobs:
 
       - name: Setup EAS CLI
         run: npm install --global eas-cli
-
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-
       - name: Build Android AAB
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
