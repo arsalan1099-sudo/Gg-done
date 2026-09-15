@@ -1,11 +1,10 @@
-name: Build Android AAB
+name: FREE Android AAB Build
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build Android AAB
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
@@ -19,19 +18,39 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
       - name: Install EAS CLI
         run: npm install --global eas-cli
 
-      - name: Build Android AAB
+      - name: Build AAB locally on GitHub
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           eas build \
             --platform android \
             --profile production \
+            --local \
             --non-interactive \
-            --clear-cache \
-            --wait
+            --output ./Go-Bharat.aab
+
+      - name: Verify AAB
+        run: |
+          test -f Go-Bharat.aab
+          ls -lh Go-Bharat.aab
+          keytool -printcert -jarfile Go-Bharat.aab
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Go-Bharat-AAB
+          path: Go-Bharat.aab
+          if-no-files-found: error
+          retention-days: 7
