@@ -1,103 +1,32 @@
-name: Go Bharat Correct Signed AAB
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    name: Build Correct Signed AAB
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-
-      - name: Decode Play keystore
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        run: |
-          mkdir -p .github-signing
-          echo "$KEYSTORE_B64" | base64 --decode > .github-signing/upload.jks
-
-      - name: Verify correct Play key
-        env:
-          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-        run: |
-          SHA1=$(keytool -list -v \
-            -keystore .github-signing/upload.jks \
-            -storepass "$STORE_PASS" \
-            -alias "$KEY_ALIAS" \
-            | awk '/SHA1:/{print $2; exit}')
-
-          EXPECTED="4F:68:A1:0F:E3:F5:3A:8C:A8:44:9F:C0:96:26:69:B8:81:22:03:E1"
-
-          echo "SOURCE KEY SHA1: $SHA1"
-
-          if [ "$SHA1" != "$EXPECTED" ]; then
-            echo "WRONG KEYSTORE"
-            exit 1
-          fi
-
-      - name: Generate Android project
-        env:
-          CI: "1"
-        run: |
-          npx expo prebuild --platform android --clean --no-install
-
-      - name: Configure release signing
-        env:
-          BUILD_NUMBER: ${{ github.run_number }}
+      - name: Fix release signing
         run: |
           python3 <<'PY'
           from pathlib import Path
-          import os
-          import re
 
-          path = Path("android/app/build.gradle")
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
 
-          if not path.exists():
-              raise SystemExit("android/app/build.gradle not found")
+          start = s.find("signingConfigs {")
+          if start == -1:
+              raise SystemExit("signingConfigs not found")
 
-          text = path.read_text()
+          open_brace = s.find("{", start)
+          depth = 0
+          close_brace = None
 
-          def matching_brace(text, opening):
-              depth = 0
-              for i in range(opening, len(text)):
-                  if text[i] == "{":
-                      depth += 1
-                  elif text[i] == "}":
-                      depth -= 1
-                      if depth == 0:
-                          return i
-              raise RuntimeError("Matching brace not found")
+          for i in range(open_brace, len(s)):
+              if s[i] == "{":
+                  depth += 1
+              elif s[i] == "}":
+                  depth -= 1
+                  if depth == 0:
+                      close_brace = i
+                      break
 
-          # Find signingConfigs block
-          m = re.search(r'(?m)^\s*signingConfigs\s*\{', text)
+          if close_brace is None:
+              raise SystemExit("signingConfigs closing brace not found")
 
-          if not m:
-              raise SystemExit("signingConfigs block not found")
-
-          signing_open = text.find("{", m.start())
-          signing_close = matching_brace(text, signing_open)
-
-          release_signing = '''
+          release_config = '''
               release {
                   storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
                   storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
@@ -106,129 +35,37 @@ jobs:
               }
           '''
 
-          signing_section = text[signing_open:signing_close]
+          s = s[:close_brace] + release_config + s[close_brace:]
 
-          if not re.search(r'(?m)^\s*release\s*\{', signing_section):
-              text = (
-                  text[:signing_close]
-                  + release_signing
-                  + text[signing_close:]
-              )
+          build_start = s.find("buildTypes {")
+          if build_start == -1:
+              raise SystemExit("buildTypes not found")
 
-          # Find buildTypes
-          m = re.search(r'(?m)^\s*buildTypes\s*\{', text)
-
-          if not m:
-              raise SystemExit("buildTypes block not found")
-
-          build_open = text.find("{", m.start())
-          build_close = matching_brace(text, build_open)
-
-          build_section = text[build_open:build_close + 1]
-
-          release_match = re.search(
-              r'(?m)^\s*release\s*\{',
-              build_section
-          )
-
-          if not release_match:
+          release_start = s.find("release {", build_start)
+          if release_start == -1:
               raise SystemExit("release buildType not found")
 
-          release_open = (
-              build_open
-              + release_match.start()
-              + build_section[release_match.start():].find("{")
-          )
+          next_section = s.find("}", release_start)
 
-          release_close = matching_brace(text, release_open)
+          section = s[release_start:next_section]
 
-          release_block = text[release_open:release_close + 1]
-
-          signing_line = re.search(
-              r'(?m)^(\s*)signingConfig\s+signingConfigs\.[A-Za-z0-9_]+\s*$',
-              release_block
-          )
-
-          if signing_line:
-              release_block = re.sub(
-                  r'(?m)^(\s*)signingConfig\s+signingConfigs\.[A-Za-z0-9_]+\s*$',
-                  r'\1signingConfig signingConfigs.release',
-                  release_block,
-                  count=1
+          if "signingConfig signingConfigs.debug" in section:
+              section = section.replace(
+                  "signingConfig signingConfigs.debug",
+                  "signingConfig signingConfigs.release"
               )
-          else:
-              release_block = release_block.replace(
-                  "{",
-                  "{\n            signingConfig signingConfigs.release",
+          elif "signingConfig signingConfigs.release" not in section:
+              section = section.replace(
+                  "release {",
+                  "release {\n            signingConfig signingConfigs.release",
                   1
               )
 
-          text = (
-              text[:release_open]
-              + release_block
-              + text[release_close + 1:]
-          )
+          s = s[:release_start] + section + s[next_section:]
 
-          # Always create a Play-valid new versionCode
-          version_code = 100000 + int(os.environ["BUILD_NUMBER"])
+          p.write_text(s)
 
-          text, count = re.subn(
-              r'(?m)^(\s*)versionCode\s+\d+\s*$',
-              lambda m: f"{m.group(1)}versionCode {version_code}",
-              text,
-              count=1
-          )
-
-          if count != 1:
-              raise SystemExit("versionCode not found")
-
-          path.write_text(text)
-
-          print("Release signing configuration inserted")
-          print("Version code:", version_code)
+          print("RELEASE SIGNING CONFIGURED")
           PY
 
-          grep -nE \
-            "signingConfigs|signingConfig|storeFile|versionCode" \
-            android/app/build.gradle
-
-      - name: Build release AAB
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.github-signing/upload.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew clean bundleRelease --no-daemon
-
-      - name: Verify final AAB
-        run: |
-          cp \
-            android/app/build/outputs/bundle/release/app-release.aab \
-            Go-Bharat.aab
-
-          SHA1=$(keytool -printcert \
-            -jarfile Go-Bharat.aab \
-            | awk '/SHA1:/{print $2; exit}')
-
-          EXPECTED="4F:68:A1:0F:E3:F5:3A:8C:A8:44:9F:C0:96:26:69:B8:81:22:03:E1"
-
-          echo "FINAL AAB SHA1: $SHA1"
-
-          if [ "$SHA1" != "$EXPECTED" ]; then
-            echo "FINAL AAB HAS WRONG SIGNING KEY"
-            exit 1
-          fi
-
-          echo "CORRECT PLAY UPLOAD KEY CONFIRMED"
-          ls -lh Go-Bharat.aab
-
-      - name: Upload AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: Go-Bharat-PlayStore-AAB
-          path: Go-Bharat.aab
-          if-no-files-found: error
-          retention-days: 7
+          grep -nE "signingConfigs|signingConfig|storeFile|keyAlias" android/app/build.gradle
