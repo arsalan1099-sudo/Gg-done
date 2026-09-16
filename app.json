@@ -89,7 +89,7 @@
       }
     },
     "android": {
-      "package": "com.median.android.odmalem",
+      "package": "co.median.android.odmalem",
       "versionCode": 18,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
