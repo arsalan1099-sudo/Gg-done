@@ -81,28 +81,50 @@ jobs:
 
           def closing_brace(data, opening):
               depth = 0
+
               for i in range(opening, len(data)):
                   if data[i] == "{":
                       depth += 1
+
                   elif data[i] == "}":
                       depth -= 1
+
                       if depth == 0:
                           return i
+
               raise SystemExit("Closing brace not found")
 
-          # Find signingConfigs
-          match = re.search(r'(?m)^\s*signingConfigs\s*\{', text)
+          # Find signingConfigs block
+          match = re.search(
+              r'(?m)^\s*signingConfigs\s*\{',
+              text
+          )
 
           if not match:
-              raise SystemExit("signingConfigs block not found")
+              raise SystemExit(
+                  "signingConfigs block not found"
+              )
 
-          sign_open = text.find("{", match.start())
-          sign_close = closing_brace(text, sign_open)
+          sign_open = text.find(
+              "{",
+              match.start()
+          )
 
-          sign_block = text[sign_open:sign_close + 1]
+          sign_close = closing_brace(
+              text,
+              sign_open
+          )
 
-          # Add release signing configuration if missing
-          if not re.search(r'(?m)^\s*release\s*\{', sign_block):
+          sign_block = text[
+              sign_open:sign_close + 1
+          ]
+
+          # Add release signing config
+          if not re.search(
+              r'(?m)^\s*release\s*\{',
+              sign_block
+          ):
+
               release_config = '''
                   release {
                       storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
@@ -118,45 +140,85 @@ jobs:
                   + text[sign_close:]
               )
 
-          # Find buildTypes
-          match = re.search(r'(?m)^\s*buildTypes\s*\{', text)
+          # Find buildTypes block
+          match = re.search(
+              r'(?m)^\s*buildTypes\s*\{',
+              text
+          )
 
           if not match:
-              raise SystemExit("buildTypes block not found")
+              raise SystemExit(
+                  "buildTypes block not found"
+              )
 
-          build_open = text.find("{", match.start())
-          build_close = closing_brace(text, build_open)
+          build_open = text.find(
+              "{",
+              match.start()
+          )
 
-          build_block = text[build_open:build_close + 1]
+          build_close = closing_brace(
+              text,
+              build_open
+          )
 
-          rel = re.search(r'(?m)^\s*release\s*\{', build_block)
+          build_block = text[
+              build_open:build_close + 1
+          ]
+
+          rel = re.search(
+              r'(?m)^\s*release\s*\{',
+              build_block
+          )
 
           if not rel:
-              raise SystemExit("release buildType not found")
+              raise SystemExit(
+                  "release buildType not found"
+              )
 
-          rel_start = build_open + rel.start()
-          rel_open = text.find("{", rel_start)
-          rel_close = closing_brace(text, rel_open)
+          rel_start = (
+              build_open
+              + rel.start()
+          )
 
-          release_block = text[rel_start:rel_close + 1]
+          rel_open = text.find(
+              "{",
+              rel_start
+          )
+
+          rel_close = closing_brace(
+              text,
+              rel_open
+          )
+
+          release_block = text[
+              rel_start:rel_close + 1
+          ]
 
           signing_pattern = (
               r'(?m)^(\s*)signingConfig\s+'
               r'signingConfigs\.[A-Za-z0-9_]+\s*$'
           )
 
-          if re.search(signing_pattern, release_block):
+          if re.search(
+              signing_pattern,
+              release_block
+          ):
+
               release_block = re.sub(
                   signing_pattern,
                   r'\1signingConfig signingConfigs.release',
                   release_block,
                   count=1
               )
+
           else:
-              release_block = release_block.replace(
-                  "{",
-                  "{\n            signingConfig signingConfigs.release",
-                  1
+
+              release_block = (
+                  release_block.replace(
+                      "{",
+                      "{\n            signingConfig signingConfigs.release",
+                      1
+                  )
               )
 
           text = (
@@ -165,23 +227,37 @@ jobs:
               + text[rel_close + 1:]
           )
 
-          # Create unique Play Store versionCode
-          version_code = 100000 + int(os.environ["BUILD_NUMBER"])
+          # Unique Play Store versionCode
+          version_code = (
+              100000
+              + int(
+                  os.environ["BUILD_NUMBER"]
+              )
+          )
 
           text, count = re.subn(
               r'(?m)^(\s*)versionCode\s+\d+\s*$',
-              lambda m: f"{m.group(1)}versionCode {version_code}",
+              lambda m:
+                  f"{m.group(1)}versionCode {version_code}",
               text,
               count=1
           )
 
           if count != 1:
-              raise SystemExit("versionCode not found")
+              raise SystemExit(
+                  "versionCode not found"
+              )
 
           path.write_text(text)
 
-          print("RELEASE SIGNING CONFIGURED")
-          print("VERSION CODE:", version_code)
+          print(
+              "RELEASE SIGNING CONFIGURED"
+          )
+
+          print(
+              "VERSION CODE:",
+              version_code
+          )
           PY
 
           grep -nE \
@@ -196,6 +272,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
         run: |
           cd android
           chmod +x gradlew
@@ -203,7 +280,9 @@ jobs:
 
       - name: Verify final AAB
         run: |
-          cp android/app/build/outputs/bundle/release/app-release.aab Go-Bharat.aab
+          cp \
+            android/app/build/outputs/bundle/release/app-release.aab \
+            Go-Bharat.aab
 
           SHA1=$(keytool -printcert \
             -jarfile Go-Bharat.aab \
@@ -224,6 +303,7 @@ jobs:
 
       - name: Upload final AAB
         uses: actions/upload-artifact@v4
+
         with:
           name: Go-Bharat-PlayStore-AAB
           path: Go-Bharat.aab
