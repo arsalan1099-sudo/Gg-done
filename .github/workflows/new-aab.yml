@@ -58,8 +58,8 @@ jobs:
       - name: Generate Android project
         env:
           CI: "1"
-                  EXPO_PUBLIC_API_URL: "https://go-bharat.onrender.com"
-        EXPO_PUBLIC_DOMAIN: "go-bharat.onrender.com"
+          EXPO_PUBLIC_API_URL: "https://go-bharat.onrender.com"
+          EXPO_PUBLIC_DOMAIN: "go-bharat.onrender.com"
         run: |
           npx expo prebuild --platform android --clean --no-install
 
@@ -90,8 +90,9 @@ jobs:
                           return i
               raise SystemExit("Closing brace not found")
 
-          # signingConfigs block
+          # Find signingConfigs
           match = re.search(r'(?m)^\s*signingConfigs\s*\{', text)
+
           if not match:
               raise SystemExit("signingConfigs block not found")
 
@@ -100,6 +101,7 @@ jobs:
 
           sign_block = text[sign_open:sign_close + 1]
 
+          # Add release signing configuration if missing
           if not re.search(r'(?m)^\s*release\s*\{', sign_block):
               release_config = '''
                   release {
@@ -116,8 +118,9 @@ jobs:
                   + text[sign_close:]
               )
 
-          # Recalculate buildTypes after modification
+          # Find buildTypes
           match = re.search(r'(?m)^\s*buildTypes\s*\{', text)
+
           if not match:
               raise SystemExit("buildTypes block not found")
 
@@ -127,6 +130,7 @@ jobs:
           build_block = text[build_open:build_close + 1]
 
           rel = re.search(r'(?m)^\s*release\s*\{', build_block)
+
           if not rel:
               raise SystemExit("release buildType not found")
 
@@ -136,7 +140,10 @@ jobs:
 
           release_block = text[rel_start:rel_close + 1]
 
-          signing_pattern = r'(?m)^(\s*)signingConfig\s+signingConfigs\.[A-Za-z0-9_]+\s*$'
+          signing_pattern = (
+              r'(?m)^(\s*)signingConfig\s+'
+              r'signingConfigs\.[A-Za-z0-9_]+\s*$'
+          )
 
           if re.search(signing_pattern, release_block):
               release_block = re.sub(
@@ -158,7 +165,7 @@ jobs:
               + text[rel_close + 1:]
           )
 
-          # Unique Play Store versionCode
+          # Create unique Play Store versionCode
           version_code = 100000 + int(os.environ["BUILD_NUMBER"])
 
           text, count = re.subn(
@@ -183,8 +190,8 @@ jobs:
 
       - name: Build release AAB
         env:
-                EXPO_PUBLIC_API_URL: "https://go-bharat.onrender.com"
-        EXPO_PUBLIC_DOMAIN: "go-bharat.onrender.com"
+          EXPO_PUBLIC_API_URL: "https://go-bharat.onrender.com"
+          EXPO_PUBLIC_DOMAIN: "go-bharat.onrender.com"
           ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.github-signing/upload.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -212,6 +219,7 @@ jobs:
           fi
 
           echo "CORRECT PLAY UPLOAD KEY CONFIRMED"
+
           ls -lh Go-Bharat.aab
 
       - name: Upload final AAB
