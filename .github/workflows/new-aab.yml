@@ -58,6 +58,8 @@ jobs:
       - name: Generate Android project
         env:
           CI: "1"
+                  EXPO_PUBLIC_API_URL: "https://go-bharat.onrender.com"
+        EXPO_PUBLIC_DOMAIN: "go-bharat.onrender.com"
         run: |
           npx expo prebuild --platform android --clean --no-install
 
@@ -181,6 +183,8 @@ jobs:
 
       - name: Build release AAB
         env:
+                EXPO_PUBLIC_API_URL: "https://go-bharat.onrender.com"
+        EXPO_PUBLIC_DOMAIN: "go-bharat.onrender.com"
           ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.github-signing/upload.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
