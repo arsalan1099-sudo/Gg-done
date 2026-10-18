@@ -248,6 +248,8 @@ export const vendorApplications = pgTable("vendor_applications", {
   photos: jsonb("photos").default([]),
   status: varchar("status", { length: 20 }).notNull().default("PENDING"),
   submittedBy: text("submitted_by").default(""),
+  // Set only from verified, active marketing identity; not from client submittedBy.
+  referralAgentPhone: varchar("referral_agent_phone", { length: 15 }),
   submittedAt: timestamp("submitted_at").defaultNow(),
   reviewedBy: text("reviewed_by"),
   reviewedAt: timestamp("reviewed_at"),
@@ -393,6 +395,7 @@ export const vendorMemberships = pgTable("vendor_memberships", {
   amountPaise: integer("amount_paise").notNull(),
   referralRatePercent: integer("referral_rate_percent").notNull().default(33),
   referralName: text("referral_name").default(""),
+  referralAgentPhone: varchar("referral_agent_phone", { length: 15 }),
   status: varchar("status", { length: 20 }).notNull().default("PENDING"),
   createdAt: timestamp("created_at").defaultNow(),
   paidAt: timestamp("paid_at"),
