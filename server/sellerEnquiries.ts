@@ -6,7 +6,7 @@ import { db } from "./db";
 import { sellerEnquiries } from "@shared/schema";
 import { requireAuth, requireRole } from "./auth";
 
-const categories = new Set(["Grocery", "Fashion", "Food", "Electronics", "Wholesale", "Services", "Other"]);
+import { normalizeSellerPhone, validSellerEnquiry } from "./sellerLeadRules";
 const statuses = new Set(["NEW", "CONTACTED", "QUALIFIED", "CLOSED", "NOT_INTERESTED"]);
 
 export function registerSellerEnquiryRoutes(app: Express): void {
@@ -23,14 +23,17 @@ export function registerSellerEnquiryRoutes(app: Express): void {
       const businessName = String(req.body?.businessName || "").trim();
       const city = String(req.body?.city || "").trim();
       const category = String(req.body?.category || "").trim();
-      const digits = String(req.body?.phone || "").replace(/\D/g, "");
-      const phone = digits.length === 12 && digits.startsWith("91") ? digits.slice(2) : digits;
-      const consent = req.body?.consent === true;
-      if (!consent) return res.status(400).json({ error: "Consent to business follow-up is required" });
-      if (!businessName || businessName.length > 100 || !city || city.length > 80 ||
-          !categories.has(category) || !/^[6-9]\d{9}$/.test(phone)) {
+      if (req.body?.consent !== true) return res.status(400).json({ error: "Consent to business follow-up is required" });
+      if (!validSellerEnquiry({
+        businessName: req.body?.businessName,
+        city: req.body?.city,
+        category: req.body?.category,
+        phone: req.body?.phone,
+        consent: req.body?.consent
+      })) {
         return res.status(400).json({ error: "Please enter valid business, city, category and 10-digit Indian mobile number" });
       }
+      const phone = normalizeSellerPhone(req.body.phone)!;
       const [recent] = await db.select({ id: sellerEnquiries.id }).from(sellerEnquiries)
         .where(and(eq(sellerEnquiries.phone, phone), eq(sellerEnquiries.businessName, businessName),
           gte(sellerEnquiries.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000))))
