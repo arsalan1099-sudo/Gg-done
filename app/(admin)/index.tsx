@@ -139,6 +139,7 @@ export default function SuperAdminDashboard() {
     { label: "Reels", icon: "videocam" as const, color: "#F59E0B", route: "/(admin)/reels", count: activeReels, badge: "" },
     { label: "Coupons", icon: "pricetag" as const, color: "#14B8A6", route: "/(admin)/coupons", count: adminCoupons.length, badge: `${activeCoupons} active` },
     { label: "Payments", icon: "wallet" as const, color: "#0EA5E9", route: "/(admin)/payments", count: totalOrders, badge: "" },
+    { label: "Subscription Revenue", icon: "cash" as const, color: "#059669", route: "/admin-revenue", count: "", badge: "Verified" },
     { label: "Withdrawals", icon: "arrow-undo" as const, color: "#E11D48", route: "/(admin)/withdrawals", count: "", badge: "New" },
     { label: "Franchises", icon: "business" as const, color: "#6366F1", route: "/(admin)/franchises", count: teamMembers.filter(m => m.role === "FRANCHISE").length, badge: "" },
     { label: "Reviews", icon: "star" as const, color: "#FBBF24", route: "/(admin)/reviews", count: reviews.length, badge: "" },
