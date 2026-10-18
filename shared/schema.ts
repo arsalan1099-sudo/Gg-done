@@ -587,6 +587,24 @@ export const leads = pgTable("leads", {
   index("idx_leads_agent_phone").on(table.marketingAgentPhone),
 ]);
 
+// Public opt-in seller enquiries, separate from authenticated marketing-agent leads.
+export const sellerEnquiries = pgTable("seller_enquiries", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  businessName: varchar("business_name", { length: 100 }).notNull(),
+  city: varchar("city", { length: 80 }).notNull(),
+  category: varchar("category", { length: 30 }).notNull(),
+  phone: varchar("phone", { length: 15 }).notNull(),
+  consent: boolean("contact_consent").notNull().default(false),
+  status: varchar("status", { length: 24 }).notNull().default("NEW"),
+  source: varchar("source", { length: 30 }).notNull().default("SELL_LANDING"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_seller_enquiries_created").on(table.createdAt),
+  index("idx_seller_enquiries_status").on(table.status),
+  index("idx_seller_enquiries_phone").on(table.phone),
+]);
+
 export const coinGrants = pgTable("coin_grants", {
   id: varchar("id", { length: 64 }).primaryKey(),
   phone: varchar("phone", { length: 15 }).notNull(),
