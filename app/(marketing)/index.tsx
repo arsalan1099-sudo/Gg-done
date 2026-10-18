@@ -227,7 +227,7 @@ export default function MarketingDashboard() {
     photos: [] as string[],
     paymentMethods: ["CASH"] as ("CASH" | "UPI" | "BANK_TRANSFER" | "CHEQUE")[],
     upiId: "",
-    subscriptionPlan: "MONTHLY" as "MONTHLY" | "QUARTERLY" | "HALF_YEARLY" | "ANNUAL",
+    subscriptionPlan: "ANNUAL" as "MONTHLY" | "QUARTERLY" | "HALF_YEARLY" | "ANNUAL",
   });
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
@@ -346,7 +346,7 @@ export default function MarketingDashboard() {
       photos: [],
       paymentMethods: ["CASH"],
       upiId: "",
-      subscriptionPlan: "MONTHLY",
+      subscriptionPlan: "ANNUAL",
     });
     setLocationError("");
     setLocationNeedsSettings(false);
@@ -1535,7 +1535,7 @@ export default function MarketingDashboard() {
                 <Text style={styles.formHint}>Choose a plan for vendor to go live on the app</Text>
                 <View style={styles.subscriptionGrid}>
                   {(() => {
-                    const defaultRates = { MONTHLY: 999, QUARTERLY: 2499, HALF_YEARLY: 4499, ANNUAL: 7999 };
+                    const defaultRates = { MONTHLY: 999, QUARTERLY: 2499, HALF_YEARLY: 4499, ANNUAL: 1000 };
                     const rates = adminPricing?.vendorSubscriptionRates || defaultRates;
                     const monthly = rates.MONTHLY || 999;
                     const savePct = (dur: number, price: number) => {
@@ -1544,10 +1544,7 @@ export default function MarketingDashboard() {
                       return `Save ${Math.round(((equiv - price) / equiv) * 100)}%`;
                     };
                     return [
-                      { id: "MONTHLY" as const, label: "Monthly", price: `₹${rates.MONTHLY.toLocaleString("en-IN")}/mo`, save: "" },
-                      { id: "QUARTERLY" as const, label: "Quarterly", price: `₹${rates.QUARTERLY.toLocaleString("en-IN")}/3mo`, save: savePct(3, rates.QUARTERLY) },
-                      { id: "HALF_YEARLY" as const, label: "Half Yearly", price: `₹${rates.HALF_YEARLY.toLocaleString("en-IN")}/6mo`, save: savePct(6, rates.HALF_YEARLY) },
-                      { id: "ANNUAL" as const, label: "Annual", price: `₹${rates.ANNUAL.toLocaleString("en-IN")}/yr`, save: savePct(12, rates.ANNUAL) },
+                      { id: "ANNUAL" as const, label: "Annual seller offer", price: "₹1,000/yr", save: "" },
                     ];
                   })().map((plan) => {
                     const isSelected = vendorForm.subscriptionPlan === plan.id;
