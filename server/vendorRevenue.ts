@@ -5,7 +5,7 @@ import { db } from "./db";
 import { vendorApplications, vendorMemberships, teamMembers } from "@shared/schema";
 import { requireAuth, requireRole } from "./auth";
 import { ANNUAL_PRICE_PAISE, REFERRAL_RATE_PERCENT, referralPaise, isCapturedAnnualPayment } from "./vendorBillingRules";
-import { createRazorpayOrder, fetchRazorpayPayment, getRazorpayKeyId, isRazorpayConfigured, verifyRazorpaySignature } from "./razorpayClient";
+import { createRazorpayOrder, fetchRazorpayPayment, fetchCapturedRazorpayOrderPayments, getRazorpayKeyId, isRazorpayConfigured, verifyRazorpaySignature } from "./razorpayClient";
 
 // The annual launch offer is charged ONLY by this trusted backend, never from a client amount.
 // Referral commission is a reserved liability, not an automatic payout.
@@ -18,7 +18,9 @@ function phoneMatches(phone: string, column: typeof vendorApplications.phone | t
   return or(eq(column, phone), eq(column, "+91" + phone), eq(column, "91" + phone));
 }
 function isLiveGateway(): boolean {
-  return isRazorpayConfigured() && getRazorpayKeyId().startsWith("rzp_live_");
+  // Explicit opt-in: production cannot accept memberships until gateway, terms and review are verified.
+  return process.env.VENDOR_MEMBERSHIP_PAYMENTS_ENABLED === "true" &&
+    isRazorpayConfigured() && getRazorpayKeyId().startsWith("rzp_live_");
 }
 function jsonError(res: Response, error: unknown) {
   console.error("[VENDOR_REVENUE]", error);
@@ -60,6 +62,19 @@ async function confirmCaptured(row: typeof vendorMemberships.$inferSelect, payme
     .where(and(eq(vendorMemberships.id, row.id), eq(vendorMemberships.status, "PENDING")))
     .returning({ id: vendorMemberships.id });
   return changed.length > 0;
+}
+
+async function reconcilePendingMembership(row: typeof vendorMemberships.$inferSelect): Promise<{
+  latest: typeof vendorMemberships.$inferSelect; gatewayAvailable: boolean
+}> {
+  if (row.status !== "PENDING") return { latest: row, gatewayAvailable: true };
+  const captured = await fetchCapturedRazorpayOrderPayments(row.razorpayOrderId);
+  if (captured === null) return { latest: row, gatewayAvailable: false };
+  for (const payment of captured) {
+    if (await confirmCaptured(row, payment)) break;
+  }
+  const [latest] = await db.select().from(vendorMemberships).where(eq(vendorMemberships.id, row.id)).limit(1);
+  return { latest: latest || row, gatewayAvailable: true };
 }
 
 export async function settleVendorMembershipWebhook(payment: any): Promise<void> {
@@ -124,7 +139,9 @@ export function registerVendorRevenueRoutes(app: Express): void {
       const vendor = await getMyVendor(phone);
       if (!vendor) return res.status(404).json({ error: "Vendor application not found" });
       res.setHeader("Cache-Control", "no-store");
-      res.json({ vendorStatus: vendor.status, membership: publicMembership(await latestForVendor(vendor.id)) });
+      const latest = await latestForVendor(vendor.id);
+      const resolved = latest ? await reconcilePendingMembership(latest) : null;
+      res.json({ vendorStatus: vendor.status, membership: publicMembership(resolved?.latest) });
     } catch (error) { return jsonError(res,error); }
   });
 
@@ -139,11 +156,16 @@ export function registerVendorRevenueRoutes(app: Express): void {
       }
       if (!isLiveGateway()) return res.status(503).json({ error: "Live payment gateway is not ready; no charge was made" });
       const previous = await latestForVendor(vendor.id);
-      if (previous?.status === "ACTIVE" && previous.expiresAt && previous.expiresAt > new Date()) {
+      const reconciliation = previous ? await reconcilePendingMembership(previous) : null;
+      const prior = reconciliation?.latest || previous;
+      if (prior?.status === "ACTIVE" && prior.expiresAt && prior.expiresAt > new Date()) {
         return res.status(409).json({ error: "Annual membership is already active" });
       }
-      if (previous?.status === "PENDING" && previous.createdAt && Date.now() - previous.createdAt.getTime() < 10 * 60 * 1000) {
-        return res.json({ checkoutUrl: "/api/vendor-membership/checkout/" + previous.checkoutToken, orderId: previous.razorpayOrderId, amount: previous.amountPaise / 100, reused: true });
+      if (prior?.status === "PENDING" && !reconciliation?.gatewayAvailable) {
+        return res.status(503).json({ error: "Gateway reconciliation unavailable. No new charge has been made; try checking status." });
+      }
+      if (prior?.status === "PENDING" && prior.createdAt && Date.now() - prior.createdAt.getTime() < 30 * 60 * 1000) {
+        return res.json({ checkoutUrl: "/api/vendor-membership/checkout/" + prior.checkoutToken, orderId: prior.razorpayOrderId, amount: prior.amountPaise / 100, reused: true });
       }
       const receipt = "SUB_" + crypto.randomBytes(12).toString("hex");
       const order = await createRazorpayOrder(ANNUAL_PRICE_PAISE / 100, receipt, { platform: "go_bharat", purpose: "vendor_annual" });
