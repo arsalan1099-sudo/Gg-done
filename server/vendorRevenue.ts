@@ -21,7 +21,8 @@ function phoneMatches(phone: string, column: typeof vendorApplications.phone | t
 function isLiveGateway(): boolean {
   // Explicit opt-in: production cannot accept memberships until gateway, terms and review are verified.
   return process.env.VENDOR_MEMBERSHIP_PAYMENTS_ENABLED === "true" &&
-    isRazorpayConfigured() && getRazorpayKeyId().startsWith("rzp_live_");
+    isRazorpayConfigured() && getRazorpayKeyId().startsWith("rzp_live_") &&
+    Boolean(process.env.RAZORPAY_WEBHOOK_SECRET);
 }
 function jsonError(res: Response, error: unknown) {
   console.error("[VENDOR_REVENUE]", error);
@@ -131,6 +132,22 @@ export function registerVendorRevenueRoutes(app: Express): void {
     standardHeaders: true, legacyHeaders: false,
     message: { error: "Too many payment attempts. Please try later." }
   });
+  // Readiness facts only; never expose gateway or webhook secret values.
+  app.get("/api/admin/vendor-membership-readiness", requireAuth, requireRole("SUPER_ADMIN"), (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      annualPrice: ANNUAL_PRICE_PAISE / 100,
+      referralRatePercent: REFERRAL_RATE_PERCENT,
+      liveRazorpayKeyPresent: isRazorpayConfigured() && getRazorpayKeyId().startsWith("rzp_live_"),
+      webhookSecretPresent: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET),
+      subscriptionCollectionEnabled: process.env.VENDOR_MEMBERSHIP_PAYMENTS_ENABLED === "true",
+      acceptingNewCharges: isLiveGateway(),
+      gatewayCaptureTested: "NOT_VERIFIED",
+      payoutExecution: "NOT_ENABLED",
+      note: "Credentials present does not prove settlement. Complete a controlled authorized payment and reconciliation before enabling sales."
+    });
+  });
+
   app.get("/api/vendor-membership/offer", (_req, res) => res.json({
     plan: "ANNUAL", amount: ANNUAL_PRICE_PAISE / 100, currency: "INR",
     onboardingFee: 0, marketingReferralPercent: REFERRAL_RATE_PERCENT,
@@ -192,6 +209,7 @@ export function registerVendorRevenueRoutes(app: Express): void {
 
   app.get("/api/vendor-membership/checkout/:token", async (req,res) => {
     try {
+      if (!isLiveGateway()) return res.status(503).send("Membership checkout is temporarily unavailable.");
       const token = String(req.params.token || "");
       if (!/^[a-f0-9]{48}$/.test(token)) return res.status(404).send("Checkout not found");
       const [row] = await db.select().from(vendorMemberships).where(eq(vendorMemberships.checkoutToken, token)).limit(1);
