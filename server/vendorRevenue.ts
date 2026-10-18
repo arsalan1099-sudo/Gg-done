@@ -4,12 +4,11 @@ import { and, desc, eq, or } from "drizzle-orm";
 import { db } from "./db";
 import { vendorApplications, vendorMemberships, teamMembers } from "@shared/schema";
 import { requireAuth, requireRole } from "./auth";
+import { ANNUAL_PRICE_PAISE, REFERRAL_RATE_PERCENT, referralPaise, isCapturedAnnualPayment } from "./vendorBillingRules";
 import { createRazorpayOrder, fetchRazorpayPayment, getRazorpayKeyId, isRazorpayConfigured, verifyRazorpaySignature } from "./razorpayClient";
 
 // The annual launch offer is charged ONLY by this trusted backend, never from a client amount.
 // Referral commission is a reserved liability, not an automatic payout.
-export const ANNUAL_PRICE_PAISE = 100000;
-export const REFERRAL_RATE_PERCENT = 33;
 const yearMs = 365 * 24 * 60 * 60 * 1000;
 
 function digits10(value: unknown): string {
@@ -24,9 +23,6 @@ function isLiveGateway(): boolean {
 function jsonError(res: Response, error: unknown) {
   console.error("[VENDOR_REVENUE]", error);
   return res.status(500).json({ error: "Vendor billing temporarily unavailable" });
-}
-function referralPaise(amountPaise: number, rate: number): number {
-  return Math.round(amountPaise * rate / 100);
 }
 function publicMembership(row: typeof vendorMemberships.$inferSelect | undefined) {
   if (!row) return { status: "NOT_PURCHASED", active: false };
@@ -54,9 +50,7 @@ async function latestForVendor(vendorId: string) {
 
 // One atomic transition per order; a duplicate callback or signed webhook cannot mint a second commission.
 async function confirmCaptured(row: typeof vendorMemberships.$inferSelect, payment: any): Promise<boolean> {
-  if (!payment || payment.order_id !== row.razorpayOrderId || payment.status !== "captured"
-      || payment.currency !== "INR" || payment.amount !== row.amountPaise
-      || typeof payment.id !== "string") return false;
+  if (!isCapturedAnnualPayment(payment, row.razorpayOrderId, row.amountPaise)) return false;
   if (row.status === "REFUNDED") return false;
   if (row.status === "ACTIVE") return row.razorpayPaymentId === payment.id;
 
@@ -176,7 +170,6 @@ export function registerVendorRevenueRoutes(app: Express): void {
         return res.status(410).send("Checkout expired or already completed. Return to your vendor dashboard.");
       }
       res.setHeader("Cache-Control", "no-store");
-      res.setHeader("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline' https://checkout.razorpay.com; style-src 'unsafe-inline'; connect-src 'self' https://api.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; img-src 'self' data: https:;");
       return res.type("html").send(checkoutPage(row.razorpayOrderId, row.amountPaise, getRazorpayKeyId()));
     } catch (error) { return jsonError(res,error); }
   });
