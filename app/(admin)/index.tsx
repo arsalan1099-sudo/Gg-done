@@ -132,6 +132,7 @@ export default function SuperAdminDashboard() {
 
   const managementItems = [
     { label: "Vendors", icon: "storefront" as const, color: Colors.primary, route: "/(admin)/vendors", count: liveVendors.length, badge: pendingApprovals > 0 ? `${pendingApprovals} pending` : "" },
+    { label: "Seller Leads", icon: "people" as const, color: "#F97316", route: "/admin-sales-leads", count: "", badge: "New enquiries" },
     { label: "Orders", icon: "receipt" as const, color: Colors.info, route: "/(admin)/orders", count: totalOrders, badge: "" },
     { label: "Team", icon: "people" as const, color: "#8B5CF6", route: "/(admin)/users", count: teamMembers.length, badge: bannedUsers.length > 0 ? `${bannedUsers.length} banned` : "" },
     { label: "Products", icon: "cube" as const, color: "#EC4899", route: "/(admin)/products", count: products.length, badge: "" },
