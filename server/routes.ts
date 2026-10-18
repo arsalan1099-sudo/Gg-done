@@ -46,6 +46,7 @@ import { isEmailConfigured, sendEmailOtp } from "./emailClient";
 import { sendPushNotifications, sendPushToUser, sendPushToRole } from "./pushService";
 import { generateToken, requireAuth, requireRole, optionalAuth, generateGoogleLinkToken, verifyGoogleLinkToken } from "./auth";
 import { isGoogleConfigured, verifyGoogleIdToken } from "./googleAuth";
+import { registerVendorRevenueRoutes, settleVendorMembershipWebhook, refundVendorMembershipWebhook } from "./vendorRevenue";
 import crypto from "crypto";
 import sharp from "sharp";
 
@@ -630,6 +631,7 @@ async function seedWithRetry(fn: () => Promise<void>, label: string, retries = 1
 }
 
 export async function registerRoutes(app: Express): Promise<void> {
+  registerVendorRevenueRoutes(app);
   // Run seeds in background with retry so a cold-start DB timeout doesn't block the server
   // or leave the app with missing data.
   seedWithRetry(seedFeatureFlags, "seedFeatureFlags");
@@ -4319,6 +4321,7 @@ Respond ONLY with valid JSON, no explanation.`;
 
       if (event === "payment.captured" && payload?.payment?.entity) {
         const payment = payload.payment.entity;
+        await settleVendorMembershipWebhook(payment);
         await db.update(transactions)
           .set({ status: "completed", razorpayPaymentId: payment.id })
           .where(eq(transactions.razorpayOrderId, payment.order_id));
@@ -4333,6 +4336,8 @@ Respond ONLY with valid JSON, no explanation.`;
             .where(and(eq(ordersTable.id, orderId), eq(ordersTable.status, "PENDING")));
           console.log(`[Webhook] Order ${orderId} accepted and paymentStatus set to PAID after payment.captured`);
         }
+      } else if (event === "refund.processed" && payload?.refund?.entity) {
+        await refundVendorMembershipWebhook(payload.refund.entity.payment_id);
       } else if (event === "payment.failed" && payload?.payment?.entity) {
         const payment = payload.payment.entity;
         await db.update(transactions)
