@@ -47,6 +47,7 @@ import { sendPushNotifications, sendPushToUser, sendPushToRole } from "./pushSer
 import { generateToken, requireAuth, requireRole, optionalAuth, generateGoogleLinkToken, verifyGoogleLinkToken } from "./auth";
 import { isGoogleConfigured, verifyGoogleIdToken } from "./googleAuth";
 import { registerVendorRevenueRoutes, settleVendorMembershipWebhook, refundVendorMembershipWebhook } from "./vendorRevenue";
+import { registerSellerEnquiryRoutes } from "./sellerEnquiries";
 import crypto from "crypto";
 import sharp from "sharp";
 
@@ -632,6 +633,7 @@ async function seedWithRetry(fn: () => Promise<void>, label: string, retries = 1
 
 export async function registerRoutes(app: Express): Promise<void> {
   registerVendorRevenueRoutes(app);
+  registerSellerEnquiryRoutes(app);
   // Run seeds in background with retry so a cold-start DB timeout doesn't block the server
   // or leave the app with missing data.
   seedWithRetry(seedFeatureFlags, "seedFeatureFlags");
