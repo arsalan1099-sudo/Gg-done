@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import crypto from "node:crypto";
+import rateLimit from "express-rate-limit";
 import { and, desc, eq, or } from "drizzle-orm";
 import { db } from "./db";
 import { vendorApplications, vendorMemberships, teamMembers } from "@shared/schema";
@@ -125,6 +126,11 @@ function checkoutPage(orderId: string, amountPaise: number, key: string): string
 }
 
 export function registerVendorRevenueRoutes(app: Express): void {
+  const paymentLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, max: 8,
+    standardHeaders: true, legacyHeaders: false,
+    message: { error: "Too many payment attempts. Please try later." }
+  });
   app.get("/api/vendor-membership/offer", (_req, res) => res.json({
     plan: "ANNUAL", amount: ANNUAL_PRICE_PAISE / 100, currency: "INR",
     onboardingFee: 0, marketingReferralPercent: REFERRAL_RATE_PERCENT,
@@ -145,7 +151,7 @@ export function registerVendorRevenueRoutes(app: Express): void {
     } catch (error) { return jsonError(res,error); }
   });
 
-  app.post("/api/vendor-membership/create-order", requireAuth, requireRole("VENDOR", "SUPER_ADMIN"), async (req,res) => {
+  app.post("/api/vendor-membership/create-order", paymentLimiter, requireAuth, requireRole("VENDOR", "SUPER_ADMIN"), async (req,res) => {
     try {
       const phone = digits10(req.user?.phone);
       if (phone.length !== 10) return res.status(401).json({ error: "Verified phone required" });
@@ -196,7 +202,7 @@ export function registerVendorRevenueRoutes(app: Express): void {
     } catch (error) { return jsonError(res,error); }
   });
 
-  app.post("/api/vendor-membership/confirm", async (req,res) => {
+  app.post("/api/vendor-membership/confirm", paymentLimiter, async (req,res) => {
     try {
       const { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature } = req.body || {};
       if (typeof orderId !== "string" || typeof paymentId !== "string" || typeof signature !== "string"
