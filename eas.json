@@ -27,8 +27,9 @@
         "buildType": "apk",
         "credentialsSource": "remote"
       },
-      "EXPO_PUBLIC_DOMAIN": "go-bharat.onrender.com",
-"EXPO_PUBLIC_API_URL": "https://go-bharat.onrender.com"
+      "env": {
+        "EXPO_PUBLIC_DOMAIN": "go-bharat.onrender.com",
+        "EXPO_PUBLIC_API_URL": "https://go-bharat.onrender.com"
       }
     },
     "production": {
@@ -43,7 +44,8 @@
       },
       "env": {
         "EXPO_PUBLIC_DEV_MODE": "false",
-        "EXPO_PUBLIC_DOMAIN": "go-bharat.replit.app"
+        "EXPO_PUBLIC_DOMAIN": "go-bharat.onrender.com",
+        "EXPO_PUBLIC_API_URL": "https://go-bharat.onrender.com"
       }
     }
   },
