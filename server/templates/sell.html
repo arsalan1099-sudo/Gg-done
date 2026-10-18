@@ -74,18 +74,23 @@
     </div></div></section>
     <section class="enquire" id="enquire">
       <div class="shell enquire-grid">
-        <div><h2 class="section-title">Get your first step online.</h2><p class="intro">Share a few business details to prepare a message for the Go Bharat onboarding contact. You will review and send the message yourself.</p>
-          <div class="price"><strong>Transparent pricing before payment</strong><p>Go Bharat has configurable vendor onboarding fees, subscriptions and category commissions. Confirm the current plan in writing before paying. This page does not accept or process payments.</p></div>
+        <div><h2 class="section-title">Get your first step online.</h2><p class="intro">Share your details with consent for a sales callback, then review a prepared WhatsApp message before sending it.</p>
+          <div class="price"><strong>Transparent pricing before payment</strong><p>Introductory annual vendor offer: ₹1,000/year with no additional onboarding fee. Payment collection is not enabled on this page. Confirm availability, terms and separate order commission rates before paying.</p></div>
           <div class="direct"><a href="tel:+919168134109">Call support</a><a href="mailto:aasaa.pvt.ltd@gmail.com?subject=Go%20Bharat%20Vendor%20Onboarding">Email support</a><a href="https://play.google.com/store/apps/details?id=co.median.android.odmalem" rel="noopener noreferrer">Open Android app</a></div>
         </div>
         <form id="seller-form">
-          <h3>Request vendor onboarding</h3><p>Opens WhatsApp with a prepared message — no message is sent automatically.</p>
+          <h3>Request vendor onboarding</h3><p>Submit a contact enquiry and open a prepared WhatsApp message. You decide whether to send it.</p>
           <label class="field">Business / shop name<input name="business" required maxlength="100" placeholder="e.g. City Fashion Store" autocomplete="organization"></label>
           <label class="field">City<input name="city" required maxlength="80" placeholder="e.g. Malegaon" autocomplete="address-level2"></label>
           <label class="field">Business category<select name="category" required><option value="">Choose category</option><option>Grocery</option><option>Fashion</option><option>Food</option><option>Electronics</option><option>Wholesale</option><option>Services</option><option>Other</option></select></label>
           <label class="field">Contact mobile number<input name="phone" type="tel" required minlength="10" maxlength="16" inputmode="tel" placeholder="10-digit mobile number" autocomplete="tel"></label>
-          <button class="btn btn-main formbtn" type="submit">Prepare WhatsApp Enquiry →</button>
-          <p class="tiny">Use only your own business contact information. WhatsApp availability on the listed support number has not been independently verified; calling or emailing support is also available.</p>
+          <div hidden aria-hidden="true"><label>Website<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>
+          <label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;margin:16px 0;color:#475569">
+            <input name="consent" type="checkbox" required style="margin-top:4px;accent-color:#ff781c">
+            <span>I am the business contact and consent to Go Bharat contacting me about vendor onboarding. See the <a href="/privacy" style="text-decoration:underline">Privacy Policy</a>.</span>
+          </label>
+          <button class="btn btn-main formbtn" type="submit">Save Enquiry & Open WhatsApp →</button>
+          <p class="tiny">No WhatsApp message is sent automatically. If enquiry saving is unavailable, you may still contact support directly. WhatsApp availability has not been independently verified.</p>
         </form>
       </div>
     </section>
@@ -93,7 +98,7 @@
   <footer><div class="shell foot"><span>© 2026 Go Bharat · AASAA Pvt Ltd</span><span>Business onboarding information · No guaranteed orders or income</span></div></footer>
   <script>
     const form = document.getElementById('seller-form');
-    form.addEventListener('submit', function(event) {
+    form.addEventListener('submit', async function(event) {
       event.preventDefault();
       if (!form.reportValidity()) return;
       const data = new FormData(form);
@@ -102,14 +107,38 @@
       if (digits.length < 10 || digits.length > 13) {
         alert('Please enter a valid mobile number.'); return;
       }
+      const businessName = String(data.get('business') || '').trim();
+      const city = String(data.get('city') || '').trim();
+      const category = String(data.get('category') || '').trim();
       const message = [
         'Hello Go Bharat, I want vendor onboarding details.',
-        'Shop: ' + String(data.get('business')||'').trim(),
-        'City: ' + String(data.get('city')||'').trim(),
-        'Category: ' + String(data.get('category')||'').trim(),
+        'Shop: ' + businessName,
+        'City: ' + city,
+        'Category: ' + category,
         'Contact: ' + phone,
         'Please share the current total fees, subscription plans, commission rates and required documents.'
       ].join('\n');
+      const button = form.querySelector('button[type="submit"]');
+      button.disabled = true;
+      button.textContent = 'Saving enquiry...';
+      let saved = false;
+      try {
+        const response = await fetch('/api/seller-enquiries', {
+          method:'POST',
+          headers: {'Content-Type':'application/json'},
+          body:JSON.stringify({
+            businessName, city, category, phone,
+            consent: data.get('consent') === 'on',
+            website: String(data.get('website') || '')
+          })
+        });
+        saved = response.ok && Boolean((await response.json()).success);
+      } catch (error) {}
+      button.disabled = false;
+      button.textContent = 'Save Enquiry & Open WhatsApp →';
+      if (!saved) {
+        alert('Your enquiry could not be saved right now. WhatsApp will open so you can contact Go Bharat directly.');
+      }
       window.location.assign('https://wa.me/919168134109?text=' + encodeURIComponent(message));
     });
   </script>
