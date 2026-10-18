@@ -5,9 +5,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: go-bharat-ios-release
+  cancel-in-progress: false
+
 jobs:
   ios-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,6 +23,14 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Verify Expo token is configured
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Missing EXPO_TOKEN repository secret. Create a token at expo.dev and add it in GitHub Settings > Secrets and variables > Actions."
+            exit 1
+          fi
       - name: Set up Expo and EAS
         uses: expo/expo-github-action@v8
         with:
@@ -26,4 +39,12 @@ jobs:
       - name: Validate Expo configuration
         run: npx expo config --type public --json > /tmp/expo-config.json
       - name: Build signed iOS IPA with EAS
+        id: ios_build
         run: eas build --platform ios --profile production --non-interactive --wait
+      - name: Signing failure help
+        if: ${{ failure() && steps.ios_build.outcome == 'failure' }}
+        run: |
+          echo "### iOS build failed" >> "$GITHUB_STEP_SUMMARY"
+          echo "If logs mention **Distribution Certificate is not validated** or **Credentials are not set up**, Apple signing must be initialized interactively once." >> "$GITHUB_STEP_SUMMARY"
+          echo "On a trusted computer with the repo: \`npx eas-cli login\` then \`npx eas-cli credentials --platform ios\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "Select production credentials, sign into Apple when prompted, and create/validate the distribution certificate and provisioning profile for com.gobharat. Then rerun this workflow." >> "$GITHUB_STEP_SUMMARY"
