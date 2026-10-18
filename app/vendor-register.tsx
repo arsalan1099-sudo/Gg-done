@@ -295,7 +295,7 @@ export default function VendorRegisterScreen() {
           paymentMethods: form.paymentMethods,
           photos: form.photos.length > 0 ? form.photos : [],
           commissionRate: 10,
-          subscriptionPlan: "MONTHLY",
+          subscriptionPlan: "ANNUAL",
           submittedBy: form.ownerName.trim(),
         }),
       });
