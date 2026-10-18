@@ -1,0 +1,29 @@
+name: Go Bharat iOS TestFlight Build
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Set up Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Validate Expo configuration
+        run: npx expo config --type public --json > /tmp/expo-config.json
+      - name: Build signed iOS IPA with EAS
+        run: eas build --platform ios --profile production --non-interactive --wait
