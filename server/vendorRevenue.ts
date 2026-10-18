@@ -21,7 +21,8 @@ function phoneMatches(phone: string, column: typeof vendorApplications.phone | t
 function isLiveGateway(): boolean {
   // Explicit opt-in: production cannot accept memberships until gateway, terms and review are verified.
   return process.env.VENDOR_MEMBERSHIP_PAYMENTS_ENABLED === "true" &&
-    isRazorpayConfigured() && getRazorpayKeyId().startsWith("rzp_live_");
+    isRazorpayConfigured() && getRazorpayKeyId().startsWith("rzp_live_") &&
+    Boolean(process.env.RAZORPAY_WEBHOOK_SECRET);
 }
 function jsonError(res: Response, error: unknown) {
   console.error("[VENDOR_REVENUE]", error);
@@ -131,6 +132,22 @@ export function registerVendorRevenueRoutes(app: Express): void {
     standardHeaders: true, legacyHeaders: false,
     message: { error: "Too many payment attempts. Please try later." }
   });
+  // Readiness facts only; never expose gateway or webhook secret values.
+  app.get("/api/admin/vendor-membership-readiness", requireAuth, requireRole("SUPER_ADMIN"), (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      annualPrice: ANNUAL_PRICE_PAISE / 100,
+      referralRatePercent: REFERRAL_RATE_PERCENT,
+      liveRazorpayKeyPresent: isRazorpayConfigured() && getRazorpayKeyId().startsWith("rzp_live_"),
+      webhookSecretPresent: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET),
+      subscriptionCollectionEnabled: process.env.VENDOR_MEMBERSHIP_PAYMENTS_ENABLED === "true",
+      acceptingNewCharges: isLiveGateway(),
+      gatewayCaptureTested: "NOT_VERIFIED",
+      payoutExecution: "NOT_ENABLED",
+      note: "Credentials present does not prove settlement. Complete a controlled authorized payment and reconciliation before enabling sales."
+    });
+  });
+
   app.get("/api/vendor-membership/offer", (_req, res) => res.json({
     plan: "ANNUAL", amount: ANNUAL_PRICE_PAISE / 100, currency: "INR",
     onboardingFee: 0, marketingReferralPercent: REFERRAL_RATE_PERCENT,
@@ -183,7 +200,8 @@ export function registerVendorRevenueRoutes(app: Express): void {
         id: "MEM_" + crypto.randomBytes(14).toString("hex"),
         vendorApplicationId: vendor.id, razorpayOrderId: order.order.id,
         checkoutToken: token, plan: "ANNUAL", amountPaise: ANNUAL_PRICE_PAISE,
-        referralRatePercent: REFERRAL_RATE_PERCENT, referralName: vendor.submittedBy || "", status: "PENDING"
+        referralRatePercent: REFERRAL_RATE_PERCENT, referralName: vendor.submittedBy || "",
+        referralAgentPhone: vendor.referralAgentPhone || null, status: "PENDING"
       });
       return res.json({ checkoutUrl: "/api/vendor-membership/checkout/" + token, orderId: order.order.id, amount: ANNUAL_PRICE_PAISE / 100 });
     } catch (error) { return jsonError(res,error); }
@@ -191,6 +209,7 @@ export function registerVendorRevenueRoutes(app: Express): void {
 
   app.get("/api/vendor-membership/checkout/:token", async (req,res) => {
     try {
+      if (!isLiveGateway()) return res.status(503).send("Membership checkout is temporarily unavailable.");
       const token = String(req.params.token || "");
       if (!/^[a-f0-9]{48}$/.test(token)) return res.status(404).send("Checkout not found");
       const [row] = await db.select().from(vendorMemberships).where(eq(vendorMemberships.checkoutToken, token)).limit(1);
@@ -224,11 +243,12 @@ export function registerVendorRevenueRoutes(app: Express): void {
   app.get("/api/vendor-membership/marketing", requireAuth, requireRole("MARKETING"), async(req,res) => {
     try {
       const phone = digits10(req.user?.phone);
-      const [rep] = await db.select({ name: teamMembers.name }).from(teamMembers)
+      const [rep] = await db.select({ phone: teamMembers.phone }).from(teamMembers)
         .where(and(phoneMatches(phone, teamMembers.phone), eq(teamMembers.role, "MARKETING"), eq(teamMembers.status, "ACTIVE"))).limit(1);
-      if (!rep?.name || phone.length !== 10) return res.status(403).json({ error: "Active marketing account required" });
-      const rows = await db.select().from(vendorMemberships).where(eq(vendorMemberships.status, "ACTIVE"));
-      const eligible = rows.filter(m => (m.referralName || "").trim().toLowerCase() === rep.name.trim().toLowerCase());
+      if (!rep?.phone || phone.length !== 10) return res.status(403).json({ error: "Active marketing account required" });
+      const eligible = await db.select().from(vendorMemberships).where(and(
+        eq(vendorMemberships.status, "ACTIVE"), eq(vendorMemberships.referralAgentPhone, phone)
+      ));
       const commissionPaise = eligible.reduce((sum,m) => sum + referralPaise(m.amountPaise, m.referralRatePercent), 0);
       res.setHeader("Cache-Control", "no-store");
       res.json({ verifiedPaidSubscriptions: eligible.length, pendingReviewCommission: commissionPaise / 100,
@@ -245,7 +265,7 @@ export function registerVendorRevenueRoutes(app: Express): void {
       const captured = rows.filter(m => m.status === "ACTIVE");
       const refunded = rows.filter(m => m.status === "REFUNDED");
       const grossPaise = captured.reduce((sum,m) => sum + m.amountPaise, 0);
-      const commissionPaise = captured.reduce((sum,m) => sum + referralPaise(m.amountPaise, m.referralRatePercent), 0);
+      const commissionPaise = captured.reduce((sum,m) => sum + (m.referralAgentPhone ? referralPaise(m.amountPaise, m.referralRatePercent) : 0), 0);
       res.setHeader("Cache-Control", "no-store");
       res.json({
         activePayments: captured.length, pendingPayments: rows.filter(m => m.status==="PENDING").length,
@@ -253,7 +273,7 @@ export function registerVendorRevenueRoutes(app: Express): void {
         reservedMarketingCommission: commissionPaise/100, beforeTaxAndGatewayFees: (grossPaise-commissionPaise)/100,
         currency: "INR", payoutsExecuted: 0,
         payments: rows.slice(0,100).map(m=>({ id:m.id, status:m.status, plan:m.plan, amount:m.amountPaise/100, 
-          referralCommission:referralPaise(m.amountPaise,m.referralRatePercent)/100, paidAt:m.paidAt?.toISOString()||null }))
+          referralCommission:m.referralAgentPhone ? referralPaise(m.amountPaise,m.referralRatePercent)/100 : 0, paidAt:m.paidAt?.toISOString()||null }))
       });
     } catch (error) { return jsonError(res,error); }
   });

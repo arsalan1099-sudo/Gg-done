@@ -11,7 +11,8 @@
     "start": "npx expo start",
     "lint": "npx expo lint",
     "lint:fix": "npx expo lint --fix",
-    "render:build": "npm run server:build && npx expo export --platform web --output-dir static-build",
+    "test:revenue": "tsx --test server/__tests__/vendorBillingRules.test.ts",
+    "render:build": "npm run test:revenue && npm run server:build && npx expo export --platform web --output-dir static-build",
     "render:start": "NODE_ENV=production node server_dist/index.js"
   },
   "dependencies": {

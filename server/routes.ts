@@ -6147,7 +6147,7 @@ setTimeout(function(){
 
   // In-memory dedup cache: prevents duplicate submissions when button is tapped multiple times
   const recentVendorSubmissions = new Map<string, number>();
-  app.post("/api/vendor-applications", async (req: any, res) => {
+  app.post("/api/vendor-applications", optionalAuth, async (req: any, res) => {
     try {
       const body = req.body;
       if (!body.id || !body.businessName || !body.ownerName || !body.phone || !body.categoryId) {
@@ -6174,14 +6174,20 @@ setTimeout(function(){
           alreadyRegistered: true,
         });
       }
-      // Always look up the real name from team_members using the authenticated user's phone
+      // Referral attribution must come from a signed login AND a currently active
+      // marketing team record. Client-provided submittedBy is never financial proof.
       const submitterPhone = (req.user?.phone || "").replace(/\D/g, "").slice(-10);
-      let realSubmittedBy = body.submittedBy || req.user?.name || "";
-      if (submitterPhone) {
-        const [submitterMember] = await db.select({ name: teamMembersTable.name })
-          .from(teamMembersTable)
-          .where(sql`RIGHT(REGEXP_REPLACE(${teamMembersTable.phone}, '[^0-9]', '', 'g'), 10) = ${submitterPhone}`);
-        if (submitterMember?.name) realSubmittedBy = submitterMember.name;
+      let realSubmittedBy = "Direct Registration";
+      let verifiedReferralAgentPhone: string | null = null;
+      if (submitterPhone.length === 10 && req.user?.role === "MARKETING") {
+        const [agent] = await db.select({
+          name: teamMembersTable.name, role: teamMembersTable.role,
+          status: teamMembersTable.status, phone: teamMembersTable.phone,
+        }).from(teamMembersTable).where(sql`RIGHT(REGEXP_REPLACE(${teamMembersTable.phone}, '[^0-9]', '', 'g'), 10) = ${submitterPhone}`).limit(1);
+        if (agent?.role === "MARKETING" && agent.status === "ACTIVE") {
+          realSubmittedBy = agent.name || "Marketing Executive";
+          verifiedReferralAgentPhone = submitterPhone;
+        }
       }
       // Use coordinates from body if valid, otherwise try to resolve from locationLink server-side
       let finalLat: number | null = (body.latitude && Math.abs(body.latitude) > 0.001) ? body.latitude : null;
@@ -6242,6 +6248,7 @@ setTimeout(function(){
         franchiseId: derivedFranchiseId,
         status: "PENDING",
         submittedBy: realSubmittedBy,
+        referralAgentPhone: verifiedReferralAgentPhone,
         submittedAt: new Date(),
       }).onConflictDoNothing();
       // If we have valid coordinates, sync immediately to the vendor record if it exists
