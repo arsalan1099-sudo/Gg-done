@@ -87,6 +87,24 @@ export async function fetchRazorpayPayment(paymentId: string): Promise<{ success
   }
 }
 
+// Server-side reconciliation for a checkout whose browser callback was interrupted.
+// Only captured payments belonging to the persisted gateway order can activate membership.
+export async function fetchCapturedRazorpayOrderPayments(orderId: string): Promise<any[]> {
+  if (!keyId || !keySecret || !/^order_[a-zA-Z0-9]+$/.test(orderId)) return [];
+  try {
+    const auth = Buffer.from(keyId + ":" + keySecret).toString("base64");
+    const response = await fetch("https://api.razorpay.com/v1/orders/" + orderId + "/payments", {
+      headers: { Authorization: "Basic " + auth },
+    });
+    if (!response.ok) return [];
+    const data = await response.json() as { items?: any[] };
+    return Array.isArray(data.items) ? data.items.filter(p => p.status === "captured") : [];
+  } catch (error) {
+    console.error("[Razorpay] Captured payment reconciliation unavailable", error);
+    return [];
+  }
+}
+
 export async function refundRazorpayPayment(paymentId: string, amountInr?: number): Promise<{ success: boolean; refund?: any; error?: string }> {
   if (!keyId || !keySecret) {
     return { success: false, error: "Razorpay not configured" };
