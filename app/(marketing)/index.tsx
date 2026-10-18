@@ -66,6 +66,12 @@ export default function MarketingDashboard() {
 
   // Fresh applications fetched from server (overrides local state which can be stale after admin approval)
   const [serverApplications, setServerApplications] = useState<VendorApplication[] | null>(null);
+  const [verifiedReferral, setVerifiedReferral] = useState<{
+    verifiedPaidSubscriptions: number;
+    pendingReviewCommission: number;
+    items: Array<{ id: string; amount: number; commission: number; paidAt: string | null }>;
+  } | null>(null);
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState(false);
 
@@ -102,6 +108,15 @@ export default function MarketingDashboard() {
         photos: a.photos || [],
       }));
       setServerApplications(apps);
+      // Verified gateway captures are the ONLY commission source.
+      try {
+        const referralRes = await fetch(new URL("/api/vendor-membership/marketing", getApiUrl()).toString(), {
+          headers: { Authorization: "Bearer " + token, "Cache-Control": "no-cache" },
+          cache: "no-store",
+        });
+        if (referralRes.ok) setVerifiedReferral(await referralRes.json());
+        else setVerifiedReferral(null);
+      } catch { setVerifiedReferral(null); }
       setFetchError(false);
     } catch {
       setFetchError(true);
@@ -183,26 +198,27 @@ export default function MarketingDashboard() {
   const closedLeads = leads.filter((l) => l.status === "CLOSED");
   // Earnings are based on vendor applications that actually went LIVE
   const liveApps = myApplications.filter((a) => a.status === "LIVE");
-  const currentRate = incentiveRateFor(liveApps.length);
-  const totalEarned = liveApps.length * currentRate;
+  // The previous screen estimated earnings from LIVE vendors, even without payment.
+  // Display only verified subscriptions, still pending manual attribution/payout review.
+  const commissionItems = verifiedReferral?.items || [];
+  const currentRate = 330;
+  const totalEarned = verifiedReferral?.pendingReviewCommission || 0;
   const now = new Date();
   const thisMonthLive = liveApps.filter((a) => {
-    // Use reviewedAt (when the vendor was approved/made live), falling back to submittedAt
     const d = new Date(a.reviewedAt || a.submittedAt);
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   });
+  const thisMonthCommission = commissionItems
+    .filter(c => { if (!c.paidAt) return false; const d = new Date(c.paidAt); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); })
+    .reduce((sum,c) => sum + c.commission, 0);
   const earningsData = {
-    totalEarned,
-    thisMonth: thisMonthLive.length * currentRate,
-    pending: totalEarned, // all earned amount is pending until withdrawn
-    withdrawn: 0,
+    totalEarned, thisMonth: thisMonthCommission, pending: totalEarned, withdrawn: 0,
   };
-  const commissionHistory = liveApps.map((a) => ({
-    id: a.id,
-    lead: a.businessName,
-    amount: currentRate,
-    date: new Date(a.submittedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-    status: "Pending",
+  const commissionHistory = commissionItems.map(c => ({
+    id: c.id, lead: "Verified paid membership",
+    amount: c.commission,
+    date: c.paidAt ? new Date(c.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "",
+    status: "Review pending",
   }));
 
   const [vendorForm, setVendorForm] = useState({
@@ -227,7 +243,7 @@ export default function MarketingDashboard() {
     photos: [] as string[],
     paymentMethods: ["CASH"] as ("CASH" | "UPI" | "BANK_TRANSFER" | "CHEQUE")[],
     upiId: "",
-    subscriptionPlan: "MONTHLY" as "MONTHLY" | "QUARTERLY" | "HALF_YEARLY" | "ANNUAL",
+    subscriptionPlan: "ANNUAL" as "MONTHLY" | "QUARTERLY" | "HALF_YEARLY" | "ANNUAL",
   });
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
@@ -346,7 +362,7 @@ export default function MarketingDashboard() {
       photos: [],
       paymentMethods: ["CASH"],
       upiId: "",
-      subscriptionPlan: "MONTHLY",
+      subscriptionPlan: "ANNUAL",
     });
     setLocationError("");
     setLocationNeedsSettings(false);
@@ -868,7 +884,7 @@ export default function MarketingDashboard() {
             <View style={styles.earningsOverview}>
               <LinearGradient colors={[Colors.primary, "#E85D00"]} style={styles.earningsHero}>
                 <Ionicons name="wallet" size={28} color="#FFF" />
-                <Text style={styles.earningsHeroLabel}>Total Earnings</Text>
+                <Text style={styles.earningsHeroLabel}>Verified Commission (Review Pending)</Text>
                 <Text style={styles.earningsHeroValue}>₹{earningsData.totalEarned.toLocaleString("en-IN")}</Text>
               </LinearGradient>
               <View style={styles.earningsStatsRow}>
@@ -896,29 +912,10 @@ export default function MarketingDashboard() {
               </View>
             </View>
 
-            <Text style={styles.earnSectionTitle}>Incentive Tier</Text>
+            <Text style={styles.earnSectionTitle}>Referral Commission Policy</Text>
             <View style={styles.tierCard}>
-              {incentiveTiers.map((tier, i) => {
-                const liveCount = liveApps.length;
-                const isCurrentTier = liveCount >= tier.min && liveCount <= tier.max;
-                return (
-                  <View key={tier.tier} style={[styles.tierItem, isCurrentTier && { backgroundColor: tier.color + "12", borderColor: tier.color, borderWidth: 1.5 }]}>
-                    <Ionicons name={tier.icon} size={20} color={tier.color} />
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                        <Text style={[styles.tierName, isCurrentTier && { color: tier.color }]}>{tier.tier}</Text>
-                        {isCurrentTier && (
-                          <View style={[styles.currentTag, { backgroundColor: tier.color }]}>
-                            <Text style={styles.currentTagText}>Current</Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.tierRange}>{tier.range}</Text>
-                    </View>
-                    <Text style={[styles.tierRate, isCurrentTier && { color: tier.color }]}>₹{tier.rate}/vendor</Text>
-                  </View>
-                );
-              })}
+              <Text style={{ color: Colors.text, fontWeight: "700", fontSize: 15 }}>33% of verified paid annual subscriptions</Text>
+              <Text style={{ color: Colors.textSecondary, marginTop: 9, fontSize: 13, lineHeight: 19 }}>₹330 per eligible ₹1,000 annual payment. Attribution and payout require administrator review. Vendor LIVE status alone does not generate earned commission.</Text>
             </View>
 
             <View style={styles.targetSection}>
@@ -940,7 +937,7 @@ export default function MarketingDashboard() {
                     style={[styles.progressFill, { width: `${Math.min((thisMonthLive.length / 25) * 100, 100)}%` }]}
                   />
                 </View>
-                <Text style={styles.targetNote}>{Math.max(0, 25 - thisMonthLive.length)} more vendors to unlock ₹5,000 bonus</Text>
+                <Text style={styles.targetNote}>Only captured membership payments count toward referral commission</Text>
               </View>
             </View>
 
@@ -969,25 +966,9 @@ export default function MarketingDashboard() {
               </View>
             ))}
 
-            <Pressable
-              style={styles.withdrawMainBtn}
-              onPress={() => {
-                try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
-                Alert.alert(
-                  "Withdraw Earnings",
-                  `Withdraw pending ₹${earningsData.pending.toLocaleString("en-IN")} to your linked bank account?`,
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Withdraw", onPress: () => Alert.alert("Success", "Withdrawal request submitted. Amount will be credited within 2-3 business days.") },
-                  ]
-                );
-              }}
-            >
-              <LinearGradient colors={[Colors.primary, "#E85D00"]} style={styles.withdrawGradient}>
-                <MaterialCommunityIcons name="bank-transfer-out" size={22} color="#FFF" />
-                <Text style={styles.withdrawText}>Withdraw ₹{earningsData.pending.toLocaleString("en-IN")}</Text>
-              </LinearGradient>
-            </Pressable>
+            <View style={styles.tierCard}>
+              <Text style={{ color: Colors.textSecondary, fontSize: 13 }}>Payout requests are not enabled. The dashboard shows reserved commission for verification only; no transfer has been initiated.</Text>
+            </View>
 
             <Pressable
               style={styles.viewFullBtn}
@@ -1535,7 +1516,7 @@ export default function MarketingDashboard() {
                 <Text style={styles.formHint}>Choose a plan for vendor to go live on the app</Text>
                 <View style={styles.subscriptionGrid}>
                   {(() => {
-                    const defaultRates = { MONTHLY: 999, QUARTERLY: 2499, HALF_YEARLY: 4499, ANNUAL: 7999 };
+                    const defaultRates = { MONTHLY: 999, QUARTERLY: 2499, HALF_YEARLY: 4499, ANNUAL: 1000 };
                     const rates = adminPricing?.vendorSubscriptionRates || defaultRates;
                     const monthly = rates.MONTHLY || 999;
                     const savePct = (dur: number, price: number) => {
@@ -1544,10 +1525,7 @@ export default function MarketingDashboard() {
                       return `Save ${Math.round(((equiv - price) / equiv) * 100)}%`;
                     };
                     return [
-                      { id: "MONTHLY" as const, label: "Monthly", price: `₹${rates.MONTHLY.toLocaleString("en-IN")}/mo`, save: "" },
-                      { id: "QUARTERLY" as const, label: "Quarterly", price: `₹${rates.QUARTERLY.toLocaleString("en-IN")}/3mo`, save: savePct(3, rates.QUARTERLY) },
-                      { id: "HALF_YEARLY" as const, label: "Half Yearly", price: `₹${rates.HALF_YEARLY.toLocaleString("en-IN")}/6mo`, save: savePct(6, rates.HALF_YEARLY) },
-                      { id: "ANNUAL" as const, label: "Annual", price: `₹${rates.ANNUAL.toLocaleString("en-IN")}/yr`, save: savePct(12, rates.ANNUAL) },
+                      { id: "ANNUAL" as const, label: "Annual seller offer", price: "₹1,000/yr", save: "" },
                     ];
                   })().map((plan) => {
                     const isSelected = vendorForm.subscriptionPlan === plan.id;

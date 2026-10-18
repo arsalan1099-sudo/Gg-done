@@ -60,7 +60,9 @@ export function verifyRazorpaySignature(orderId: string, paymentId: string, sign
     .update(body)
     .digest("hex");
 
-  return expectedSignature === signature;
+  // Reject malformed signatures and compare the entire MAC in constant time.
+  if (!/^[0-9a-f]{64}$/i.test(signature)) return false;
+  return crypto.timingSafeEqual(Buffer.from(expectedSignature, "hex"), Buffer.from(signature, "hex"));
 }
 
 export async function fetchRazorpayPayment(paymentId: string): Promise<{ success: boolean; payment?: any; error?: string }> {
@@ -84,6 +86,24 @@ export async function fetchRazorpayPayment(paymentId: string): Promise<{ success
     }
   } catch (err: any) {
     return { success: false, error: err?.message || "Failed to fetch payment" };
+  }
+}
+
+// Server-side reconciliation for a checkout whose browser callback was interrupted.
+// Only captured payments belonging to the persisted gateway order can activate membership.
+export async function fetchCapturedRazorpayOrderPayments(orderId: string): Promise<any[] | null> {
+  if (!keyId || !keySecret || !/^order_[a-zA-Z0-9]+$/.test(orderId)) return null;
+  try {
+    const auth = Buffer.from(keyId + ":" + keySecret).toString("base64");
+    const response = await fetch("https://api.razorpay.com/v1/orders/" + orderId + "/payments", {
+      headers: { Authorization: "Basic " + auth },
+    });
+    if (!response.ok) return null;
+    const data = await response.json() as { items?: any[] };
+    return Array.isArray(data.items) ? data.items.filter(p => p.status === "captured") : [];
+  } catch (error) {
+    console.error("[Razorpay] Captured payment reconciliation unavailable", error);
+    return null;
   }
 }
 

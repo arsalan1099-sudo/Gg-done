@@ -202,6 +202,15 @@ export default function VendorDashboard() {
         </View>
       </LinearGradient>
 
+      <Pressable onPress={() => router.push("/vendor-subscription" as any)} style={{ marginHorizontal: 20, marginTop: 18, marginBottom: 4, paddingVertical: 17, paddingHorizontal: 18, backgroundColor: "#FFF4E8", borderRadius: 14, borderWidth: 1, borderColor: "#FFD4A8", flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <Ionicons name="storefront-outline" size={25} color="#F36B15" />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: "800", fontSize: 15, color: "#172A43" }}>Annual Vendor Membership</Text>
+          <Text style={{ fontSize: 12, color: "#69788E", marginTop: 3 }}>₹1,000/year · Check secure payment status</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={21} color="#F36B15" />
+      </Pressable>
+
       {categoryPanel && (
         <Pressable
           style={styles.categoryPanelBanner}

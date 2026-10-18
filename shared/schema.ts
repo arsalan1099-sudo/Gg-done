@@ -382,6 +382,27 @@ export const adRequests = pgTable("ad_requests", {
   endDate: timestamp("end_date"),
 });
 
+// Separate ledger for genuine vendor membership payments. Never infer paid status from vendor approval.
+export const vendorMemberships = pgTable("vendor_memberships", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  vendorApplicationId: varchar("vendor_application_id", { length: 64 }).notNull(),
+  razorpayOrderId: varchar("razorpay_order_id", { length: 64 }).notNull().unique(),
+  razorpayPaymentId: varchar("razorpay_payment_id", { length: 64 }).unique(),
+  checkoutToken: varchar("checkout_token", { length: 64 }).notNull().unique(),
+  plan: varchar("plan", { length: 20 }).notNull().default("ANNUAL"),
+  amountPaise: integer("amount_paise").notNull(),
+  referralRatePercent: integer("referral_rate_percent").notNull().default(33),
+  referralName: text("referral_name").default(""),
+  status: varchar("status", { length: 20 }).notNull().default("PENDING"),
+  createdAt: timestamp("created_at").defaultNow(),
+  paidAt: timestamp("paid_at"),
+  expiresAt: timestamp("expires_at"),
+  refundedAt: timestamp("refunded_at"),
+}, (table) => [
+  index("idx_vendor_memberships_vendor").on(table.vendorApplicationId),
+  index("idx_vendor_memberships_status").on(table.status),
+]);
+
 export const transactions = pgTable("transactions", {
   id: varchar("id", { length: 64 }).primaryKey(),
   orderId: varchar("order_id", { length: 64 }),
