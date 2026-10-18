@@ -4278,21 +4278,32 @@ Respond ONLY with valid JSON, no explanation.`;
       if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
         return res.status(400).json({ error: "Missing payment verification fields" });
       }
-      const isValid = verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
-      if (isValid) {
-        await db.update(transactions)
-          .set({ status: "completed", razorpayPaymentId: razorpay_payment_id })
-          .where(eq(transactions.razorpayOrderId, razorpay_order_id));
-        const paymentDetails = await fetchRazorpayPayment(razorpay_payment_id);
-        res.json({
-          verified: true,
-          paymentId: razorpay_payment_id,
-          method: paymentDetails.payment?.method || "unknown",
-          status: "paid",
-        });
-      } else {
-        res.status(400).json({ verified: false, error: "Invalid payment signature" });
+      if (!verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature)) {
+        return res.status(400).json({ verified: false, error: "Invalid payment signature" });
       }
+      // A valid checkout signature alone does not prove money was captured.
+      const [stored] = await db.select().from(transactions)
+        .where(eq(transactions.razorpayOrderId, razorpay_order_id)).limit(1);
+      if (!stored) return res.status(404).json({ verified: false, error: "Order not found" });
+      if (stored.status === "completed" && stored.razorpayPaymentId === razorpay_payment_id) {
+        return res.json({ verified: true, paymentId: razorpay_payment_id, status: "paid" });
+      }
+      if (stored.status === "completed") return res.status(409).json({ verified: false, error: "Order already settled" });
+      const paymentDetails = await fetchRazorpayPayment(razorpay_payment_id);
+      const payment = paymentDetails.payment;
+      if (!paymentDetails.success || !payment) {
+        return res.status(503).json({ verified: false, error: "Gateway verification unavailable" });
+      }
+      if (payment.status !== "captured" || payment.order_id !== razorpay_order_id ||
+          payment.currency !== "INR" || payment.amount !== Math.round(stored.amount * 100)) {
+        return res.status(409).json({ verified: false, error: "Payment not captured or amount mismatch" });
+      }
+      const updated = await db.update(transactions)
+        .set({ status: "completed", razorpayPaymentId: razorpay_payment_id })
+        .where(and(eq(transactions.razorpayOrderId, razorpay_order_id), eq(transactions.status, "pending")))
+        .returning({ id: transactions.id });
+      if (!updated.length) return res.status(409).json({ verified: false, error: "Payment state changed; refresh status" });
+      return res.json({ verified: true, paymentId: razorpay_payment_id, method: payment.method || "unknown", status: "paid" });
     } catch (error: any) {
       console.error("Razorpay verify error:", error.message);
       res.status(500).json({ error: error.message || "Verification failed" });
@@ -4314,7 +4325,9 @@ Respond ONLY with valid JSON, no explanation.`;
         return res.status(500).json({ error: "Raw body not captured" });
       }
       const expected = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
-      if (expected !== signature) return res.status(400).json({ error: "Invalid signature" });
+      const sigValid = /^[0-9a-f]{64}$/i.test(signature) &&
+        crypto.timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(signature, "hex"));
+      if (!sigValid) return res.status(400).json({ error: "Invalid signature" });
 
       const event = req.body?.event;
       const payload = req.body?.payload;
@@ -4322,14 +4335,18 @@ Respond ONLY with valid JSON, no explanation.`;
       if (event === "payment.captured" && payload?.payment?.entity) {
         const payment = payload.payment.entity;
         await settleVendorMembershipWebhook(payment);
-        await db.update(transactions)
-          .set({ status: "completed", razorpayPaymentId: payment.id })
-          .where(eq(transactions.razorpayOrderId, payment.order_id));
-        const txn = await db.select({ orderId: transactions.orderId })
-          .from(transactions)
-          .where(eq(transactions.razorpayOrderId, payment.order_id))
-          .limit(1);
-        const orderId = txn[0]?.orderId;
+        const [txn] = await db.select({
+          id: transactions.id, orderId: transactions.orderId, amount: transactions.amount, status: transactions.status,
+        }).from(transactions).where(eq(transactions.razorpayOrderId, payment.order_id)).limit(1);
+        const matchesInvoice = txn && payment.currency === "INR" && payment.status === "captured" &&
+          payment.amount === Math.round(txn.amount * 100);
+        if (matchesInvoice && txn.status === "pending") {
+          await db.update(transactions)
+            .set({ status: "completed", razorpayPaymentId: payment.id })
+            .where(and(eq(transactions.id, txn.id), eq(transactions.status, "pending")));
+        }
+        if (txn && !matchesInvoice) console.error("[Webhook] Rejected amount/status mismatch for order", payment.order_id);
+        const orderId = matchesInvoice ? txn.orderId : null;
         if (orderId) {
           await db.update(ordersTable)
             .set({ status: "ACCEPTED", paymentStatus: "PAID" })
