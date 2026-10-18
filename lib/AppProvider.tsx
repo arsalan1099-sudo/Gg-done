@@ -155,12 +155,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [appAnnouncements, setAppAnnouncements] = useState<Array<AppAnnouncement>>([]);
   const DEFAULT_ADMIN_PRICING: AdminPricing = {
     dealSlotRates: { "1day": 299, "3days": 699, "7days": 1499 },
-    vendorOnboardingFee: 999,
+    vendorOnboardingFee: 0,
     defaultCommissionRate: 10,
     deliveryChargePerKm: 5,
     platformServiceFee: 2,
     adSlotRates: { banner: 499, featured: 999, spotlight: 1999 },
-    vendorSubscriptionRates: { MONTHLY: 999, QUARTERLY: 2499, HALF_YEARLY: 4499, ANNUAL: 7999 },
+    vendorSubscriptionRates: { MONTHLY: 999, QUARTERLY: 2499, HALF_YEARLY: 4499, ANNUAL: 1000 },
     updatedAt: new Date().toISOString(),
   };
 
