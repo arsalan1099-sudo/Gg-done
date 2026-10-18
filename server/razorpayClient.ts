@@ -60,7 +60,9 @@ export function verifyRazorpaySignature(orderId: string, paymentId: string, sign
     .update(body)
     .digest("hex");
 
-  return expectedSignature === signature;
+  // Reject malformed signatures and compare the entire MAC in constant time.
+  if (!/^[0-9a-f]{64}$/i.test(signature)) return false;
+  return crypto.timingSafeEqual(Buffer.from(expectedSignature, "hex"), Buffer.from(signature, "hex"));
 }
 
 export async function fetchRazorpayPayment(paymentId: string): Promise<{ success: boolean; payment?: any; error?: string }> {
