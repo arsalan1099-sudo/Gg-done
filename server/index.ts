@@ -153,6 +153,12 @@ function configureExpoAndLanding(app: express.Application) {
     res.status(200).send(adminTemplate);
   });
 
+  // Dedicated vendor acquisition page. Served before the Expo SPA fallback.
+  app.get('/sell', (_req: Request, res: Response) => {
+    const sellPath = path.resolve(process.cwd(), 'server', 'templates', 'sell.html');
+    return res.sendFile(sellPath);
+  });
+
   // Valid robots.txt — allows all crawlers, points to sitemap
   app.get('/robots.txt', (_req: Request, res: Response) => {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
