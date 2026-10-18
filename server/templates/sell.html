@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0a1730">
+  <meta name="description" content="Bring your local shop online with Go Bharat. Enquire about seller onboarding, product listings and available subscription plans.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Sell on Go Bharat | Bring Your Shop Online">
+  <meta property="og:description" content="Reach customers through your digital storefront. Request vendor onboarding with Go Bharat.">
+  <title>Sell on Go Bharat | Vendor Onboarding</title>
+  <style>
+    :root{--navy:#0a1730;--navy2:#152d50;--orange:#ff781c;--light:#f7f9fc;--ink:#142238;--muted:#64748b}
+    *{box-sizing:border-box} html{scroll-behavior:smooth}body{margin:0;color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--light)}
+    a{color:inherit;text-decoration:none}.shell{width:min(1100px,calc(100% - 40px));margin:auto}
+    header{background:var(--navy);color:#fff;border-bottom:1px solid #ffffff1c}.top{height:76px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+    .logo{font-size:23px;font-weight:900;letter-spacing:-.6px}.logo span{color:var(--orange)}.toplink{border:1px solid #ffffff50;border-radius:40px;padding:10px 16px;font-weight:700;font-size:14px}
+    .hero{background:radial-gradient(circle at 80% 30%,#ff781c20,transparent 28%),linear-gradient(132deg,var(--navy),var(--navy2));color:white;padding:85px 0 92px}
+    .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:55px;align-items:center}
+    .eyebrow{display:inline-flex;border:1px solid #ff974b80;background:#ff781c17;color:#ffc99e;border-radius:30px;padding:7px 14px;font-size:13px;font-weight:700}
+    h1{font-size:clamp(38px,5vw,65px);line-height:1.09;letter-spacing:-2px;margin:18px 0}h1 em{font-style:normal;color:#ff984c}
+    .lead{font-size:19px;color:#d3ddea;max-width:640px}.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin:27px 0 19px}
+    .btn{display:inline-flex;justify-content:center;align-items:center;border-radius:12px;padding:14px 22px;font-weight:800;min-height:48px;transition:transform .15s}
+    .btn:hover{transform:translateY(-2px)}.btn-main{background:linear-gradient(135deg,#ff8c2b,#ff6917);color:white}.btn-alt{border:1px solid #ffffff7c;color:white}
+    .subnote{font-size:13px;color:#aec1d7}.visual{border:1px solid #ffffff2c;border-radius:26px;padding:26px;background:#ffffff10;box-shadow:0 30px 60px #020a1f55}
+    .visual .mini{padding:20px;background:#fff;color:var(--ink);border-radius:17px;transform:rotate(-2deg);box-shadow:0 10px 30px #0002}
+    .mini-top{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#64748b;font-weight:800}.mini strong{display:block;margin:10px 0 18px;font-size:27px;line-height:1.2}
+    .chips{display:flex;gap:7px;flex-wrap:wrap}.chips span{padding:7px 9px;border-radius:7px;background:#f0f4f8;font-size:12px;font-weight:700}
+    .mini-bottom{border-top:1px solid #e5eaf0;margin-top:20px;padding-top:12px;color:#375b7c;font-size:13px}
+    section{padding:76px 0}.section-title{font-size:clamp(27px,3.1vw,38px);letter-spacing:-.8px;line-height:1.2;margin:0 0 10px}.intro{color:var(--muted);max-width:690px;margin:0 0 28px}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{padding:27px;border-radius:18px;background:#fff;border:1px solid #e1e7ed;box-shadow:0 6px 18px #14223808}
+    .card .emoji{font-size:29px}.card h3{font-size:18px;margin:15px 0 7px}.card p{color:#66768b;margin:0;font-size:14px}
+    .how{background:white}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.step{border-top:4px solid var(--orange);background:#f8fafc;border-radius:10px;padding:23px}
+    .step b{display:block;color:var(--orange);font-size:13px;margin-bottom:8px}.step h3{margin:0 0 7px}.step p{font-size:14px;color:var(--muted);margin:0}
+    .enquire{background:#eaf0f7}.enquire-grid{display:grid;grid-template-columns:1fr 1fr;gap:35px;align-items:start}
+    .price{border-left:4px solid var(--orange);background:#fff;padding:18px 20px;border-radius:10px;margin-top:24px}.price strong{display:block;margin-bottom:5px}
+    .price p{margin:0;font-size:14px;color:var(--muted)}form{background:#fff;border:1px solid #dce5ef;border-radius:21px;padding:28px;box-shadow:0 20px 42px #17283c18}
+    form h3{font-size:23px;margin:0 0 4px}form>p{font-size:14px;margin:0 0 20px;color:var(--muted)}
+    .field{display:block;margin:14px 0;font-size:13px;font-weight:800}.field input,.field select{display:block;width:100%;margin-top:6px;border-radius:10px;border:1px solid #ccd5df;background:#fff;padding:13px;font:inherit;color:var(--ink)}
+    .field input:focus,.field select:focus{outline:3px solid #ffd4b6;border-color:#ff781c}.formbtn{width:100%;border:0;cursor:pointer;font-size:16px}
+    .tiny{font-size:12px;line-height:1.5;color:#718197;margin-top:12px}
+    .direct{display:flex;gap:16px;flex-wrap:wrap;margin-top:22px}.direct a{text-decoration:underline;font-size:14px;font-weight:700;color:#285478}
+    footer{background:var(--navy);color:#a9bace;padding:28px 0;font-size:13px}.foot{display:flex;gap:20px;justify-content:space-between;flex-wrap:wrap}
+    @media(max-width:800px){.hero-grid,.enquire-grid{grid-template-columns:1fr}.hero{padding:58px 0}.visual{max-width:470px}.cards,.steps{grid-template-columns:1fr}section{padding:58px 0}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
+  </style>
+</head>
+<body>
+  <header><div class="shell top"><a class="logo" href="/">GO <span>BHARAT</span></a><a class="toplink" href="https://play.google.com/store/apps/details?id=co.median.android.odmalem" rel="noopener noreferrer">Android App ↗</a></div></header>
+  <main>
+    <div class="hero">
+      <div class="shell hero-grid">
+        <div>
+          <span class="eyebrow">For local shops and business owners</span>
+          <h1>Your shop deserves a <em>digital storefront.</em></h1>
+          <p class="lead">Go Bharat helps local sellers list products, manage orders and connect with customers through one platform.</p>
+          <div class="hero-actions"><a class="btn btn-main" href="#enquire">Request Seller Onboarding →</a><a class="btn btn-alt" href="/vendor-register">Apply in Go Bharat</a></div>
+          <div class="subnote">Enquiry is free. Any applicable onboarding, subscription and order commission charges are explained before activation.</div>
+        </div>
+        <div class="visual" aria-hidden="true"><div class="mini"><div class="mini-top">Your business on Go Bharat</div><strong>One shop.<br>More ways to sell.</strong><div class="chips"><span>🛍 Product listings</span><span>📦 Order management</span><span>💬 Local discovery</span><span>📱 Mobile access</span></div><div class="mini-bottom">Seller onboarding subject to application review and platform availability.</div></div></div>
+      </div>
+    </div>
+    <section><div class="shell"><h2 class="section-title">Tools to grow your local business</h2><p class="intro">Make it easier for people to discover what you sell and for your team to manage customer orders.</p>
+      <div class="cards">
+        <article class="card"><div class="emoji" aria-hidden="true">🏬</div><h3>Digital shop profile</h3><p>Present your store and products to customers browsing your area.</p></article>
+        <article class="card"><div class="emoji" aria-hidden="true">📱</div><h3>Manage from mobile</h3><p>Use the seller experience to update products and follow orders.</p></article>
+        <article class="card"><div class="emoji" aria-hidden="true">🤝</div><h3>Onboarding support</h3><p>Enquire about eligibility, available plans, required documents and the application process.</p></article>
+      </div></div>
+    </section>
+    <section class="how"><div class="shell"><h2 class="section-title">Getting started is simple</h2><p class="intro">There is no need to pay anyone to submit an enquiry.</p><div class="steps">
+      <div class="step"><b>STEP 01</b><h3>Send an enquiry</h3><p>Tell our onboarding team your business name, location and category.</p></div>
+      <div class="step"><b>STEP 02</b><h3>Review the offer</h3><p>Confirm current subscription pricing, onboarding charges, terms and eligibility.</p></div>
+      <div class="step"><b>STEP 03</b><h3>Submit for approval</h3><p>Complete verification and activate listings when approved.</p></div>
+    </div></div></section>
+    <section class="enquire" id="enquire">
+      <div class="shell enquire-grid">
+        <div><h2 class="section-title">Get your first step online.</h2><p class="intro">Share a few business details to prepare a message for the Go Bharat onboarding contact. You will review and send the message yourself.</p>
+          <div class="price"><strong>Transparent pricing before payment</strong><p>Go Bharat has configurable vendor onboarding fees, subscriptions and category commissions. Confirm the current plan in writing before paying. This page does not accept or process payments.</p></div>
+          <div class="direct"><a href="tel:+919168134109">Call support</a><a href="mailto:aasaa.pvt.ltd@gmail.com?subject=Go%20Bharat%20Vendor%20Onboarding">Email support</a><a href="https://play.google.com/store/apps/details?id=co.median.android.odmalem" rel="noopener noreferrer">Open Android app</a></div>
+        </div>
+        <form id="seller-form">
+          <h3>Request vendor onboarding</h3><p>Opens WhatsApp with a prepared message — no message is sent automatically.</p>
+          <label class="field">Business / shop name<input name="business" required maxlength="100" placeholder="e.g. City Fashion Store" autocomplete="organization"></label>
+          <label class="field">City<input name="city" required maxlength="80" placeholder="e.g. Malegaon" autocomplete="address-level2"></label>
+          <label class="field">Business category<select name="category" required><option value="">Choose category</option><option>Grocery</option><option>Fashion</option><option>Food</option><option>Electronics</option><option>Wholesale</option><option>Services</option><option>Other</option></select></label>
+          <label class="field">Contact mobile number<input name="phone" type="tel" required minlength="10" maxlength="16" inputmode="tel" placeholder="10-digit mobile number" autocomplete="tel"></label>
+          <button class="btn btn-main formbtn" type="submit">Prepare WhatsApp Enquiry →</button>
+          <p class="tiny">Use only your own business contact information. WhatsApp availability on the listed support number has not been independently verified; calling or emailing support is also available.</p>
+        </form>
+      </div>
+    </section>
+  </main>
+  <footer><div class="shell foot"><span>© 2026 Go Bharat · AASAA Pvt Ltd</span><span>Business onboarding information · No guaranteed orders or income</span></div></footer>
+  <script>
+    const form = document.getElementById('seller-form');
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      const data = new FormData(form);
+      const phone = String(data.get('phone') || '').trim();
+      const digits = phone.replace(/[^0-9]/g,'');
+      if (digits.length < 10 || digits.length > 13) {
+        alert('Please enter a valid mobile number.'); return;
+      }
+      const message = [
+        'Hello Go Bharat, I want vendor onboarding details.',
+        'Shop: ' + String(data.get('business')||'').trim(),
+        'City: ' + String(data.get('city')||'').trim(),
+        'Category: ' + String(data.get('category')||'').trim(),
+        'Contact: ' + phone,
+        'Please share the current total fees, subscription plans, commission rates and required documents.'
+      ].join('\n');
+      window.location.assign('https://wa.me/919168134109?text=' + encodeURIComponent(message));
+    });
+  </script>
+</body>
+</html>
