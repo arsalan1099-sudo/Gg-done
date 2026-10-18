@@ -65,19 +65,19 @@ export default function RevenueAdmin() {
       <Pressable onPress={refresh} style={{padding:13,backgroundColor:"#FFF0E4",borderRadius:12,alignItems:"center",marginTop:12,marginBottom:13}}>
         <Text style={{fontWeight:"800",color:"#AF5B1A"}}>Refresh verified statement</Text>
       </Pressable>
-      {figures.map(x=><View key={x.title} style={{backgroundColor:"#FFFFFF",borderRadius:16,padding:20,marginBottom:11,flexDirection:"row",alignItems:"center",gap:14}}>
+      {data ? figures.map(x=><View key={x.title} style={{backgroundColor:"#FFFFFF",borderRadius:16,padding:20,marginBottom:11,flexDirection:"row",alignItems:"center",gap:14}}>
         <Ionicons name={x.icon} size={25} color="#F27622"/>
         <View><Text style={{fontSize:12,color:"#6D7F92"}}>{x.title}</Text><Text style={{fontSize:27,fontWeight:"900",color:"#172940",marginTop:3}}>{x.value}</Text></View>
-      </View>)}
-      <View style={{flexDirection:"row",gap:9,marginTop:5}}>
+      </View>) : null}
+      {data ? <View style={{flexDirection:"row",gap:9,marginTop:5}}>
         {[{title:"Captured",n:data?.activePayments||0},{title:"Pending",n:data?.pendingPayments||0},{title:"Refunded",n:data?.refundedPayments||0}].map(x=>
           <View key={x.title} style={{flex:1,backgroundColor:"#FFFFFF",borderRadius:12,padding:14}}>
             <Text style={{fontWeight:"900",fontSize:22,color:"#20344C"}}>{x.n}</Text>
             <Text style={{fontSize:12,color:"#718196"}}>{x.title}</Text>
           </View>
         )}
-      </View>
-      <View style={{backgroundColor:"#FFFFFF",borderRadius:16,padding:20,marginTop:15}}>
+      </View> : null}
+      {readiness ? <View style={{backgroundColor:"#FFFFFF",borderRadius:16,padding:20,marginTop:15}}>
         <Text style={{color:"#1B2D42",fontWeight:"900",fontSize:18}}>Payment launch checklist</Text>
         <Text style={{color:"#687D92",fontSize:12,marginTop:5,marginBottom:9}}>Configuration checks do not prove that a real capture or settlement test has passed.</Text>
         {checks.map(c=><View key={c.title} style={{flexDirection:"row",alignItems:"center",gap:9,marginTop:13}}>
@@ -85,7 +85,7 @@ export default function RevenueAdmin() {
           <Text style={{flex:1,fontSize:13,color:"#344A61"}}>{c.title}</Text>
         </View>)}
         <Text style={{marginTop:14,color:"#B0722B",fontSize:12}}>Captured payment test: {readiness?.gatewayCaptureTested||"Not verified"}</Text>
-      </View>
+      </View> : null}
       <Pressable onPress={()=>router.push("/admin-sales-leads" as any)} style={{padding:17,borderRadius:14,marginTop:14,backgroundColor:"#16385D",flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
         <Text style={{color:"#FFFFFF",fontWeight:"800"}}>Open seller enquiry pipeline</Text>
         <Ionicons name="arrow-forward-circle" color="#FFFFFF" size={22}/>
