@@ -8,6 +8,11 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Sell on Go Bharat | Bring Your Shop Online">
   <meta property="og:description" content="Reach customers through your digital storefront. Request vendor onboarding with Go Bharat.">
+  <meta property="og:url" content="https://go-bharat.onrender.com/sell">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Go Bharat — Apni Dukaan Online Lao">
+  <meta name="twitter:description" content="Own a shop? Request seller onboarding on Go Bharat. Annual introductory offer ₹1,000/year; terms apply. Free to enquire.">
+  <link rel="canonical" href="https://go-bharat.onrender.com/sell">
   <title>Sell on Go Bharat | Vendor Onboarding</title>
   <style>
     :root{--navy:#0a1730;--navy2:#152d50;--orange:#ff781c;--light:#f7f9fc;--ink:#142238;--muted:#64748b}
@@ -40,6 +45,16 @@
     .field input:focus,.field select:focus{outline:3px solid #ffd4b6;border-color:#ff781c}.formbtn{width:100%;border:0;cursor:pointer;font-size:16px}
     .tiny{font-size:12px;line-height:1.5;color:#718197;margin-top:12px}
     .direct{display:flex;gap:16px;flex-wrap:wrap;margin-top:22px}.direct a{text-decoration:underline;font-size:14px;font-weight:700;color:#285478}
+    .share-section{background:#fff;padding:46px 0;border-top:1px solid #e5eaf0}
+    .share-wrap{padding:24px;border:1px solid #e0e8f0;border-radius:20px;background:linear-gradient(130deg,#fff,#f7fbff)}
+    .share-title{margin:0 0 5px;font-size:24px;letter-spacing:-.5px}
+    .share-help{font-size:14px;color:var(--muted);margin:0 0 15px}
+    .share-buttons{display:flex;gap:10px;flex-wrap:wrap}
+    .share-button{border:1px solid #d7e0e9;border-radius:12px;padding:12px 16px;background:#fff;font:700 14px system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+    .share-wa{background:#0c996e;color:white;border-color:#0c996e}
+    .share-fb{background:#2563ad;color:white;border-color:#2563ad}
+    .share-note{font-size:12px;color:#64748b;margin-top:14px}
+    .share-status{min-height:1.4em;color:#096b52;font-size:13px;font-weight:700;margin-top:8px}
     footer{background:var(--navy);color:#a9bace;padding:28px 0;font-size:13px}.foot{display:flex;gap:20px;justify-content:space-between;flex-wrap:wrap}
     @media(max-width:800px){.hero-grid,.enquire-grid{grid-template-columns:1fr}.hero{padding:58px 0}.visual{max-width:470px}.cards,.steps{grid-template-columns:1fr}section{padding:58px 0}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
@@ -72,6 +87,21 @@
       <div class="step"><b>STEP 02</b><h3>Review the offer</h3><p>Confirm current subscription pricing, onboarding charges, terms and eligibility.</p></div>
       <div class="step"><b>STEP 03</b><h3>Submit for approval</h3><p>Complete verification and activate listings when approved.</p></div>
     </div></div></section>
+    <section class="share-section" aria-labelledby="share-title">
+      <div class="shell share-wrap">
+        <h2 class="share-title" id="share-title">Help a local shop go digital</h2>
+        <p class="share-help">Know a business owner? Share the free seller enquiry page directly — no Metricool or social account connection is needed.</p>
+        <div class="share-buttons">
+          <a class="share-button share-wa" href="https://wa.me/?text=GO%20BHARAT%20%F0%9F%87%AE%F0%9F%87%B3%20%7C%20Apni%20Dukaan%20Online%20Lao!%20Business%20owners%20can%20request%20a%20digital%20storefront.%20Introductory%20annual%20seller%20offer%20%E2%82%B91%2C000%2Fyear%20(subject%20to%20approval%20and%20terms).%20Enquiry%20is%20free.%20Apply%3A%20https%3A%2F%2Fgo-bharat.onrender.com%2Fsell" target="_blank" rel="noopener noreferrer">WhatsApp Share ↗</a>
+          <a class="share-button share-fb" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgo-bharat.onrender.com%2Fsell" target="_blank" rel="noopener noreferrer">Facebook Share ↗</a>
+          <a class="share-button" href="https://t.me/share/url?url=https%3A%2F%2Fgo-bharat.onrender.com%2Fsell&text=Go%20Bharat%20%E2%80%94%20Apni%20Dukaan%20Online%20Lao!%20%E2%82%B91%2C000%2Fyear%20introductory%20seller%20offer.%20Enquiry%20is%20free%3B%20terms%20apply." target="_blank" rel="noopener noreferrer">Telegram Share ↗</a>
+          <button type="button" class="share-button" id="share-native">Share with phone</button>
+          <button type="button" class="share-button" id="share-copy">Copy seller link</button>
+        </div>
+        <p class="share-note">These buttons open your chosen social app. Nothing is posted or sent automatically.</p>
+        <p id="share-status" class="share-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
     <section class="enquire" id="enquire">
       <div class="shell enquire-grid">
         <div><h2 class="section-title">Get your first step online.</h2><p class="intro">Share your details with consent for a sales callback, then review a prepared WhatsApp message before sending it.</p>
@@ -97,6 +127,29 @@
   </main>
   <footer><div class="shell foot"><span>© 2026 Go Bharat · AASAA Pvt Ltd</span><span>Business onboarding information · No guaranteed orders or income</span></div></footer>
   <script>
+    const shareLink = "https://go-bharat.onrender.com/sell";
+    const shareText = "GO BHARAT 🇮🇳 | Apni Dukaan Online Lao! Business owners can request a digital storefront. Introductory annual seller offer ₹1,000/year (subject to approval and terms). Enquiry is free. Apply: https://go-bharat.onrender.com/sell";
+    const shareStatus = document.getElementById('share-status');
+    document.getElementById('share-copy').addEventListener('click', async function() {
+      try {
+        await navigator.clipboard.writeText(shareLink);
+        shareStatus.textContent = 'Seller registration link copied.';
+      } catch (error) {
+        shareStatus.textContent = 'Copy this link: ' + shareLink;
+      }
+    });
+    document.getElementById('share-native').addEventListener('click', async function() {
+      if (navigator.share) {
+        try {
+          await navigator.share({title:'Go Bharat Seller Registration',text:shareText,url:shareLink});
+          shareStatus.textContent = 'Share panel opened. Post or send from your selected app.';
+        } catch (error) {
+          if (error && error.name !== 'AbortError') shareStatus.textContent = 'Use a direct share link above.';
+        }
+      } else {
+        shareStatus.textContent = 'Choose WhatsApp, Facebook or Telegram above, or copy the link.';
+      }
+    });
     const form = document.getElementById('seller-form');
     form.addEventListener('submit', async function(event) {
       event.preventDefault();
