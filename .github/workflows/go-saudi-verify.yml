@@ -64,6 +64,23 @@ jobs:
           })().catch(e=>{console.error(e.message);process.exit(1)});
           NODE
           npm run db:saudi:migrate
+      - name: Saudi PostgreSQL backup and restore drill (disposable CI data)
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PGPASSWORD=saudi_ci_only
+          pg_dump --format=custom --no-owner --no-acl "$DATABASE_URL" > /tmp/go-saudi-ci.backup
+          test -s /tmp/go-saudi-ci.backup
+          createdb -h localhost -U saudi_ci go_saudi_restore
+          pg_restore --no-owner --no-acl \
+            -d postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore /tmp/go-saudi-ci.backup
+          marker="$(psql postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore -Atqc \
+            "SELECT market || ':' || schema_version FROM saudi_market_metadata")"
+          test "$marker" = "go-saudi:2"
+          test "$(psql postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore -Atqc \
+            "SELECT count(*) FROM saudi_vendor_data_requests WHERE status='COMPLETED'")" -ge 1
+          test "$(psql postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore -Atqc \
+            "SELECT count(*) FROM saudi_vendor_draft_products")" -ge 1
       - run: npm run server:build
       - name: Focused Saudi TypeScript verification
         run: npx tsc --noEmit --strict --skipLibCheck --esModuleInterop --target ES2022 --module commonjs --moduleResolution node --types node server/saudiAdminAuth.ts server/saudiAdminRules.ts server/saudiVendorRules.ts server/saudiCsp.ts
