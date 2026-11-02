@@ -12,6 +12,26 @@
 - Public seller enquiry submission **defaults to closed in production** unless `GO_SAUDI_PRIVACY_APPROVED=true` is explicitly set after signed privacy/data transfer review.
 - `GO_SAUDI_MODE=true`, `APP_PUBLIC_URL` HTTPS origin, `GO_SAUDI_ADMIN_TOKEN_SHA256`, independent Saudi `DATABASE_URL` and DB schema marker required.
 
+## November 2026 engineering hardening
+
+The Saudi branch now additionally implements:
+- Seller enquiry de-duplication under a Postgres advisory transaction lock, tested with concurrent HTTP submissions.
+- Privacy-safe error logging for admin, seller lead and vendor routes: SQL/driver messages, phone numbers, invitation codes and merchant notes are never written to production logs.
+- Migration guard: refuses any unmarked *nonempty* database and any unexpected table/version in a marked Saudi database. CI adds an actual mixed-market rejection and clean-rerun test.
+- Public `/api/saudi/readiness` flags explicitly report that commercial launch, public products, orders and payments are OFF, with no raw secrets.
+- Production-mode smoke verifies: seller personal-data submissions return 503 without signed privacy approval; cross-origin activation returns 403; India commerce API stays disabled; private draft portal serves independently.
+
+### Shipping decision
+
+| Release target | Gate |
+|---|---|
+| Source-controlled Saudi private draft onboarding preview | CI tests and production-mode smoke must pass; requires new isolated DB to deploy |
+| Public Saudi vendor lead collection | BLOCKED pending Saudi privacy, hosting/transfer signoff and approved notices; `GO_SAUDI_PRIVACY_APPROVED` stays false |
+| Real seller login at scale | BLOCKED pending Saudi OTP, individual identities, recovery and admin MFA |
+| Live public marketplace / checkout | BLOCKED pending legal merchant/e-store validation, PSP/mada, invoices, delivery, refunds, buyer terms and end-to-end external security tests |
+
+Never use the existing Go Bharat Render service or GitHub `main` branch for this pilot. Confirm workspace before any Render service creation, and use private trusted channels for credentials.
+
 ## Required checks — dev/CI
 
 ```sh
