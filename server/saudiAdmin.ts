@@ -1,3 +1,4 @@
+import {logSaudiError} from "./saudiLog";
 import type { Express, Request, Response, NextFunction } from "express";
 import crypto from "node:crypto";
 import {sendSaudiPage} from "./saudiCsp";
@@ -76,7 +77,7 @@ export function registerSaudiAdmin(app: Express): void {
         note:"APPROVED means onboarding reviewed, NOT store live. No payments or selling are enabled."
       });
     } catch (err) {
-      console.error("[SAUDI_ADMIN] Lead listing failed",err);
+      logSaudiError("SAUDI_ADMIN",err);
       return res.status(503).json({error:"Seller enquiries are temporarily unavailable."});
     }
   });
@@ -94,7 +95,7 @@ export function registerSaudiAdmin(app: Express): void {
       sendNoStore(res);
       return res.json({events});
     } catch(err) {
-      console.error("[SAUDI_ADMIN] Review history read failed",err);
+      logSaudiError("SAUDI_ADMIN",err);
       return res.status(503).json({error:"Review history unavailable."});
     }
   });
@@ -135,7 +136,7 @@ export function registerSaudiAdmin(app: Express): void {
       return res.json({success:true,lead:result,storeLive:false,
         note:"Approval records onboarding review only; shop activation and payments remain disabled."});
     }catch(err){
-      console.error("[SAUDI_ADMIN] Review write failed",err);
+      logSaudiError("SAUDI_ADMIN",err);
       return res.status(503).json({error:"Could not update seller review."});
     }
   });
