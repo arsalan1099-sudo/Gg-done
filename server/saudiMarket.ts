@@ -58,6 +58,7 @@ export function registerSaudiMarket(app: Express): void {
     try {
       const [existing] = await db.select({id:sellerEnquiries.id})
         .from(sellerEnquiries).where(and(
+          eq(sellerEnquiries.source, "SAUDI_LANDING"),
           eq(sellerEnquiries.phone, parsed.phone!),
           eq(sellerEnquiries.businessName, parsed.businessName),
           gte(sellerEnquiries.createdAt, new Date(Date.now() - 86400000))
