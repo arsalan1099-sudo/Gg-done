@@ -17,6 +17,8 @@ services:
         value: "22"
       - key: VENDOR_MEMBERSHIP_PAYMENTS_ENABLED
         value: "false"
+      - key: GO_SAUDI_PRIVACY_APPROVED
+        value: "false"
       - key: GO_SAUDI_ADMIN_TOKEN_SHA256
         sync: false
       - key: DATABASE_URL
