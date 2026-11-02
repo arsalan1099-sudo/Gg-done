@@ -124,6 +124,16 @@ textarea.input{min-height:92px;resize:vertical}.formrow{display:grid;grid-templa
         <div class="formrow"><div><label class="label" data-t="category">الفئة</label><input class="input" id="storeCategory" disabled></div><div><label class="label" data-t="phone">رقم الجوال</label><input class="input" id="storePhone" disabled></div></div>
         <form id="storeForm"><label class="label" data-t="storeDescription" for="storeDescription">وصف المتجر</label><textarea class="input" id="storeDescription" maxlength="600" placeholder="Describe your shop..."></textarea><div class="formactions"><button type="submit" class="btn" id="saveStore" data-t="saveChanges">حفظ التعديلات</button></div><div id="storeFeedback" class="success" role="status"></div></form>
       </div>
+      <div class="panel">
+        <h2 data-t="privacyTitle">بياناتك وخصوصيتك</h2>
+        <p class="sub" data-t="privacyHelp">يمكنك تنزيل نسخة من بيانات متجرك، أو تقديم طلب لحذف الحساب ليتم مراجعته.</p>
+        <div class="formactions">
+          <button type="button" class="btn secondary" id="exportData" data-t="downloadData">تنزيل بياناتي</button>
+          <button type="button" class="btn danger" id="requestDeletion" data-t="deleteRequest">طلب حذف حسابي</button>
+        </div>
+        <div class="notice" data-t="deletionNotice">تقديم الطلب لا يعني حذف الحساب فوراً. يجب مراجعة الهوية ومتطلبات الاحتفاظ القانونية أولاً.</div>
+        <div id="dataRequestStatus" class="success" role="status" aria-live="polite"></div>
+      </div>
       <div class="notice" data-t="identityNotice">لتعديل اسم النشاط أو رقم الجوال أو بيانات الترخيص، تواصل مع المسؤول لإعادة التحقق.</div>
     </section>
   </div>
@@ -137,7 +147,7 @@ const words={
  overview:"الرئيسية",products:"المنتجات",orders:"الطلبات",settings:"إعداد المتجر",overviewCaption:"إدارة متجرك وكتالوج منتجاتك قبل الإطلاق.",draftStatus:"مسودات فقط · غير منشور",draftProducts:"منتجات مسودة",totalOrders:"الطلبات",salesSar:"مبيعات (ر.س)",notLive:"غير منشور",storeStatus:"حالة المتجر",draftWarning:"يمكنك إعداد المنتجات والأسعار والمخزون كمسودات فقط. عرض المتجر للعامة، استقبال الطلبات والمدفوعات مغلق حالياً.",quickActions:"إجراءات سريعة",addProduct:"أضف منتجاً",addProductHelp:"اكتب الأسعار بالريال السعودي والمخزون",storeDetails:"بيانات متجرك",editDescription:"أضف وصفاً لنشاطك",checklist:"قائمة التجهيز للإطلاق",approved:"✓ مراجعة البائع",drafting:"✓ إعداد الكتالوج",pendingLive:"⏳ تشغيل المدفوعات والمتجر",nextStep:"سيتم فتح البيع بعد تفعيل الدفع المناسب والتحقق من الامتثال.",
  productTitle:"إدارة المنتجات",productSubtitle:"مسودات خاصة بك فقط — غير متاحة للمشترين.",productNew:"منتج جديد",productEdit:"تعديل مسودة",cancel:"إلغاء",productName:"اسم المنتج",price:"السعر (ر.س)",stock:"المخزون",productDescription:"وصف المنتج",saveDraft:"حفظ كمسودة",status:"الحالة",actions:"الإجراءات",noProducts:"لا توجد مسودات بعد. أضف منتجك الأول.",draft:"مسودة",edit:"تعديل",delete:"حذف",
  ordersSubtitle:"الطلبات والمدفوعات سيتم تفعيلها عند إطلاق السوق.",comingSoon:"قريباً",noOrders:"لا توجد طلبات",ordersWarning:"الطلبات الحقيقية غير متاحة في المرحلة الحالية. لا توجد مبيعات أو أرباح حتى الآن.",
- settingsHelp:"بيانات النشاط المعتمد ثابتة، ويمكنك تحرير وصف المتجر.",business:"اسم النشاط",city:"المدينة",category:"الفئة",phone:"رقم الجوال",storeDescription:"وصف المتجر",saveChanges:"حفظ التعديلات",identityNotice:"لتعديل اسم النشاط أو رقم الجوال أو بيانات الترخيص، تواصل مع المسؤول لإعادة التحقق.",
+ privacyTitle:"بياناتك وخصوصيتك",privacyHelp:"تنزيل نسخة من بيانات متجرك أو تقديم طلب لحذف الحساب ومراجعته.",downloadData:"تنزيل بياناتي",deleteRequest:"طلب حذف حسابي",deletionNotice:"طلب الحذف لا يُنفّذ تلقائياً. يتطلب تحقق الهوية والمراجعة القانونية.",deletionConfirm:"هل تريد إرسال طلب حذف الحساب للمراجعة؟ لن يتم حذف بياناتك فوراً.",requestPending:"طلب حذف الحساب قيد المراجعة.",requestSent:"تم إرسال طلب الحذف للمراجعة.",exportFailed:"تعذر تصدير بيانات المتجر.", settingsHelp:"بيانات النشاط المعتمد ثابتة، ويمكنك تحرير وصف المتجر.",business:"اسم النشاط",city:"المدينة",category:"الفئة",phone:"رقم الجوال",storeDescription:"وصف المتجر",saveChanges:"حفظ التعديلات",identityNotice:"لتعديل اسم النشاط أو رقم الجوال أو بيانات الترخيص، تواصل مع المسؤول لإعادة التحقق.",
  saved:"تم الحفظ بنجاح.",deleted:"تم حذف المسودة.",confirmDelete:"هل تريد حذف هذه المسودة؟",unexpected:"تعذر إكمال العملية. حاول لاحقاً.",expired:"انتهت الجلسة. الرجاء إدخال دعوة جديدة من المسؤول.",invalidPrice:"أدخل سعر ريال سعودي صحيح (مثلاً 12.50).",missingToken:"أدخل رمز دعوة صحيحاً."
  },
  en:{
@@ -145,7 +155,7 @@ const words={
  overview:"Dashboard",products:"Products",orders:"Orders",settings:"Store settings",overviewCaption:"Manage your draft storefront and catalog before launch.",draftStatus:"Draft only · Not published",draftProducts:"Draft products",totalOrders:"Orders",salesSar:"Sales (SAR)",notLive:"Not live",storeStatus:"Store status",draftWarning:"You can save product names, Saudi prices and stock as private drafts. Public store listings, orders and payments are disabled.",quickActions:"Quick actions",addProduct:"Add product",addProductHelp:"Set a price in SAR and stock quantity",storeDetails:"Store profile",editDescription:"Edit your shop description",checklist:"Launch checklist",approved:"✓ Seller review",drafting:"✓ Draft catalog",pendingLive:"⏳ Payments and store activation",nextStep:"Selling will open only after compliance review and approved payment gateway activation.",
  productTitle:"My products",productSubtitle:"Private drafts only — not visible to shoppers.",productNew:"Add product",productEdit:"Edit draft product",cancel:"Cancel",productName:"Product name",price:"Price (SAR)",stock:"Stock",productDescription:"Product description",saveDraft:"Save draft",status:"Status",actions:"Actions",noProducts:"No products yet. Add your first draft.",draft:"Draft",edit:"Edit",delete:"Delete",
  ordersSubtitle:"Orders and payments will become available at marketplace launch.",comingSoon:"Coming soon",noOrders:"No orders yet",ordersWarning:"Live orders are not enabled. No real orders or revenue have been recorded.",
- settingsHelp:"Verified business details are read-only; you can edit your description.",business:"Business name",city:"City",category:"Category",phone:"Saudi mobile",storeDescription:"Store description",saveChanges:"Save changes",identityNotice:"Contact the admin to change your business identity, phone number or licence documents.",
+ privacyTitle:"Your data and privacy",privacyHelp:"Download a copy of your merchant data or submit an account deletion request for review.",downloadData:"Download my data",deleteRequest:"Request account deletion",deletionNotice:"Submitting a request does not delete your account immediately. Identity and lawful retention must be reviewed.",deletionConfirm:"Submit an account deletion request? Your data will not be deleted immediately.",requestPending:"Account deletion request is pending review.",requestSent:"Deletion request submitted for review.",exportFailed:"Could not export merchant data.", settingsHelp:"Verified business details are read-only; you can edit your description.",business:"Business name",city:"City",category:"Category",phone:"Saudi mobile",storeDescription:"Store description",saveChanges:"Save changes",identityNotice:"Contact the admin to change your business identity, phone number or licence documents.",
  saved:"Saved successfully.",deleted:"Draft deleted.",confirmDelete:"Delete this draft product?",unexpected:"The operation failed. Try again later.",expired:"Your session expired. Ask the admin for a new invitation.",invalidPrice:"Enter a valid SAR amount (for example 12.50).",missingToken:"Enter a valid invitation code."
  }
 };
@@ -215,7 +225,7 @@ $("logout").addEventListener("click",async()=>{try{await api("/api/saudi/vendor/
  $("workspace").classList.add("hidden");$("activation").classList.remove("hidden");$("logout").classList.add("hidden");
 });
 $("lang").addEventListener("click",()=>{lang=lang==="ar"?"en":"ar";translate();});
-document.querySelectorAll("[data-view]").forEach(btn=>btn.addEventListener("click",()=>view(btn.dataset.view)));
+document.querySelectorAll("[data-view]").forEach(btn=>btn.addEventListener("click",()=>{view(btn.dataset.view);if(btn.dataset.view==="store")showDataRightsState();}));
 document.querySelectorAll("[data-go]").forEach(btn=>btn.addEventListener("click",()=>{view(btn.dataset.go);if(btn.dataset.go==="products")openProduct()}));
 const openProduct=p=>{
  editing=p?.id||null;$("productFormPanel").classList.remove("hidden");$("formProductTitle").textContent=words[lang][p?"productEdit":"productNew"];
@@ -244,6 +254,38 @@ const removeProduct=async p=>{
  try{await api("/api/saudi/vendor/products/"+encodeURIComponent(p.id),{method:"DELETE"});await loadProducts();}
  catch(e){window.alert(e.message);}
 };
+const showDataRightsState=async()=>{
+ try{
+  const d=await api("/api/saudi/vendor/data-requests");
+  const pending=(d.requests||[]).find(x=>x.status==="PENDING");
+  $("requestDeletion").disabled=!!pending;
+  $("dataRequestStatus").textContent=pending?words[lang].requestPending:"";
+ }catch{$("dataRequestStatus").textContent="";}
+};
+$("exportData").addEventListener("click",async()=>{
+ $("exportData").disabled=true;
+ try{
+  const data=await api("/api/saudi/vendor/data-export");
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");link.href=url;
+  link.download="go-saudi-merchant-data.json";
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }catch(e){$("dataRequestStatus").textContent=e.message||words[lang].exportFailed}
+ finally{$("exportData").disabled=false;}
+});
+$("requestDeletion").addEventListener("click",async()=>{
+ if(!window.confirm(words[lang].deletionConfirm))return;
+ $("requestDeletion").disabled=true;
+ try{
+  await api("/api/saudi/vendor/data-requests",{
+   method:"POST",body:JSON.stringify({requestType:"DELETE_ACCOUNT",confirm:true})
+  });
+  $("dataRequestStatus").textContent=words[lang].requestSent;
+  await showDataRightsState();
+ }catch(e){$("dataRequestStatus").textContent=e.message;$("requestDeletion").disabled=false;}
+});
 $("storeForm").addEventListener("submit",async e=>{
  e.preventDefault();$("storeFeedback").textContent="";$("saveStore").disabled=true;
  try{
