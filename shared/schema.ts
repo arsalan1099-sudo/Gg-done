@@ -658,6 +658,20 @@ export const saudiVendorDraftProducts = pgTable("saudi_vendor_draft_products", {
   updatedAt:timestamp("updated_at").defaultNow(),
 },table=>[index("idx_saudi_vendor_products").on(table.vendorId)]);
 
+// Vendor account deletion requests: keep only a non-identifying request receipt
+// after physical merchant-data erasure (vendor FK is ON DELETE SET NULL).
+export const saudiVendorDataRequests = pgTable("saudi_vendor_data_requests", {
+  id: varchar("id", {length:64}).primaryKey(),
+  vendorId: varchar("vendor_id", {length:64}),
+  requestType: varchar("request_type", {length:24}).notNull().default("DELETE_ACCOUNT"),
+  status: varchar("status", {length:24}).notNull().default("PENDING"),
+  requestedAt: timestamp("requested_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+}, table => [
+  index("idx_saudi_data_request_status").on(table.status,table.requestedAt),
+  index("idx_saudi_data_request_vendor").on(table.vendorId),
+]);
+
 export const coinGrants = pgTable("coin_grants", {
   id: varchar("id", { length: 64 }).primaryKey(),
   phone: varchar("phone", { length: 15 }).notNull(),
