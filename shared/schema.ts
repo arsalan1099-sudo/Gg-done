@@ -621,6 +621,43 @@ export const saudiSellerReviewEvents = pgTable("saudi_seller_review_events", {
   index("idx_saudi_review_enquiry_created").on(table.enquiryId, table.createdAt),
 ]);
 
+
+/** Go Saudi: invitation-only, strictly draft-only vendor workspace. */
+export const saudiVendorAccounts = pgTable("saudi_vendor_accounts", {
+  id: varchar("id",{length:64}).primaryKey(),
+  enquiryId: varchar("enquiry_id",{length:64}).notNull().unique(),
+  description: text("description").notNull().default(""),
+  createdAt:timestamp("created_at").defaultNow(),
+  updatedAt:timestamp("updated_at").defaultNow(),
+});
+export const saudiVendorInvites = pgTable("saudi_vendor_invites", {
+  id:varchar("id",{length:64}).primaryKey(),
+  vendorId:varchar("vendor_id",{length:64}).notNull(),
+  tokenHash:varchar("token_hash",{length:64}).notNull().unique(),
+  expiresAt:timestamp("expires_at").notNull(),
+  consumedAt:timestamp("consumed_at"),
+  createdAt:timestamp("created_at").defaultNow(),
+}, table=>[index("idx_saudi_vendor_invite_vendor").on(table.vendorId)]);
+export const saudiVendorSessions = pgTable("saudi_vendor_sessions",{
+  id:varchar("id",{length:64}).primaryKey(),
+  vendorId:varchar("vendor_id",{length:64}).notNull(),
+  tokenHash:varchar("token_hash",{length:64}).notNull().unique(),
+  expiresAt:timestamp("expires_at").notNull(),
+  revokedAt:timestamp("revoked_at"),
+  createdAt:timestamp("created_at").defaultNow(),
+},table=>[index("idx_saudi_vendor_session_vendor").on(table.vendorId)]);
+export const saudiVendorDraftProducts = pgTable("saudi_vendor_draft_products", {
+  id:varchar("id",{length:64}).primaryKey(),
+  vendorId:varchar("vendor_id",{length:64}).notNull(),
+  title:varchar("title",{length:120}).notNull(),
+  description:text("description").notNull().default(""),
+  priceHalalas:integer("price_halalas").notNull(),
+  stock:integer("stock").notNull().default(0),
+  status:varchar("status",{length:12}).notNull().default("DRAFT"),
+  createdAt:timestamp("created_at").defaultNow(),
+  updatedAt:timestamp("updated_at").defaultNow(),
+},table=>[index("idx_saudi_vendor_products").on(table.vendorId)]);
+
 export const coinGrants = pgTable("coin_grants", {
   id: varchar("id", { length: 64 }).primaryKey(),
   phone: varchar("phone", { length: 15 }).notNull(),
