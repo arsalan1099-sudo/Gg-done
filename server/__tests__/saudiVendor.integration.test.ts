@@ -118,6 +118,20 @@ test("Saudi vendor onboarding, draft isolation, invitation replay and revocation
  const stillB=await json("/api/saudi/vendor/me",{headers:{Cookie:cookieB}});
  assert.equal(stillB.res.status,200);
 });
+test("concurrent same seller submissions deduplicate transactionally",async()=>{
+ const businessName="Saudi Duplicate Race "+Date.now();
+ const payload={businessName,city:"Jeddah",category:"Food",phone:"0551234569",consent:true};
+ const [a,b]=await Promise.all([
+   post("/api/saudi/seller-enquiries",payload),
+   post("/api/saudi/seller-enquiries",payload)
+ ]);
+ assert.deepEqual([a.res.status,b.res.status].sort(),[200,201]);
+ const leads=await json("/api/saudi/admin/seller-enquiries?page=1",{
+   headers:{Authorization:"Bearer "+adminToken}
+ });
+ assert.equal(leads.res.status,200);
+ assert.equal(leads.data.leads.filter((x:any)=>x.businessName===businessName).length,1);
+});
 test("CSP prevents arbitrary inline script injection",async()=>{
  for(const page of ["/","/saudi-admin","/vendor"]){
   const res=await fetch(base+page);
