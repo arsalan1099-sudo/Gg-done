@@ -27,6 +27,7 @@ export function registerSaudiMarket(app: Express): void {
       languages: ["ar", "en"], cities: SAUDI_CITIES,
       categories: SAUDI_CATEGORIES,
       status: "PRELAUNCH", paymentsEnabled: false,
+      sellerEnquiriesOpen: process.env.NODE_ENV!=="production" || process.env.GO_SAUDI_PRIVACY_APPROVED==="true",
       membershipPriceSar: null, referralPercentProposed: REFERRAL_PERCENT,
       note: "Membership pricing and any commission require approval. No payments accepted."
     });
@@ -53,6 +54,10 @@ export function registerSaudiMarket(app: Express): void {
     message: { error: "Too many enquiries. Try again later." }
   });
   app.post("/api/saudi/seller-enquiries", enquiryLimiter, async (req, res) => {
+    // No personal data collection in production until legal privacy documents,
+    // retention/deletion process and Saudi cross-border/hosting review are signed off.
+    if(process.env.NODE_ENV==="production" && process.env.GO_SAUDI_PRIVACY_APPROVED!=="true")
+      return res.status(503).json({error:"Seller enquiries are closed pending privacy readiness"});
     if (req.body?.website) return res.json({success:true}); // bot honeypot
     const parsed = validateSaudiEnquiry(req.body && typeof req.body === "object" ? req.body : {});
     if (!parsed.valid) return res.status(400).json({error:"Valid seller name, Saudi city, category, Saudi mobile and consent required."});
