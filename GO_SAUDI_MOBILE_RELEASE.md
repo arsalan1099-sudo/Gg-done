@@ -1,6 +1,18 @@
 # Go Saudi — Android & iOS publishing gate (2 November 2026)
 
-**Current decision: NOT APPROVED FOR STORE SUBMISSION.** Do not upload or release the currently available prelaunch native app to Google Play or Apple App Store. It does not implement a functional Saudi marketplace or adequately useful standalone seller experience. No signed AAB/IPA, live Saudi production backend, device tests or new-store registration have been verified.
+**Current decision: NOT APPROVED FOR STORE SUBMISSION.** Do not upload or release the currently available prelaunch native app to Google Play or Apple App Store. It does not yet implement customer orders, payments, shipping or signed-in seller operations inside the native app. No signed AAB/IPA, live Saudi production backend, device tests or new-store registration have been verified.
+
+## 3 November 2026 — working catalog and cart preview
+
+The original mobile screenshots showed an inert landing page and a disabled seller registration form. The native Saudi home now defaults to an interactive **Shop** view, with Arabic/English switching, live Saudi catalog fetch (when lawfully enabled), city/category filters, search, product details, a local wishlist, and a persistent local cart with stock caps and SAR/halalas totals.
+
+With no approved Saudi HTTPS backend, the app shows eight **clearly labeled DEMO products**. These are illustrative, not real merchants or purchasable items. The cart only prepares a local selection; checkout cannot charge customers, place orders, reserve inventory or notify merchants. The previous seller-interest form is available through the Sell action and stays closed without the actual Saudi privacy gate.
+
+Backend schema version **3** adds `saudi_catalog_submissions`: approved vendors can request moderation of private draft product snapshots; admins can review/reject in the Saudi admin dashboard. Even `APPROVED` records are NOT public unless **all** of `GO_SAUDI_PRIVACY_APPROVED=true`, `GO_SAUDI_CATALOG_PUBLIC=true`, and `GO_SAUDI_MARKETPLACE_LAUNCH_APPROVED=true` are set after approvals. Catalog moderation approval itself also requires `GO_SAUDI_MERCHANT_VERIFICATION_APPROVED=true`. All these new flags default to false in Render.
+
+The new GET `/api/saudi/catalog` returns a bounded, PII-free seller-verified product listing only when permitted. It explicitly returns `checkoutEnabled:false` until a separate lawful transaction and payment architecture is built. CI tests cover moderation, catalog visibility/permissions, draft isolation, and cart arithmetic. Real device and signed-store build tests remain outstanding.
+
+**Still missing for full functionality:** live Saudi HTTPS environment, genuine Saudi customer/mobile authentication, customer address management and privacy handling, order orchestration and stock reservation, supplier fulfilment, shipping, refunds, disputes, regulated PSP/payment settlement, VAT invoicing, merchant verification, and actual app-store approval. Do not market the preview as a finished working marketplace.
 
 ## Implemented this pass
 
