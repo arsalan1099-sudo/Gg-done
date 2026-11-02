@@ -19,6 +19,38 @@
 - Zero live payment acceptance or promises of subscription pricing.
 - Separate proposed 33% referral-policy constant; not paid or accrued in the absence of verified Saudi captured settlements.
 
+## Vendor panel — implemented in Go Saudi branch
+
+The Saudi-only vendor panel is available at `/vendor` (`/vendor-panel` redirects there). It is a **working, authenticated draft-store workspace**, not a public selling site. The UI supports Arabic RTL/English LTR and mobile layouts.
+
+- After admin approves a Saudi lead, open `/saudi-admin`, select the `APPROVED` enquiry, and click **Generate seller invitation**. Code is shown only in the admin response/UI, expires after 24 hours, and invalidates prior unused invitations. Share the code only after an independent identity check, using a private verified channel; never add it to a link or public chat.
+- Vendor visits `/vendor`, enters the one-time 64-hex code, and receives a **seven-day vendor-only session**. This is a temporary admin-issued invitation flow until actual Saudi OTP/MFA account login is configured.
+- `/api/saudi/vendor/me` returns only that vendor's draft business profile and draft product count; business identity is read-only.
+- Vendor can update store description (600 characters max), create/edit/delete own products (maximum 200 private drafts, title, description, price as integer halalas, stock). All products remain `DRAFT`; there is no public publishing endpoint.
+- Orders, sales, seller payout, payments, and public product discovery are **disabled**; dashboard order counts and sales are zero because there is no live order integration.
+- Admin can revoke all vendor sessions and invitations. Admin access remains protected by its separately configured secret.
+- Session tokens are stored as SHA-256 hashes in the Saudi database. The vendor browser keeps the active session token in `sessionStorage` for its own tab session, not in the URL or localStorage. Use HTTPS; implement individual merchant identity, OTP/MFA, device/session management and security review before launch.
+
+### Vendor/admin API routes
+
+| Method and route | Purpose |
+|---|---|
+| `POST /api/saudi/admin/vendor-invites` | Admin-protected invite, body `{"enquiryId":"SL_..."}` |
+| `POST /api/saudi/admin/vendor-sessions/revoke` | Admin-protected revoke, body `{"enquiryId":"SL_..."}` |
+| `POST /api/saudi/vendor/activate` | Exchange one-time invite for vendor session |
+| `GET /api/saudi/vendor/me` | Vendor-only draft store profile |
+| `PATCH /api/saudi/vendor/store` | Vendor-only description |
+| `GET /api/saudi/vendor/products` | Vendor's own draft products |
+| `POST /api/saudi/vendor/products` | Create private draft |
+| `PATCH /api/saudi/vendor/products/:id` | Update own draft |
+| `DELETE /api/saudi/vendor/products/:id` | Delete own draft |
+| `POST /api/saudi/vendor/logout` | Revoke current vendor session |
+
+The separate database must be initialized with `npm run db:push` to create `saudi_vendor_accounts`, `saudi_vendor_invites`, `saudi_vendor_sessions` and `saudi_vendor_draft_products`. Do not run this against Go Bharat's original database.
+
+**Not yet verified:** full authenticated HTTP integration tests against a migrated Saudi PostgreSQL database, Saudi OTP, legal review, production Render deployment, shop activation, order/payment handling.
+
+
 ## Running locally
 ```sh
 git checkout go-saudi
@@ -41,6 +73,7 @@ Never use Go Bharat's production DATABASE_URL for Saudi testing.
 - `POST /api/saudi/seller-enquiries`: Saudi seller lead
 - `GET /api/health`: server health (requires database)
 - `GET /saudi-admin`: admin login shell; no seller PII embedded
+- `GET /vendor`: invitation-only merchant panel (Arabic/English)
 - `GET /api/saudi/admin/seller-enquiries?status=ALL&page=1`: authenticated seller pipeline + status totals
 - `GET /api/saudi/admin/seller-enquiries/:id/events`: authenticated audit history
 - `PATCH /api/saudi/admin/seller-enquiries/:id`: authenticated transition with `{status,note,checks}`
@@ -75,8 +108,8 @@ This is a **single-admin prelaunch prototype**, not full workforce authenticatio
 
 ## Launch gate / unresolved work
 1. Separate new GitHub repository **go-saudi** (currently a development branch of Go Bharat).
-2. Localize all customer/vendor/admin/delivery/marketing/franchise product screens and backend for Saudi (the inherited Expo screens are not Saudi-ready).
-3. Implement genuine phone OTP for +966, individual admin identities, MFA/RBAC, SMS gateway, anti-abuse and account deletion.
+2. Localize remaining customer/delivery/marketing/franchise screens and backend for Saudi; the vendor draft web workspace is implemented, but the inherited Expo native screens are not Saudi-ready.
+3. Replace temporary admin-issued vendor invite with genuine phone OTP for +966, vendor/admin account recovery, individual admin identities, MFA/RBAC, SMS gateway, anti-abuse and account deletion.
 4. Replace GST/PAN/IFSC/UPI/INR/Razorpay/PhonePe with Saudi CR/verification, IBAN, tax information, SAR/halalas, mada + licensed PSP. Avoid handling or routing merchants' funds directly without legal/PSP review.
 5. Country-specific VAT (standard rate currently 15% where applicable), ZATCA invoices, VAT registration, refunds and official seller terms.
 6. Saudi Business Center store verification and entity/bank-account requirements, PDPL privacy documents, lawful Saudi personal-data hosting/transfer assessment.
