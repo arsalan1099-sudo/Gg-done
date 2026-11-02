@@ -683,6 +683,7 @@ export const saudiCatalogSubmissions = pgTable("saudi_catalog_submissions",{
   priceHalalas:integer("price_halalas").notNull(),
   stock:integer("stock").notNull(),
   status:varchar("status",{length:16}).notNull().default("PENDING"),
+  reviewNote:varchar("review_note",{length:500}).notNull().default(""),
   reviewedAt:timestamp("reviewed_at"),
   requestedAt:timestamp("requested_at").defaultNow(),
 },table=>[
