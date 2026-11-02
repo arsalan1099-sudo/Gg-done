@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import crypto from "node:crypto";
-import path from "node:path";
+import {sendSaudiPage} from "./saudiCsp";
 import rateLimit from "express-rate-limit";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "./db";
@@ -36,13 +36,7 @@ function sendNoStore(res: Response) {
 export function registerSaudiAdmin(app: Express): void {
   // The login shell is public, but ALL data & mutations require a long random
   // bearer token whose SHA-256 hash is stored in the server environment.
-  app.get("/saudi-admin", (_req,res)=>{
-    sendNoStore(res);
-    res.setHeader("Referrer-Policy", "no-referrer");
-    res.setHeader("Content-Security-Policy",
-      "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
-    return res.sendFile(path.resolve(process.cwd(),"server/templates/go-saudi-admin.html"));
-  });
+  app.get("/saudi-admin", (_req,res)=>sendSaudiPage(res,"go-saudi-admin.html"));
   // Do not expose the original India admin screen on the Saudi branch.
   app.get("/admin", (_req,res)=>res.redirect(302,"/saudi-admin"));
 
