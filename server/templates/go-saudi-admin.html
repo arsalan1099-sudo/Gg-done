@@ -44,6 +44,15 @@
 <section id="dashboard" class="hidden">
   <div class="subhead"><div><h1>Vendor Onboarding Pipeline</h1><p>Saudi enquiries only. Admin reviews are logged; approving an enquiry does not make a store live.</p></div><button class="button button-outline" id="refresh">Refresh</button></div>
   <div class="stats" id="stats" aria-label="Seller statuses"></div>
+  <div class="panel" id="catalogReviewPanel">
+    <div class="subhead">
+      <div><h2>Product catalog moderation</h2><p class="hint">Merchant draft submissions require manual approval and verified Saudi merchant/privacy checks. An approved item is NOT automatically public.</p></div>
+      <button class="button button-outline" type="button" id="refreshCatalog">Refresh catalog queue</button>
+    </div>
+    <div class="notice">Public catalog is fail-closed by separate Saudi launch and privacy flags. Orders and payments remain disabled.</div>
+    <div id="catalogQueue" class="table-wrap"></div>
+    <div id="catalogError" class="error" role="status"></div>
+  </div>
   <div class="panel" id="privacyRequestsPanel">
     <div class="subhead">
       <div><h2>Vendor data deletion requests</h2>
@@ -183,6 +192,44 @@
       if(e.message.toLowerCase().includes("token"))lock();
     }finally{loading=false;$("refresh").disabled=false;}
   }
+  async function loadCatalogQueue(){
+    const target=$("catalogQueue");$("catalogError").textContent="";
+    try {
+      const data=await api("/api/saudi/admin/catalog-submissions?status=PENDING");
+      target.replaceChildren();
+      if(!(data.submissions||[]).length){target.append(make("p","hint","No product drafts pending review."));return;}
+      const table=make("table","table"),head=make("thead"),tr=make("tr");
+      ["Merchant","Product","Price (SAR)","Stock","Decision"].forEach(v=>tr.append(make("th","",v)));
+      head.append(tr);table.append(head);
+      const body=make("tbody");
+      for(const product of data.submissions){
+        const row=make("tr");
+        [product.businessName,product.title,(product.priceHalalas/100).toFixed(2),product.stock]
+          .forEach(v=>row.append(make("td","",v)));
+        const cell=make("td");
+        for(const status of ["APPROVED","REJECTED"]){
+          const button=make("button","button "+(status==="REJECTED"?"button-outline":"button-secondary"),
+            status==="APPROVED"?"Approve draft":"Reject");
+          button.type="button";
+          button.addEventListener("click",async()=>{
+            const note=window.prompt("Write an audited review note (at least 10 characters):","");
+            if(!note||note.trim().length<10)return;
+            if(!window.confirm("Confirm "+status+" for "+product.title+"? This is NOT a commercial launch."))return;
+            button.disabled=true;
+            try{
+              await api("/api/saudi/admin/catalog-submissions/"+encodeURIComponent(product.id),{
+                method:"PATCH",body:JSON.stringify({status,note:note.trim()})
+              });
+              await loadCatalogQueue();
+            }catch(e){$("catalogError").textContent=e.message;button.disabled=false;}
+          });
+          cell.append(button);
+        }
+        row.append(cell);body.append(row);
+      }
+      table.append(body);target.append(table);
+    }catch(e){$("catalogError").textContent=e.message;}
+  }
   async function loadDeletionRequests(){
     const el=$("deletionRequests");
     $("deletionError").textContent="";
@@ -276,12 +323,14 @@
       $("adminToken").value="";$("login").classList.add("hidden");$("dashboard").classList.remove("hidden");$("lock").classList.remove("hidden");
       page=1;items=data.leads;total=data.pagination.total;summary=data.summary;paintStats();renderTable();
       loadDeletionRequests();
+      loadCatalogQueue();
     }catch(e){token="";$("loginError").textContent=e.message;}finally{$("unlock").disabled=false;}
   });
   $("adminToken").addEventListener("keydown",e=>{if(e.key==="Enter")$("unlock").click()});
   $("lock").addEventListener("click",lock);
   $("refresh").addEventListener("click",load);
   $("refreshDeletionRequests").addEventListener("click",loadDeletionRequests);
+  $("refreshCatalog").addEventListener("click",loadCatalogQueue);
   $("filter").addEventListener("change",()=>{page=1;load()});
   $("search").addEventListener("input",renderTable);
   $("prev").addEventListener("click",()=>{if(page>1){page--;load()}});
