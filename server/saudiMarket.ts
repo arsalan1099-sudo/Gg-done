@@ -1,3 +1,4 @@
+import {logSaudiError} from "./saudiLog";
 import type { Express } from "express";
 import crypto from "node:crypto";
 import {sendSaudiPage} from "./saudiCsp";
@@ -78,7 +79,7 @@ export function registerSaudiMarket(app: Express): void {
       res.setHeader("Cache-Control", "no-store");
       return res.status(201).json({success:true});
     } catch (err) {
-      console.error("[SAUDI_LEAD] Lead database unavailable", err);
+      logSaudiError("SAUDI_LEAD",err);
       return res.status(503).json({error:"Enquiry service unavailable. No submission was saved."});
     }
   });
