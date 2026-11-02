@@ -10,6 +10,7 @@ import { SAUDI_CITIES, SAUDI_CATEGORIES, validateSaudiEnquiry, REFERRAL_PERCENT 
 import { registerSaudiAdmin } from "./saudiAdmin";
 import { registerSaudiVendor } from "./saudiVendor";
 import { registerSaudiDataRights } from "./saudiDataRights";
+import { registerSaudiCatalog } from "./saudiCatalog";
 
 // This Saudi launch slice is intentionally fail-closed. It reuses the original
 // Go Bharat codebase without exposing INR checkout, payouts, or Indian write APIs.
@@ -17,6 +18,7 @@ export function registerSaudiMarket(app: Express): void {
   registerSaudiAdmin(app);
   registerSaudiVendor(app);
   registerSaudiDataRights(app);
+  registerSaudiCatalog(app);
   const sendLanding = (_req: any, res: any) => {
     return sendSaudiPage(res,"go-saudi.html");
   };
@@ -46,8 +48,8 @@ export function registerSaudiMarket(app: Express): void {
     })();
     res.json({
       market:"go-saudi",mode:"PRELAUNCH",commercialLaunchReady:false,
-      liveOrders:false,livePayments:false,publicProducts:false,
-      vendorPanel:"PRIVATE_DRAFT_ONLY",vendorAuthentication:"ADMIN_INVITE_ONLY",
+      liveOrders:false,livePayments:false,publicProducts:process.env.GO_SAUDI_CATALOG_PUBLIC==="true" && process.env.GO_SAUDI_PRIVACY_APPROVED==="true" && process.env.GO_SAUDI_MARKETPLACE_LAUNCH_APPROVED==="true",
+      vendorPanel:"DRAFT_AND_CATALOG_REVIEW",vendorAuthentication:"ADMIN_INVITE_ONLY",
       onboardingDatabaseConfigured:Boolean(process.env.DATABASE_URL),
       technicalConfiguration:{
         saudiMode:process.env.GO_SAUDI_MODE==="true",
