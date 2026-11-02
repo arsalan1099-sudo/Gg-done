@@ -24,8 +24,9 @@ CREATE TABLE IF NOT EXISTS saudi_catalog_submissions (
  price_halalas integer NOT NULL CHECK (price_halalas BETWEEN 1 AND 100000000),
  stock integer NOT NULL CHECK (stock BETWEEN 0 AND 1000000),
  status varchar(16) NOT NULL DEFAULT 'PENDING'
-   CHECK (status IN ('PENDING','PUBLISHED','REJECTED')),
+   CHECK (status IN ('PENDING','APPROVED','REJECTED')),
  requested_at timestamp NOT NULL DEFAULT now(),
+ review_note varchar(500) NOT NULL DEFAULT '',
  reviewed_at timestamp
 );
 CREATE INDEX IF NOT EXISTS idx_saudi_catalog_status ON saudi_catalog_submissions(status,requested_at);
