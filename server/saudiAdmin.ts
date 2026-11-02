@@ -6,24 +6,21 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "./db";
 import { sellerEnquiries, saudiSellerReviewEvents } from "@shared/schema";
 import { isSaudiLeadStatus, reviewTransition, SAUDI_LEAD_STATUSES } from "./saudiAdminRules";
+import { isSaudiAdminKeyConfigured, verifySaudiAdminAuthorization } from "./saudiAdminAuth";
 
 const SOURCE = "SAUDI_LANDING";
 const ID_REGEX = /^SL_[a-f0-9]{30}$/;
-const SAFE_ADMIN_TOKEN = /^Bearer ([a-zA-Z0-9_-]{32,128})$/;
 function adminKeyConfigured(): boolean {
-  return /^[0-9a-f]{64}$/i.test(process.env.GO_SAUDI_ADMIN_TOKEN_SHA256 || "");
+  return isSaudiAdminKeyConfigured(process.env.GO_SAUDI_ADMIN_TOKEN_SHA256);
 }
 function secureAdminAccess(req: Request, res: Response, next: NextFunction) {
   res.setHeader("Cache-Control", "no-store");
   if (!adminKeyConfigured()) {
     return res.status(503).json({error:"Saudi admin is not configured; access disabled."});
   }
-  const auth = SAFE_ADMIN_TOKEN.exec(req.header("Authorization") || "");
-  if (!auth) return res.status(401).json({error:"Admin access token required."});
-  const given = crypto.createHash("sha256").update(auth[1], "utf8").digest();
-  const expected = Buffer.from(process.env.GO_SAUDI_ADMIN_TOKEN_SHA256!, "hex");
-  if (!crypto.timingSafeEqual(given, expected))
-    return res.status(401).json({error:"Invalid admin access token."});
+  if (!verifySaudiAdminAuthorization(
+    req.header("Authorization"), process.env.GO_SAUDI_ADMIN_TOKEN_SHA256
+  )) return res.status(401).json({error:"Missing or invalid admin access token."});
   next();
 }
 const adminLimiter = rateLimit({
