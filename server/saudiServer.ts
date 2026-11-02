@@ -20,6 +20,10 @@ if(process.env.NODE_ENV==="production"){
       publicOrigin.search || publicOrigin.hash) throw Error("Invalid origin");
   }catch{throw Error("APP_PUBLIC_URL must be an HTTPS origin in production");}
 }
+// Verify Saudi DB marker BEFORE listening: never boot against a Go Bharat database.
+const marker=await db.execute(sql`SELECT market,schema_version FROM saudi_market_metadata WHERE market='go-saudi'`);
+if(marker.rows[0]?.schema_version!==1) throw Error("Invalid Saudi DB marker/schema; run the isolated Saudi migration");
+
 const app=express();
 app.disable("x-powered-by");
 app.set("trust proxy",1); // Render: one trusted ingress proxy
@@ -38,14 +42,15 @@ app.use("/api/saudi",(req,res,next)=>{
   const origin=req.header("Origin");
   const configured=process.env.APP_PUBLIC_URL;
   const own=process.env.NODE_ENV==="production"
-    ? configured
+    ? new URL(configured||'https://invalid.invalid').origin
     : "http://"+req.get("host");
   if(origin && origin!==own)return res.status(403).json({error:"Cross-origin writes are disabled"});
   next();
 });
 app.get("/api/health",async(_req,res)=>{
   try{
-    await db.execute(sql`select 1 as ok`);
+    const h=await db.execute(sql`SELECT schema_version FROM saudi_market_metadata WHERE market='go-saudi'`);
+    if(h.rows[0]?.schema_version!==1)throw Error('Saudi DB marker missing');
     res.setHeader("Cache-Control","no-store");
     return res.status(200).json({status:"healthy",service:"go-saudi",mode:"PRELAUNCH",
       database:"connected",payments:false,orders:false});
