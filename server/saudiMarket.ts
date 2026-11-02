@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import crypto from "node:crypto";
-import path from "node:path";
+import {sendSaudiPage} from "./saudiCsp";
 import rateLimit from "express-rate-limit";
 import { and, eq, gte } from "drizzle-orm";
 import { db } from "./db";
@@ -15,8 +15,7 @@ export function registerSaudiMarket(app: Express): void {
   registerSaudiAdmin(app);
   registerSaudiVendor(app);
   const sendLanding = (_req: any, res: any) => {
-    res.setHeader("Cache-Control", "no-cache");
-    return res.sendFile(path.resolve(process.cwd(), "server/templates/go-saudi.html"));
+    return sendSaudiPage(res,"go-saudi.html");
   };
   app.get("/", sendLanding);
   app.get("/sell", sendLanding);
