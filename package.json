@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "postinstall": "patch-package",
-    "server:dev": "NODE_ENV=development tsx server/index.ts",
+    "server:dev": "npm run server:build && NODE_ENV=development node server_dist/saudiServer.mjs",
     "server:build": "esbuild server/saudiServer.ts --platform=node --packages=external --bundle --format=esm --outfile=server_dist/saudiServer.mjs",
     "server:prod": "NODE_ENV=production node server_dist/saudiServer.mjs",
     "db:push": "drizzle-kit push",
