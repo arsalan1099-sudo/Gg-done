@@ -65,6 +65,18 @@
     <div class="review">
       <div>
         <div class="detail" id="sellerDetails"></div>
+        <div id="invitationPanel" class="notice hidden">
+          <strong>Approved seller invitation</strong>
+          <p style="font-size:12px">Generate a single-use invitation only after confirming this seller's identity. Expires in 24 hours. Deliver privately, not in a URL or public chat.</p>
+          <button class="button button-secondary" id="issueInvite" type="button">Generate seller invitation</button>
+          <button class="button button-outline" id="revokeVendor" type="button">Revoke vendor access</button>
+          <div id="inviteDisplay" class="hidden" style="margin-top:12px">
+            <label class="label" for="inviteTokenOutput">Private invitation — shown once</label>
+            <input class="input" dir="ltr" id="inviteTokenOutput" readonly autocomplete="off" spellcheck="false" />
+            <div class="toolbar"><button type="button" class="button button-outline" id="copyInvitation">Copy token</button></div>
+          </div>
+          <div class="error" id="inviteFeedback" role="status"></div>
+        </div>
         <div class="events"><h2>Audit history</h2><div id="events"><span class="muted">Select a seller to see review history.</span></div></div>
       </div>
       <div>
@@ -185,6 +197,10 @@
   }
   function selectLead(row){
     selected=row;
+    $("invitationPanel").classList.toggle("hidden",row.status!=="APPROVED");
+    $("inviteDisplay").classList.add("hidden");
+    $("inviteTokenOutput").value="";
+    $("inviteFeedback").textContent="";
     $("reviewPanel").classList.remove("hidden");$("reviewError").textContent="";
     $("note").value="";["phoneConfirmed","businessChecked","complianceReviewed"].forEach(id=>$(id).checked=false);
     fillDetails(row);
@@ -213,6 +229,42 @@
   $("prev").addEventListener("click",()=>{if(page>1){page--;load()}});
   $("next").addEventListener("click",()=>{if(page*50<total){page++;load()}});
   $("closeReview").addEventListener("click",()=>{$("reviewPanel").classList.add("hidden");selected=null});
+  $("issueInvite").addEventListener("click",async()=>{
+    if(!selected||selected.status!=="APPROVED")return;
+    $("inviteFeedback").textContent="";
+    $("issueInvite").disabled=true;
+    try{
+      const data=await api("/api/saudi/admin/vendor-invites",{
+        method:"POST",body:JSON.stringify({enquiryId:selected.id})
+      });
+      $("inviteTokenOutput").value=data.inviteToken;
+      $("inviteDisplay").classList.remove("hidden");
+      $("inviteFeedback").textContent="Invitation issued. Share securely after merchant identity verification.";
+    }catch(e){$("inviteFeedback").textContent=e.message}
+    finally{$("issueInvite").disabled=false}
+  });
+  $("copyInvitation").addEventListener("click",()=>{
+    const field=$("inviteTokenOutput");field.focus();field.select();
+    if(navigator.clipboard && window.isSecureContext){
+      navigator.clipboard.writeText(field.value).then(()=>{
+        $("inviteFeedback").textContent="Copied. Deliver privately. Do not paste in a public URL.";
+      }).catch(()=>{$("inviteFeedback").textContent="Select and copy the code manually."});
+    }else{$("inviteFeedback").textContent="Select and copy the code manually."}
+  });
+  $("revokeVendor").addEventListener("click",async()=>{
+    if(!selected||selected.status!=="APPROVED")return;
+    if(!window.confirm("Revoke all issued invitations and vendor sessions for this merchant?"))return;
+    $("revokeVendor").disabled=true;
+    try{
+      await api("/api/saudi/admin/vendor-sessions/revoke",{
+        method:"POST",body:JSON.stringify({enquiryId:selected.id})
+      });
+      $("inviteDisplay").classList.add("hidden");
+      $("inviteTokenOutput").value="";
+      $("inviteFeedback").textContent="Vendor access revoked.";
+    }catch(e){$("inviteFeedback").textContent=e.message}
+    finally{$("revokeVendor").disabled=false}
+  });
   $("reviewForm").addEventListener("submit",async e=>{
     e.preventDefault();if(!selected)return;
     const status=$("decision").value,note=$("note").value.trim();
