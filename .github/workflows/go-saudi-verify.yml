@@ -69,14 +69,17 @@ jobs:
         run: |
           set -euo pipefail
           export PGPASSWORD=saudi_ci_only
-          PG16_BIN=/usr/lib/postgresql/16/bin
-          test -x "$PG16_BIN/pg_dump"
-          test -x "$PG16_BIN/pg_restore"
-          "$PG16_BIN/pg_dump" --format=custom --no-owner --no-acl "$DATABASE_URL" > /tmp/go-saudi-ci.backup
+          # The GitHub host may have PostgreSQL 17/18 clients. Use the matching
+          # PostgreSQL 16 container image already pulled for the test database.
+          docker run --rm --network host -e PGPASSWORD=saudi_ci_only postgres:16 \
+            pg_dump -h 127.0.0.1 -U saudi_ci -d go_saudi_ci \
+            --format=custom --no-owner --no-acl > /tmp/go-saudi-ci.backup
           test -s /tmp/go-saudi-ci.backup
           createdb -h localhost -U saudi_ci go_saudi_restore
-          "$PG16_BIN/pg_restore" --no-owner --no-acl \
-            -d postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore /tmp/go-saudi-ci.backup
+          docker run --rm --network host -e PGPASSWORD=saudi_ci_only \
+            -v /tmp:/backup:ro postgres:16 \
+            pg_restore -h 127.0.0.1 -U saudi_ci -d go_saudi_restore \
+            --no-owner --no-acl /backup/go-saudi-ci.backup
           marker="$(psql postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore -Atqc \
             "SELECT market || ':' || schema_version FROM saudi_market_metadata")"
           test "$marker" = "go-saudi:2"
