@@ -48,7 +48,7 @@ jobs:
           export APP_PUBLIC_URL="https://go-saudi-ci.example"
           export NODE_ENV="production"
           export PORT=5011
-          node server_dist/saudiServer.js > /tmp/go-saudi-boot.log 2>&1 &
+          node server_dist/saudiServer.mjs > /tmp/go-saudi-boot.log 2>&1 &
           pid=$!
           trap 'kill "$pid" 2>/dev/null || true' EXIT
           ready=0
