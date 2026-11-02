@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import compression from "compression";
 import { createServer, type Server } from "node:http";
 import { registerRoutes } from "./routes";
+import { registerSaudiMarket } from "./saudiMarket";
 import { pool, getPoolHealth } from "./db";
 import { cache } from "./cache";
 import * as fs from "fs";
@@ -280,6 +281,8 @@ function setupErrorHandler(app: express.Application) {
   setupBodyParsing(app);
   setupRequestLogging(app);
 
+  // Saudi routes must precede the original Expo SPA fallback and Indian commerce APIs.
+  registerSaudiMarket(app);
   configureExpoAndLanding(app);
 
   app.get('/map', (_req, res) => {
