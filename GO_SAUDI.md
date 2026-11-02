@@ -46,7 +46,7 @@ The Saudi-only vendor panel is available at `/vendor` (`/vendor-panel` redirects
 | `DELETE /api/saudi/vendor/products/:id` | Delete own draft |
 | `POST /api/saudi/vendor/logout` | Revoke current vendor session |
 
-The separate database must be initialized with `GO_SAUDI_MODE=true npm run db:saudi:migrate` to create `saudi_vendor_accounts`, `saudi_vendor_invites`, `saudi_vendor_sessions` and `saudi_vendor_draft_products`. Do not run this against Go Bharat's original database.
+The separate database must be initialized with `GO_SAUDI_MODE=true npm run db:saudi:migrate` (Saudi schema version **2**) to create seller enquiry/review tables, vendor accounts/invitations/sessions, product drafts and data-deletion requests. Do not run this against Go Bharat's original database.
 
 **CI verified:** authenticated HTTP integration tests on disposable migrated PostgreSQL (vendor invitation, session cookies, tenant isolation, draft CRUD, revoke, origin/CSP restrictions). **Still not verified:** real Saudi OTP, legal review, a separate live Render service, actual merchant activation, orders or payments.
 
@@ -58,6 +58,19 @@ The separate database must be initialized with `GO_SAUDI_MODE=true npm run db:sa
 - First Saudi migration refuses any nonempty unmarked or mixed-market database, and is idempotent on its own marked database.
 - `/api/saudi/readiness` publicly reports launch blockers and confirms commercial features remain disabled.
 - Latest CI also verifies privacy-gated submission, migration mixed-DB rejection and cross-origin request blocking in production-mode smoke tests.
+
+## Merchant privacy tools — prelaunch
+
+- `GET /api/saudi/vendor/data-export`: authenticated vendor data download. Each session gets only its own profile and product drafts.
+- `POST /api/saudi/vendor/data-requests`: seller confirms a deletion request; status is **PENDING** until approved/admin-processed.
+- `GET /api/saudi/vendor/data-requests`: current vendor's request status.
+- `GET /api/saudi/admin/data-requests`: private admin request queue.
+- `POST /api/saudi/admin/data-requests/:id/complete`: requires admin authentication **and** explicit production configuration `GO_SAUDI_ACCOUNT_ERASURE_ENABLED=true` plus independently verified identity, retention review and exact deletion phrase. The default in Render is `false`.
+- Vendor panel offers **Download my data** / **Request account deletion**. Admin panel shows review queue and stays locked until approved erasure configuration.
+- Schema migration `002_data_requests.sql` upgrades the dedicated marker to version 2; run `npm run db:saudi:migrate` against a separate Saudi database, never Go Bharat. Server requires schema v2.
+- CI additionally runs a disposable PostgreSQL backup/restore drill (not a production backup). Set up encrypted production backups and periodic restores before real operation.
+
+**Privacy/compliance warning:** data exports and erasures are technical features, not substitutes for Saudi PDPL legal review, named admin MFA, consent/retention policy or signed legal signoff.
 
 ## Build and deploy
 
