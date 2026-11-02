@@ -3,7 +3,7 @@ import type { Express } from "express";
 import crypto from "node:crypto";
 import {sendSaudiPage} from "./saudiCsp";
 import rateLimit from "express-rate-limit";
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "./db";
 import { sellerEnquiries } from "@shared/schema";
 import { SAUDI_CITIES, SAUDI_CATEGORIES, validateSaudiEnquiry, REFERRAL_PERCENT } from "./saudiRules";
@@ -63,20 +63,29 @@ export function registerSaudiMarket(app: Express): void {
     const parsed = validateSaudiEnquiry(req.body && typeof req.body === "object" ? req.body : {});
     if (!parsed.valid) return res.status(400).json({error:"Valid seller name, Saudi city, category, Saudi mobile and consent required."});
     try {
-      const [existing] = await db.select({id:sellerEnquiries.id})
-        .from(sellerEnquiries).where(and(
-          eq(sellerEnquiries.source, "SAUDI_LANDING"),
-          eq(sellerEnquiries.phone, parsed.phone!),
-          eq(sellerEnquiries.businessName, parsed.businessName),
-          gte(sellerEnquiries.createdAt, new Date(Date.now() - 86400000))
-        )).limit(1);
-      if (existing) return res.json({success:true, deduplicated:true});
-      await db.insert(sellerEnquiries).values({
-        id:"SL_"+crypto.randomBytes(15).toString("hex"),
-        businessName:parsed.businessName, city:parsed.city, category:parsed.category,
-        phone:parsed.phone!, consent:true, status:"NEW", source:"SAUDI_LANDING"
+      const inserted = await db.transaction(async(tx)=>{
+        // Serialize same Saudi mobile/business submissions so a burst of
+        // concurrent requests cannot create duplicate admin applications.
+        const fingerprint=crypto.createHash("sha256")
+          .update(parsed.phone!+"\\0"+parsed.businessName.toLocaleLowerCase("en")).digest("hex");
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${fingerprint}))`);
+        const [existing] = await tx.select({id:sellerEnquiries.id})
+          .from(sellerEnquiries).where(and(
+            eq(sellerEnquiries.source, "SAUDI_LANDING"),
+            eq(sellerEnquiries.phone, parsed.phone!),
+            eq(sellerEnquiries.businessName, parsed.businessName),
+            gte(sellerEnquiries.createdAt, new Date(Date.now() - 86400000))
+          )).limit(1);
+        if(existing)return false;
+        await tx.insert(sellerEnquiries).values({
+          id:"SL_"+crypto.randomBytes(15).toString("hex"),
+          businessName:parsed.businessName, city:parsed.city, category:parsed.category,
+          phone:parsed.phone!, consent:true, status:"NEW", source:"SAUDI_LANDING"
+        });
+        return true;
       });
       res.setHeader("Cache-Control", "no-store");
+      if(!inserted)return res.json({success:true, deduplicated:true});
       return res.status(201).json({success:true});
     } catch (err) {
       logSaudiError("SAUDI_LEAD",err);
