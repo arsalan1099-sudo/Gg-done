@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#064c39">
+  <meta name="description" content="Go Saudi — a Saudi-first local marketplace for shops and communities. Seller enquiries open during prelaunch.">
+  <title>Go Saudi | جو سعودي — تسوق محلياً</title>
+  <style>
+    :root{--green:#08543e;--deep:#06382e;--mint:#e6f4ee;--gold:#d5b878;--ink:#132d27;--gray:#63716b;--white:#fff;--radius:22px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;background:#fcfdfb}
+    a{text-decoration:none;color:inherit}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait}
+    .container{max-width:1200px;margin:0 auto;padding:0 22px}
+    header{background:#fff;border-bottom:1px solid #e5ebe6;position:sticky;top:0;z-index:10}
+    .nav{display:flex;align-items:center;justify-content:space-between;min-height:76px;gap:14px}
+    .brand{display:flex;align-items:center;gap:11px;font-size:23px;font-weight:900;letter-spacing:-1px;color:var(--green);direction:ltr}
+    .logo{width:43px;height:43px;border-radius:14px;background:var(--green);color:white;display:grid;place-items:center;font-size:22px;box-shadow:0 4px 10px #08543e20}
+    .links{display:flex;align-items:center;gap:23px;font-weight:650;font-size:14px;color:#3b5047}
+    .nav-actions{display:flex;align-items:center;gap:10px}
+    .lang{background:white;border:1px solid #dae5df;border-radius:12px;padding:10px 14px;color:var(--green);font-weight:800}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border:none;border-radius:14px;font-weight:800;font-size:15px;transition:transform .15s,background .2s}
+    .btn:hover{transform:translateY(-1px)}.btn-primary{background:var(--green);color:white}.btn-primary:hover{background:#09684b}
+    .btn-light{background:#fff;color:var(--green)}.btn-outline{background:transparent;border:1px solid #b8d7c8;color:var(--green)}
+    .hero{background:radial-gradient(circle at 12% 20%,#20745c 0%,transparent 36%),linear-gradient(123deg,#032e26,#07533f 68%,#087357);color:white;position:relative;overflow:hidden}
+    .hero:after{content:"";height:440px;width:440px;border:1px solid #ffffff18;border-radius:50%;position:absolute;top:30px;left:-155px;box-shadow:0 0 0 60px #ffffff09,0 0 0 120px #ffffff08;pointer-events:none}
+    .hero-inner{min-height:490px;padding-top:74px;padding-bottom:74px;display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:42px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;background:#ffffff1c;border:1px solid #ffffff33;padding:9px 15px;border-radius:80px;font-size:12px;font-weight:800;letter-spacing:.3px}
+    h1{font-size:clamp(36px,5.2vw,67px);line-height:1.14;letter-spacing:-1.2px;margin:20px 0}
+    .hero p{color:#dbefe6;font-size:18px;line-height:1.95;max-width:580px;margin:0 0 29px}
+    .hero-ctas{display:flex;flex-wrap:wrap;gap:12px}.hero-ctas .btn-primary{background:var(--gold);color:#173a2d}
+    .showcase{position:relative;z-index:1}
+    .phone{max-width:325px;margin:auto;border:9px solid #234d41;border-radius:35px;background:#f8fcf8;color:var(--ink);box-shadow:0 25px 75px #001d1745;overflow:hidden;transform:rotate(-3deg)}
+    .phone-top{background:var(--green);color:#fff;padding:22px 18px 26px}.phone-bar{display:flex;align-items:center;justify-content:space-between;font-size:13px}
+    .phone-top h2{font-size:23px;margin:25px 0 8px}.phone-search{background:white;border-radius:12px;padding:12px;color:#758a7c;font-size:12px}
+    .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;padding:16px}.tile{border:1px solid #e0e9e1;border-radius:16px;padding:17px 12px;background:white;font-size:14px;font-weight:800;text-align:center}
+    .tile span{display:block;font-size:28px;margin-bottom:8px}.phone-bottom{padding:13px 18px;background:#e8f4ed;text-align:center;font-size:12px;color:#436f5a}
+    .notice{margin-top:28px;background:#fff8e8;border:1px solid #f3e5c3;color:#685126;border-radius:14px;padding:15px 18px;font-size:13px;line-height:1.7}
+    section{padding:70px 0}.section-title{font-size:clamp(27px,3.2vw,38px);letter-spacing:-.6px;margin:8px 0 14px}.subtitle{font-size:16px;color:var(--gray);max-width:700px;line-height:1.8;margin:0 0 29px}
+    .section-kicker{color:#16845d;font-weight:900;font-size:13px;letter-spacing:.5px}
+    .cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+    .category{background:white;border:1px solid #e3ede5;border-radius:20px;padding:26px 15px;text-align:center;min-height:140px;transition:box-shadow .2s,transform .2s}
+    .category:hover{transform:translateY(-4px);box-shadow:0 12px 35px #05543812}
+    .category .emoji{font-size:36px;display:block;margin-bottom:15px}.category strong{font-size:15px}
+    .features{background:#edf6f0}.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .feature{background:white;border-radius:20px;padding:25px;border:1px solid #dbe9df}
+    .feature i{font-style:normal;font-size:27px}.feature h3{font-size:18px;margin:18px 0 9px}.feature p{font-size:14px;color:var(--gray);line-height:1.8;margin:0}
+    .seller-layout{display:grid;grid-template-columns:.86fr 1.14fr;gap:52px;align-items:start}
+    .steps{display:grid;gap:17px;margin:26px 0}.step{display:flex;gap:13px;align-items:start;font-size:15px;color:#445d50;line-height:1.7}
+    .step .num{width:30px;height:30px;flex:none;border-radius:50%;background:#d7eee1;color:var(--green);font-weight:900;display:grid;place-items:center}
+    .form-card{background:#fff;border:1px solid #e2ece4;box-shadow:0 20px 65px #103d2911;border-radius:24px;padding:32px}
+    .form-card h3{font-size:23px;margin:0 0 9px}.form-card p{color:var(--gray);font-size:13px;line-height:1.8;margin-bottom:25px}
+    .fields{display:grid;gap:15px}.field label{display:block;font-weight:700;font-size:13px;margin-bottom:8px}
+    input,select{width:100%;border:1px solid #cfdcd1;background:#fcfffc;color:var(--ink);border-radius:11px;min-height:47px;padding:11px 13px;outline:none}
+    input:focus,select:focus{border-color:#15875b;box-shadow:0 0 0 3px #178b5420}
+    .consent{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.7;color:#53655b}.consent input{min-height:0;width:17px;height:17px;margin-top:3px;flex:none}
+    .form-card .btn{width:100%}.form-message{min-height:20px;font-size:13px;font-weight:750;margin-top:12px}
+    .pricing{background:#073c30;color:white;text-align:center;padding:45px 25px;border-radius:25px}
+    .pricing h2{margin:10px 0;font-size:29px}.pricing p{color:#c6e5d5;line-height:1.9}
+    footer{background:#052f26;color:#e0ebe3;padding:33px 0}.footer-inner{display:flex;justify-content:space-between;gap:16px;align-items:center;font-size:13px}
+    footer small{color:#b0c9ba}
+    @media(max-width:900px){.hero-inner{grid-template-columns:1fr;padding-top:58px;padding-bottom:48px}.showcase{display:none}.seller-layout{grid-template-columns:1fr}.links{display:none}}
+    @media(max-width:640px){.nav{min-height:67px}.nav-actions .btn{padding:10px 13px;font-size:12px}.brand{font-size:19px}.logo{width:37px;height:37px}.lang{padding:9px 10px}.hero-inner{min-height:420px}.hero p{font-size:16px}.cat-grid{grid-template-columns:repeat(2,1fr);gap:10px}.feature-grid{grid-template-columns:1fr}.form-card{padding:21px}section{padding:48px 0}.footer-inner{flex-direction:column;align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <header><div class="container nav">
+    <a class="brand" href="/" aria-label="Go Saudi home"><span class="logo">✦</span> GO SAUDI</a>
+    <nav class="links" aria-label="Main navigation"><a href="#categories" data-i18n="navShop">التسوق</a><a href="#benefits" data-i18n="navFeatures">المميزات</a><a href="#sell" data-i18n="navSell">للتجار</a></nav>
+    <div class="nav-actions"><button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button><a class="btn btn-primary" href="#sell" data-i18n="join">سجّل متجرك</a></div>
+  </div></header>
+  <main>
+  <div class="hero"><div class="container hero-inner">
+    <div><span class="eyebrow" data-i18n="prelaunch">🇸🇦 منصة سعودية · التسجيل الأولي</span>
+      <h1 data-i18n="headline">مدينتك، متاجرك،<br> في مكان واحد</h1>
+      <p data-i18n="heroDesc">جو سعودي يجمع المتاجر المحلية مع مجتمعها. اكتشف ما يقدمه التجار في مدينتك، وسجّل اهتمامك بفتح متجرك الإلكتروني.</p>
+      <div class="hero-ctas"><a class="btn btn-primary" href="#sell" data-i18n="startSelling">انضم كتاجر</a><a class="btn btn-light" href="#categories" data-i18n="browse">تصفح الفئات</a></div>
+    </div>
+    <div class="showcase"><div class="phone">
+      <div class="phone-top"><div class="phone-bar"><b>GO SAUDI</b><span>🇸🇦 SAR</span></div><h2 data-i18n="phoneTitle">تسوق من مدينتك</h2><div class="phone-search" data-i18n="phoneSearch">🔎 ابحث عن المنتجات والمتاجر</div></div>
+      <div class="tiles"><div class="tile"><span>🛍️</span><span data-i18n="fashion">الأزياء</span></div><div class="tile"><span>🥘</span><span data-i18n="food">الطعام</span></div><div class="tile"><span>🛒</span><span data-i18n="grocery">البقالة</span></div><div class="tile"><span>📱</span><span data-i18n="electronics">الإلكترونيات</span></div></div>
+      <div class="phone-bottom" data-i18n="prototype">تصور أولي · الخدمات قيد الإطلاق</div>
+    </div></div>
+  </div></div>
+  <div class="container"><div class="notice" role="note" data-i18n="notice">مرحلة ما قبل الإطلاق: لا نقبل أي مدفوعات أو طلبات شراء حالياً. التسجيل لإبداء الاهتمام فقط.</div></div>
+  <section id="categories"><div class="container">
+    <div class="section-kicker" data-i18n="discover">اكتشف المزيد</div><h2 class="section-title" data-i18n="categoriesTitle">فئات التسوق</h2>
+    <p class="subtitle" data-i18n="categoriesDesc">الفئات المخطط لها في سوق جو سعودي. اضغط على فئة لتقديم طلب تاجر.</p>
+    <div class="cat-grid" id="categoryGrid">
+      <button class="category" type="button" data-category="Grocery"><span class="emoji">🛒</span><strong data-i18n="grocery">البقالة</strong></button>
+      <button class="category" type="button" data-category="Fashion"><span class="emoji">👗</span><strong data-i18n="fashion">الأزياء</strong></button>
+      <button class="category" type="button" data-category="Food"><span class="emoji">🥘</span><strong data-i18n="food">الطعام</strong></button>
+      <button class="category" type="button" data-category="Electronics"><span class="emoji">📱</span><strong data-i18n="electronics">الإلكترونيات</strong></button>
+      <button class="category" type="button" data-category="Home"><span class="emoji">🏡</span><strong data-i18n="home">المنزل</strong></button>
+      <button class="category" type="button" data-category="Beauty"><span class="emoji">🌷</span><strong data-i18n="beauty">الجمال</strong></button>
+      <button class="category" type="button" data-category="Services"><span class="emoji">🧰</span><strong data-i18n="services">الخدمات</strong></button>
+      <button class="category" type="button" data-category="Wholesale"><span class="emoji">📦</span><strong data-i18n="wholesale">الجملة</strong></button>
+    </div>
+  </div></section>
+  <section class="features" id="benefits"><div class="container">
+    <div class="section-kicker" data-i18n="why">لماذا جو سعودي؟</div><h2 class="section-title" data-i18n="benefitsTitle">بُني للأعمال المحلية</h2>
+    <div class="feature-grid">
+      <div class="feature"><i>🏬</i><h3 data-i18n="feature1Title">متجرك الرقمي</h3><p data-i18n="feature1Desc">أنشئ حضوراً رقمياً لنشاطك وعرض المنتجات بعد اعتماد المتجر وإطلاق الخدمة.</p></div>
+      <div class="feature"><i>📍</i><h3 data-i18n="feature2Title">متاجر قريبة منك</h3><p data-i18n="feature2Desc">اكتشاف المتاجر حسب المدينة والمنطقة، بدءاً من الأسواق السعودية.</p></div>
+      <div class="feature"><i>🛡️</i><h3 data-i18n="feature3Title">التحقق أولاً</h3><p data-i18n="feature3Desc">لن تبدأ عمليات الدفع قبل التحقق التجاري وتفعيل بوابة دفع مناسبة.</p></div>
+    </div>
+  </div></section>
+  <section id="sell"><div class="container seller-layout">
+    <div><div class="section-kicker" data-i18n="merchantKicker">أصحاب المتاجر</div><h2 class="section-title" data-i18n="sellerTitle">خذ متجرك إلى الإنترنت</h2>
+      <p class="subtitle" data-i18n="sellerDesc">أرسل اهتمامك مجاناً لتكون من أوائل المتاجر التي نتواصل معها عند فتح التسجيل الرسمي.</p>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><span data-i18n="step1">املأ بيانات متجرك ورقم الجوال السعودي.</span></div>
+        <div class="step"><span class="num">2</span><span data-i18n="step2">يراجع الفريق طلبك ويتواصل معك بعد توفر الخدمة.</span></div>
+        <div class="step"><span class="num">3</span><span data-i18n="step3">يتم التحقق من المستندات والشروط قبل البيع.</span></div>
+      </div>
+      <div class="notice" data-i18n="sellerNotice">التقديم مجاني، وليس اشتراكاً مدفوعاً. الأسعار والعمولات النهائية لم تُعتمد.</div>
+    </div>
+    <div class="form-card">
+      <h3 data-i18n="formTitle">إبداء اهتمام تاجر</h3><p data-i18n="formDesc">يرجى إدخال بيانات صحيحة. لا ترسل كلمات المرور أو بيانات البطاقة.</p>
+      <form id="sellerForm" class="fields" novalidate>
+        <div class="field"><label for="business" data-i18n="business">اسم المتجر</label><input id="business" name="businessName" minlength="2" maxlength="100" required autocomplete="organization" placeholder="مثال: متجر الندى"></div>
+        <div class="field"><label for="city" data-i18n="city">المدينة</label><select id="city" name="city" required><option value="" data-i18n="chooseCity">اختر المدينة</option><option value="Riyadh">Riyadh / الرياض</option><option value="Jeddah">Jeddah / جدة</option><option value="Makkah">Makkah / مكة</option><option value="Madinah">Madinah / المدينة</option><option value="Dammam">Dammam / الدمام</option><option value="Khobar">Khobar / الخبر</option><option value="Dhahran">Dhahran / الظهران</option><option value="Taif">Taif / الطائف</option><option value="Tabuk">Tabuk / تبوك</option><option value="Abha">Abha / أبها</option><option value="Jazan">Jazan / جازان</option><option value="Hail">Hail / حائل</option><option value="Other">Other / أخرى</option></select></div>
+        <div class="field"><label for="category" data-i18n="category">نوع النشاط</label><select id="category" name="category" required><option value="" data-i18n="chooseCategory">اختر الفئة</option><option value="Grocery">Grocery / بقالة</option><option value="Fashion">Fashion / أزياء</option><option value="Food">Food / طعام</option><option value="Electronics">Electronics / إلكترونيات</option><option value="Home">Home / منزل</option><option value="Beauty">Beauty / جمال</option><option value="Services">Services / خدمات</option><option value="Wholesale">Wholesale / جملة</option><option value="Other">Other / أخرى</option></select></div>
+        <div class="field"><label for="phone" data-i18n="phone">رقم الجوال السعودي</label><input id="phone" name="phone" dir="ltr" required type="tel" inputmode="tel" autocomplete="tel" placeholder="05XXXXXXXX"></div>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-10000px" aria-hidden="true">
+        <label class="consent"><input type="checkbox" name="consent" required><span data-i18n="consent">أوافق على حفظ بيانات الطلب والتواصل معي بشأن انضمام المتجر. هذا ليس شراءً أو اشتراكاً.</span></label>
+        <button class="btn btn-primary" id="submitBtn" type="submit" data-i18n="submit">إرسال الطلب مجاناً</button><div class="form-message" id="formMessage" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+  </div></section>
+  <section style="padding-top:0"><div class="container"><div class="pricing">
+    <div class="section-kicker" style="color:#d8bc83" data-i18n="planKicker">للتجار</div><h2 data-i18n="planTitle">الأسعار ستُعلن لاحقاً</h2>
+    <p data-i18n="planDesc">العضوية السنوية، العمولات وأي مدفوعات ستُحدَّد بعد مراجعة الشروط والامتثال. التسجيل الحالي مجاني.</p>
+    <a href="#sell" class="btn btn-light" data-i18n="joinWaitlist">سجّل اهتمامك</a>
+  </div></div></section>
+  </main>
+  <footer><div class="container footer-inner"><div class="brand" style="color:#fff"><span class="logo" style="background:#167657">✦</span> GO SAUDI</div><small data-i18n="footer">Go Saudi · مفهوم ما قبل الإطلاق · لا توجد مدفوعات مفعّلة</small><small>© 2026 AASAA · Go Saudi</small></div></footer>
+  <script>
+    const tr = {
+      ar:{
+        navShop:"التسوق",navFeatures:"المميزات",navSell:"للتجار",join:"سجّل متجرك",
+        prelaunch:"🇸🇦 منصة سعودية · التسجيل الأولي",headline:"مدينتك، متاجرك، في مكان واحد",
+        heroDesc:"جو سعودي يجمع المتاجر المحلية مع مجتمعها. اكتشف ما يقدمه التجار في مدينتك، وسجّل اهتمامك بفتح متجرك الإلكتروني.",
+        startSelling:"انضم كتاجر",browse:"تصفح الفئات",phoneTitle:"تسوق من مدينتك",phoneSearch:"🔎 ابحث عن المنتجات والمتاجر",
+        grocery:"البقالة",fashion:"الأزياء",food:"الطعام",electronics:"الإلكترونيات",home:"المنزل",beauty:"الجمال",services:"الخدمات",wholesale:"الجملة",
+        prototype:"تصور أولي · الخدمات قيد الإطلاق",notice:"مرحلة ما قبل الإطلاق: لا نقبل أي مدفوعات أو طلبات شراء حالياً. التسجيل لإبداء الاهتمام فقط.",
+        discover:"اكتشف المزيد",categoriesTitle:"فئات التسوق",categoriesDesc:"الفئات المخطط لها في سوق جو سعودي. اضغط على فئة لتقديم طلب تاجر.",
+        why:"لماذا جو سعودي؟",benefitsTitle:"بُني للأعمال المحلية",feature1Title:"متجرك الرقمي",feature1Desc:"أنشئ حضوراً رقمياً لنشاطك وعرض المنتجات بعد اعتماد المتجر وإطلاق الخدمة.",
+        feature2Title:"متاجر قريبة منك",feature2Desc:"اكتشاف المتاجر حسب المدينة والمنطقة، بدءاً من الأسواق السعودية.",
+        feature3Title:"التحقق أولاً",feature3Desc:"لن تبدأ عمليات الدفع قبل التحقق التجاري وتفعيل بوابة دفع مناسبة.",
+        merchantKicker:"أصحاب المتاجر",sellerTitle:"خذ متجرك إلى الإنترنت",sellerDesc:"أرسل اهتمامك مجاناً لتكون من أوائل المتاجر التي نتواصل معها عند فتح التسجيل الرسمي.",
+        step1:"املأ بيانات متجرك ورقم الجوال السعودي.",step2:"يراجع الفريق طلبك ويتواصل معك بعد توفر الخدمة.",step3:"يتم التحقق من المستندات والشروط قبل البيع.",
+        sellerNotice:"التقديم مجاني، وليس اشتراكاً مدفوعاً. الأسعار والعمولات النهائية لم تُعتمد.",
+        formTitle:"إبداء اهتمام تاجر",formDesc:"يرجى إدخال بيانات صحيحة. لا ترسل كلمات المرور أو بيانات البطاقة.",
+        business:"اسم المتجر",city:"المدينة",category:"نوع النشاط",phone:"رقم الجوال السعودي",chooseCity:"اختر المدينة",chooseCategory:"اختر الفئة",
+        consent:"أوافق على حفظ بيانات الطلب والتواصل معي بشأن انضمام المتجر. هذا ليس شراءً أو اشتراكاً.",
+        submit:"إرسال الطلب مجاناً",sending:"جار الإرسال...", success:"تم استلام طلبك بنجاح. سنتواصل معك إذا توفرت الخدمة.",fail:"تعذر إرسال الطلب. يرجى المحاولة لاحقاً.",
+        invalid:"تأكد من بيانات المتجر والرقم السعودي والموافقة.",planKicker:"للتجار",planTitle:"الأسعار ستُعلن لاحقاً",
+        planDesc:"العضوية السنوية، العمولات وأي مدفوعات ستُحدَّد بعد مراجعة الشروط والامتثال. التسجيل الحالي مجاني.",
+        joinWaitlist:"سجّل اهتمامك",footer:"Go Saudi · مفهوم ما قبل الإطلاق · لا توجد مدفوعات مفعّلة"
+      },
+      en:{
+        navShop:"Shopping",navFeatures:"Features",navSell:"For sellers",join:"Register interest",
+        prelaunch:"🇸🇦 Saudi-first marketplace · Prelaunch",headline:"Your city. Your stores. All together.",
+        heroDesc:"Go Saudi brings local stores closer to their communities. Discover what businesses in your city can offer, and register interest in opening your digital shop.",
+        startSelling:"Become a seller",browse:"Explore categories",phoneTitle:"Shop your city",phoneSearch:"🔎 Search products and stores",
+        grocery:"Grocery",fashion:"Fashion",food:"Food",electronics:"Electronics",home:"Home",beauty:"Beauty",services:"Services",wholesale:"Wholesale",
+        prototype:"Concept preview · services not live",notice:"Prelaunch: no purchases, checkout or payments are accepted. Registration is an interest enquiry only.",
+        discover:"Discover more",categoriesTitle:"Shopping categories",categoriesDesc:"Planned categories for the Go Saudi marketplace. Select one to register seller interest.",
+        why:"Why Go Saudi?",benefitsTitle:"Designed for local business",feature1Title:"Your digital storefront",feature1Desc:"Build a digital presence and list products once approved and launched.",
+        feature2Title:"Nearby shopping",feature2Desc:"Discover neighbourhood stores by Saudi city and region.",
+        feature3Title:"Verification first",feature3Desc:"Payments stay off until business verification and local gateway setup.",
+        merchantKicker:"For shop owners",sellerTitle:"Bring your store online",sellerDesc:"Send a free enquiry to be among the first contacted when official seller registration opens.",
+        step1:"Tell us your shop details and Saudi mobile number.",step2:"Our team will review the enquiry and follow up when the service is available.",step3:"Business documents and terms must be checked before selling.",
+        sellerNotice:"Enquiries are free, not paid subscriptions. Final pricing and commissions are not yet approved.",
+        formTitle:"Seller interest form",formDesc:"Use accurate information. Never share passwords or bank-card details.",
+        business:"Business name",city:"City",category:"Business category",phone:"Saudi mobile",chooseCity:"Select a city",chooseCategory:"Select a category",
+        consent:"I consent to storing my enquiry details and being contacted about seller onboarding. This is not a purchase or subscription.",
+        submit:"Send free enquiry",sending:"Submitting...",success:"Your enquiry has been submitted. We will contact you if the service becomes available.",
+        fail:"Could not submit the enquiry. Please try later.",invalid:"Please check the business details, Saudi mobile and consent.",
+        planKicker:"For sellers",planTitle:"Membership pricing coming later",
+        planDesc:"Annual membership, commissions and payments will be determined after terms and compliance review. Enquiries are free.",
+        joinWaitlist:"Register interest",footer:"Go Saudi · Prelaunch concept · No live payments"
+      }
+    };
+    let lang = localStorage.getItem("goSaudiLang") === "en" ? "en" : "ar";
+    function renderLanguage(){
+      document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+      document.getElementById("langBtn").textContent=lang==="ar"?"English":"العربية";
+      document.querySelectorAll("[data-i18n]").forEach(el=>{const key=el.dataset.i18n;if(tr[lang][key])el.textContent=tr[lang][key]});
+      document.getElementById("business").placeholder=lang==="ar"?"مثال: متجر الندى":"e.g. Al Nada Store";
+    }
+    document.getElementById("langBtn").addEventListener("click",()=>{
+      lang=lang==="ar"?"en":"ar";localStorage.setItem("goSaudiLang",lang);renderLanguage();
+    });
+    document.querySelectorAll("[data-category]").forEach(el=>el.addEventListener("click",()=>{
+      document.getElementById("category").value=el.dataset.category;
+      document.getElementById("sell").scrollIntoView({behavior:"smooth"});
+    }));
+    document.getElementById("sellerForm").addEventListener("submit",async e=>{
+      e.preventDefault();
+      const form=e.currentTarget;const fd=new FormData(form);
+      const data={businessName:fd.get("businessName"),city:fd.get("city"),category:fd.get("category"),phone:fd.get("phone"),consent:fd.get("consent")==="on",website:fd.get("website")};
+      const msg=document.getElementById("formMessage"),btn=document.getElementById("submitBtn");
+      msg.textContent="";msg.style.color="#a12c35";
+      if(!data.consent||!data.businessName||!data.city||!data.category||!/^(?:\+?966|0)?5\d{8}$/.test(String(data.phone).replace(/[\s()-]/g,""))){
+        msg.textContent=tr[lang].invalid;return;
+      }
+      btn.disabled=true;btn.textContent=tr[lang].sending;
+      try{
+        const res=await fetch("/api/saudi/seller-enquiries",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+        if(!res.ok)throw new Error("request failed");
+        form.reset();msg.style.color="#176e45";msg.textContent=tr[lang].success;
+      }catch(_err){msg.textContent=tr[lang].fail}
+      finally{btn.disabled=false;btn.textContent=tr[lang].submit}
+    });
+    renderLanguage();
+  </script>
+</body></html>
