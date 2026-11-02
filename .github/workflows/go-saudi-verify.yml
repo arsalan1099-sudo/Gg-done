@@ -35,6 +35,7 @@ jobs:
       - run: npm ci
       - run: npm run db:saudi:migrate
       - run: npm run test:saudi
+      - run: npm run test:saudi:mobile
       - run: npm run test:revenue
       - run: npm run test:saudi:integration
       - name: Saudi migration must reject a mixed-market database
@@ -88,6 +89,11 @@ jobs:
           test "$(psql postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore -Atqc \
             "SELECT count(*) FROM saudi_vendor_draft_products")" -ge 1
       - run: npm run server:build
+      - name: Export Saudi Android and iOS JavaScript bundles (unsigned, no store upload)
+        env:
+          EXPO_PUBLIC_SAUDI_API_URL: ""
+          EXPO_PUBLIC_SAUDI_STAGE: PRELAUNCH
+        run: npx expo export --platform all --output-dir static-build
       - name: Focused Saudi TypeScript verification
         run: npx tsc --noEmit --strict --skipLibCheck --esModuleInterop --target ES2022 --module commonjs --moduleResolution node --types node server/saudiAdminAuth.ts server/saudiAdminRules.ts server/saudiVendorRules.ts server/saudiCsp.ts
       - name: Production-mode smoke (isolated Saudi server only)
