@@ -1,3 +1,4 @@
+# GO SAUDI PRELAUNCH only: deploy after isolated database migration and verified Saudi privacy / hosting review.
 # Separate Saudi preview service. Never point DATABASE_URL to Go Bharat's database.
 services:
   - type: web
@@ -12,11 +13,11 @@ services:
         value: production
       - key: GO_SAUDI_MODE
         value: "true"
+      - key: NODE_VERSION
+        value: "22"
       - key: VENDOR_MEMBERSHIP_PAYMENTS_ENABLED
         value: "false"
       - key: GO_SAUDI_ADMIN_TOKEN_SHA256
-        sync: false
-      - key: JWT_SECRET
         sync: false
       - key: DATABASE_URL
         sync: false
