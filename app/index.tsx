@@ -1,8 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
-import { getApiUrl } from "@/lib/query-client";
+
 
 type Lang = "ar" | "en";
+// No fallback to Go Bharat/INR APIs. Mobile seller registration fails closed
+// until a separately deployed, reviewed Saudi HTTPS backend is configured.
+const configuredSaudiOrigin=(process.env.EXPO_PUBLIC_SAUDI_API_URL || "").trim();
+function getSaudiOrigin(): string | null {
+  if(!configuredSaudiOrigin) return null;
+  try {
+    const url=new URL(configuredSaudiOrigin);
+    if(url.protocol!=="https:" || url.username || url.password || url.search || url.hash ||
+      url.pathname!=="/" || /go[-_]?bharat|gg[-_]?done/i.test(url.hostname)) return null;
+    return url.origin;
+  }catch{return null;}
+}
+const saudiOrigin=getSaudiOrigin();
 const cities = [
   ["Riyadh","الرياض"],["Jeddah","جدة"],["Makkah","مكة"],["Madinah","المدينة"],
   ["Dammam","الدمام"],["Khobar","الخبر"],["Taif","الطائف"],["Tabuk","تبوك"],
@@ -23,7 +36,7 @@ const strings = {
     seller:"سجّل اهتمام متجرك", details:"التسجيل الأولي مجاني ولا يمثل عضوية مدفوعة.",
     business:"اسم المتجر", nameHint:"اسم نشاطك التجاري", phone:"رقم الجوال السعودي",phoneHint:"05XXXXXXXX",
     city:"اختر المدينة",category:"نوع النشاط",consent:"أوافق على حفظ بياناتي والتواصل معي بشأن انضمام المتجر.",
-    submit:"إرسال الطلب",sending:"جار الإرسال…",success:"تم تسجيل اهتمامك بنجاح.",
+    closed:"التسجيل مغلق حتى اكتمال مراجعة الخصوصية",submit:"إرسال الطلب",sending:"جار الإرسال…",success:"تم تسجيل اهتمامك بنجاح.",
     error:"تعذر حفظ الطلب. حاول مرة أخرى.",invalid:"راجع البيانات، رقم الجوال والموافقة.",
     coming:"التسوق والمدفوعات سيتم تفعيلها بعد اعتماد الشروط والتحقق.", powered:"GO SAUDI · AASAA"
   },
@@ -36,7 +49,7 @@ const strings = {
     seller:"Register your store interest",details:"Seller enquiries are free, not paid memberships.",
     business:"Business name",nameHint:"Your store name",phone:"Saudi mobile",phoneHint:"05XXXXXXXX",
     city:"Select city",category:"Business category",consent:"I agree to store my details and be contacted about seller onboarding.",
-    submit:"Send enquiry",sending:"Submitting…",success:"Your enquiry has been recorded.",
+    closed:"Registration unavailable pending privacy approval",submit:"Send enquiry",sending:"Submitting…",success:"Your enquiry has been recorded.",
     error:"Could not save your enquiry. Try again.",invalid:"Check the details, Saudi phone and consent.",
     coming:"Shopping and payments will be enabled after verification and compliance review.",powered:"GO SAUDI · AASAA"
   }
@@ -50,24 +63,38 @@ export default function GoSaudiPreview() {
   const [category,setCategory]=useState("");
   const [consent,setConsent]=useState(false);
   const [busy,setBusy]=useState(false);
-  const [notice,setNotice]=useState<"success"|"error"|"invalid"|null>(null);
+  const [sellerOpen,setSellerOpen]=useState(false);
+  const [notice,setNotice]=useState<"success"|"error"|"invalid"|"closed"|null>(null);
+  useEffect(()=>{
+    let active=true;
+    if(!saudiOrigin)return;
+    fetch(saudiOrigin+"/api/saudi/market",{headers:{Accept:"application/json"}})
+      .then(res=>res.ok?res.json():Promise.reject(new Error("Saudi API unavailable")))
+      .then(data=>{
+        if(active)setSellerOpen(data?.country==="SA" && data?.currency==="SAR" &&
+          data?.status==="PRELAUNCH" && data?.sellerEnquiriesOpen===true &&
+          data?.paymentsEnabled===false);
+      }).catch(()=>{if(active)setSellerOpen(false)});
+    return ()=>{active=false;};
+  },[]);
   const tr=strings[lang];
   const ar=lang==="ar";
   const textAlign=ar?"right" as const:"left" as const;
 
   const submit=async()=>{
     if(busy)return;
+    if(!saudiOrigin||!sellerOpen){setNotice("closed");return;}
     const cleaned=phone.replace(/[\s()+-]/g,"");
     if(businessName.trim().length < 2 || !city || !category || !consent || !/^(?:0?5[0-9]{8}|9665[0-9]{8})$/.test(cleaned)){
       setNotice("invalid");return;
     }
     setNotice(null);setBusy(true);
     try {
-      const response=await fetch(new URL("/api/saudi/seller-enquiries",getApiUrl()).toString(),{
+      const response=await fetch(saudiOrigin+"/api/saudi/seller-enquiries",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({businessName:businessName.trim(),phone,city,category,consent:true})
       });
-      if(!response.ok)throw new Error("Server rejected enquiry");
+      if(!response.ok)throw new Error("Saudi seller enquiry unavailable");
       setBusinessName("");setPhone("");setCity("");setCategory("");setConsent(false);setNotice("success");
     }catch(_error){setNotice("error");}finally{setBusy(false);}
   };
@@ -132,8 +159,8 @@ export default function GoSaudiPreview() {
               <View style={[styles.checkbox,consent&&styles.checkboxChecked]}>{consent&&<Text style={styles.checkmark}>✓</Text>}</View>
               <Text style={[styles.consentText,{textAlign}]}>{tr.consent}</Text>
             </Pressable>
-            <Pressable onPress={submit} disabled={busy} style={styles.submit} accessibilityRole="button">
-              {busy?<ActivityIndicator color="#fff"/>:<Text style={styles.submitText}>{tr.submit}</Text>}
+            <Pressable onPress={submit} disabled={busy||!sellerOpen} style={[styles.submit,!sellerOpen&&{opacity:0.55}]} accessibilityRole="button">
+              {busy?<ActivityIndicator color="#fff"/>:<Text style={styles.submitText}>{sellerOpen?tr.submit:tr.closed}</Text>}
             </Pressable>
             {notice&&<Text accessibilityRole="alert" style={[styles.feedback,{color:notice==="success"?"#067146":"#a92b30",textAlign}]}>{tr[notice]}</Text>}
           </View>
