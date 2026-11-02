@@ -48,8 +48,16 @@ The Saudi-only vendor panel is available at `/vendor` (`/vendor-panel` redirects
 
 The separate database must be initialized with `GO_SAUDI_MODE=true npm run db:saudi:migrate` to create `saudi_vendor_accounts`, `saudi_vendor_invites`, `saudi_vendor_sessions` and `saudi_vendor_draft_products`. Do not run this against Go Bharat's original database.
 
-**Not yet verified:** full authenticated HTTP integration tests against a migrated Saudi PostgreSQL database, Saudi OTP, legal review, production Render deployment, shop activation, order/payment handling.
+**CI verified:** authenticated HTTP integration tests on disposable migrated PostgreSQL (vendor invitation, session cookies, tenant isolation, draft CRUD, revoke, origin/CSP restrictions). **Still not verified:** real Saudi OTP, legal review, a separate live Render service, actual merchant activation, orders or payments.
 
+
+## Security hardening
+
+- Postgres transactions prevent duplicate concurrent lead submissions from reaching admin as separate applications.
+- Admin/vendor SQL errors are logged using sanitized categories only, not phone numbers, review notes or invite codes.
+- First Saudi migration refuses any nonempty unmarked or mixed-market database, and is idempotent on its own marked database.
+- `/api/saudi/readiness` publicly reports launch blockers and confirms commercial features remain disabled.
+- Latest CI also verifies privacy-gated submission, migration mixed-DB rejection and cross-origin request blocking in production-mode smoke tests.
 
 ## Build and deploy
 
@@ -89,7 +97,7 @@ CI tests use a separate disposable PostgreSQL instance and verify the invitation
 
 ## Admin onboarding setup (preview only)
 
-**Do not make the admin dashboard public until Saudi privacy, business, hosting and access-control review.** The page shell is viewable but seller data requires a strong secret. Provision a **separate Saudi PostgreSQL database**; run `npm run db:push` against *that database only* to create the `saudi_seller_review_events` table and original seller enquiry table.
+**Do not enable real public seller data collection until Saudi privacy, business, hosting and access-control review.** The page shell is viewable but seller data requires a strong secret. Provision a **new empty, isolated Saudi PostgreSQL database**; use `GO_SAUDI_MODE=true npm run db:saudi:migrate` to apply the dedicated migration, never generic `db:push`.
 
 Create a unique high-entropy random admin token and its SHA-256 digest *on your own trusted machine*:
 
@@ -97,7 +105,7 @@ Create a unique high-entropy random admin token and its SHA-256 digest *on your 
 node -e "const c=require('crypto');const t=c.randomBytes(32).toString('hex');console.log('PRIVATE_ADMIN_TOKEN='+t);console.log('GO_SAUDI_ADMIN_TOKEN_SHA256='+c.createHash('sha256').update(t).digest('hex'))"
 ```
 
-Set the **digest only** as Render secret `GO_SAUDI_ADMIN_TOKEN_SHA256`. Keep `PRIVATE_ADMIN_TOKEN` in a trusted password manager, never in GitHub, Slack, URL parameters or browser localStorage. Set `JWT_SECRET` as an independent random server secret (inherited app startup requires it). Optional `GO_SAUDI_ADMIN_REVIEWER` is an audit label for this single-admin preview.
+Set the **digest only** as Render secret `GO_SAUDI_ADMIN_TOKEN_SHA256`. Keep `PRIVATE_ADMIN_TOKEN` in a trusted password manager, never in GitHub, Slack, URL parameters or browser localStorage. The isolated Saudi server does not use Go Bharat's JWT auth; do not reuse India's JWT secret. Optional `GO_SAUDI_ADMIN_REVIEWER` is an audit label for this single-admin preview.
 
 Visit `https://YOUR-SA-RENDER-HOST/saudi-admin`, paste the private admin token, select a lead and update its status. Read/list/review requests have `Authorization: Bearer <token>`, `Cache-Control: no-store` and rate limiting. The UI stores token only in JS memory until page close or logout. No SMS OTP or vendor account is created by this review tool.
 
