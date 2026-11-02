@@ -56,7 +56,7 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
  const [category,setCategory]=useState("All");
  const [city,setCity]=useState("All");
  const [cart,setCart]=useState<CartLine[]>([]);
- const [cartLoaded,setCartLoaded]=useState(false);
+ const [loadedCartKey,setLoadedCartKey]=useState("");
  const [favs,setFavs]=useState<string[]>([]);
  const [selected,setSelected]=useState<SaudiProduct|null>(null);
  const [networkError,setNetworkError]=useState(false);
@@ -79,17 +79,17 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
  const key=mode==="live"?"go-saudi-live-cart-v1":"go-saudi-demo-cart-v1";
  useEffect(()=>{
   let active=true;
-  setCartLoaded(false);
+  setLoadedCartKey("");
   AsyncStorage.getItem(key).then(raw=>{
    let stored:unknown=[];try{stored=JSON.parse(raw||"[]")}catch{}
-   if(active){setCart(safeSaudiCart(stored,items));setCartLoaded(true);}
-  }).catch(()=>{if(active){setCart([]);setCartLoaded(true);}});
+   if(active){setCart(safeSaudiCart(stored,items));setLoadedCartKey(key);}
+  }).catch(()=>{if(active){setCart([]);setLoadedCartKey(key);}});
   return()=>{active=false};
  // Demo and real carts are stored separately. Never send cart data to the server.
  },[key,mode]);
  useEffect(()=>{
-  if(cartLoaded)AsyncStorage.setItem(key,JSON.stringify(cart)).catch(()=>{});
- },[key,cart,cartLoaded]);
+  if(loadedCartKey===key)AsyncStorage.setItem(key,JSON.stringify(cart)).catch(()=>{});
+ },[key,cart,loadedCartKey]);
  const favorites=useMemo(()=>items.filter(p=>favs.includes(p.id)),[items,favs]);
  const shown=useMemo(()=>items.filter(p=>{
   const q=search.trim().toLocaleLowerCase("en");
