@@ -672,6 +672,24 @@ export const saudiVendorDataRequests = pgTable("saudi_vendor_data_requests", {
   index("idx_saudi_data_request_vendor").on(table.vendorId),
 ]);
 
+// Saudi catalog submission records are independent of private product drafts.
+// Only explicitly moderated PUBLISHED snapshots can ever be eligible for public listing.
+export const saudiCatalogSubmissions = pgTable("saudi_catalog_submissions",{
+  id:varchar("id",{length:64}).primaryKey(),
+  vendorId:varchar("vendor_id",{length:64}).notNull(),
+  draftId:varchar("draft_id",{length:64}).notNull().unique(),
+  title:varchar("title",{length:120}).notNull(),
+  description:text("description").notNull().default(""),
+  priceHalalas:integer("price_halalas").notNull(),
+  stock:integer("stock").notNull(),
+  status:varchar("status",{length:16}).notNull().default("PENDING"),
+  reviewedAt:timestamp("reviewed_at"),
+  requestedAt:timestamp("requested_at").defaultNow(),
+},table=>[
+  index("idx_saudi_catalog_status").on(table.status,table.requestedAt),
+  index("idx_saudi_catalog_vendor").on(table.vendorId)
+]);
+
 export const coinGrants = pgTable("coin_grants", {
   id: varchar("id", { length: 64 }).primaryKey(),
   phone: varchar("phone", { length: 15 }).notNull(),
