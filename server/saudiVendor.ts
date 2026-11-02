@@ -28,13 +28,13 @@ async function vendorAuthorized(req:Request,res:Response,next:NextFunction) {
   noCache(res);
   const rawCookie=req.header("Cookie")||"";
   if(rawCookie.length>4096)return res.status(401).json({error:"Vendor session required"});
-  const tokens=[...rawCookie.matchAll(/(?:^|;\\s*)__Host-go_saudi_vendor=([a-f0-9]{64})(?=;|$)/g)];
+  const tokens=[...rawCookie.matchAll(/(?:^|;\s*)__Host-go_saudi_vendor=([a-f0-9]{64})(?=;|$)/g)];
   if(tokens.length!==1)return res.status(401).json({error:"Vendor session required"});
   // Cookies can be sent cross-site; explicitly require same-origin Origin on
   // mutating requests, in addition to Secure, HttpOnly and SameSite=Strict.
   if(["POST","PUT","PATCH","DELETE"].includes(req.method)){
     const expected=process.env.NODE_ENV==="production"
-      ? process.env.APP_PUBLIC_URL
+      ? new URL(process.env.APP_PUBLIC_URL||"https://invalid.invalid").origin
       : "http://"+req.get("host");
     if(!req.header("Origin")||req.header("Origin")!==expected)
       return res.status(403).json({error:"Same-origin vendor request required"});
