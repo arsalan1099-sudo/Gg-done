@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import crypto from "node:crypto";
-import path from "node:path";
+import {sendSaudiPage} from "./saudiCsp";
 import rateLimit from "express-rate-limit";
 import {and, eq, gt, isNull, sql, desc} from "drizzle-orm";
 import {db} from "./db";
@@ -46,12 +46,7 @@ async function vendorAuthorized(req:Request,res:Response,next:NextFunction) {
 const requestVendor=(res:Response)=>res.locals.saudiVendor as {id:string;enquiryId:string;sessionId:string};
 
 export function registerSaudiVendor(app:Express):void{
-  app.get("/vendor",(_req,res)=>{
-    noCache(res);
-    res.setHeader("Referrer-Policy","no-referrer");
-    res.setHeader("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
-    return res.sendFile(path.resolve(process.cwd(),"server/templates/go-saudi-vendor.html"));
-  });
+  app.get("/vendor",(_req,res)=>sendSaudiPage(res,"go-saudi-vendor.html"));
   app.get("/vendor-panel",(_req,res)=>res.redirect(302,"/vendor"));
 
   // Admin route executes AFTER registerSaudiAdmin installed its auth middleware.
