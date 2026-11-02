@@ -19,6 +19,8 @@ services:
         value: "false"
       - key: GO_SAUDI_PRIVACY_APPROVED
         value: "false"
+      - key: GO_SAUDI_ACCOUNT_ERASURE_ENABLED
+        value: "false"
       - key: GO_SAUDI_ADMIN_TOKEN_SHA256
         sync: false
       - key: DATABASE_URL
