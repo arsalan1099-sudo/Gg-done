@@ -21,6 +21,12 @@ services:
         value: "false"
       - key: GO_SAUDI_ACCOUNT_ERASURE_ENABLED
         value: "false"
+      - key: GO_SAUDI_CATALOG_PUBLIC
+        value: "false"
+      - key: GO_SAUDI_MARKETPLACE_LAUNCH_APPROVED
+        value: "false"
+      - key: GO_SAUDI_MERCHANT_VERIFICATION_APPROVED
+        value: "false"
       - key: GO_SAUDI_ADMIN_TOKEN_SHA256
         sync: false
       - key: DATABASE_URL
