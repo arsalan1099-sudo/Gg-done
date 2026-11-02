@@ -11,7 +11,10 @@ const SOURCE="SAUDI_LANDING";
 const leadIdPattern=/^SL_[a-f0-9]{30}$/;
 const productIdPattern=/^SVP_[a-f0-9]{30}$/;
 const inviteHours=24;
-const sessionDays=7;
+const sessionHours=12;
+const COOKIE_NAME="__Host-go_saudi_vendor";
+const COOKIE_FLAGS="Path=/; HttpOnly; Secure; SameSite=Strict";
+const clearVendorCookie=(res:Response)=>res.setHeader("Set-Cookie",COOKIE_NAME+"=; "+COOKIE_FLAGS+"; Max-Age=0");
 const randomId=(prefix:string)=>prefix+crypto.randomBytes(15).toString("hex");
 const randomToken=()=>crypto.randomBytes(32).toString("hex");
 const noCache=(res:Response)=>{
@@ -23,9 +26,19 @@ const inviteLimiter=rateLimit({windowMs:15*60*1000,max:12,standardHeaders:true,l
 
 async function vendorAuthorized(req:Request,res:Response,next:NextFunction) {
   noCache(res);
-  const header=req.header("Authorization")||"";
-  const match=/^Bearer ([a-f0-9]{64})$/.exec(header);
-  if(!match)return res.status(401).json({error:"Vendor session required"});
+  const rawCookie=req.header("Cookie")||"";
+  if(rawCookie.length>4096)return res.status(401).json({error:"Vendor session required"});
+  const tokens=[...rawCookie.matchAll(/(?:^|;\\s*)__Host-go_saudi_vendor=([a-f0-9]{64})(?=;|$)/g)];
+  if(tokens.length!==1)return res.status(401).json({error:"Vendor session required"});
+  // Cookies can be sent cross-site; explicitly require same-origin Origin on
+  // mutating requests, in addition to Secure, HttpOnly and SameSite=Strict.
+  if(["POST","PUT","PATCH","DELETE"].includes(req.method)){
+    const expected=process.env.NODE_ENV==="production"
+      ? process.env.APP_PUBLIC_URL
+      : "http://"+req.get("host");
+    if(!req.header("Origin")||req.header("Origin")!==expected)
+      return res.status(403).json({error:"Same-origin vendor request required"});
+  }
   try {
     const [row]=await db.select({
       id:saudiVendorSessions.id,vendorId:saudiVendorSessions.vendorId,
@@ -34,7 +47,7 @@ async function vendorAuthorized(req:Request,res:Response,next:NextFunction) {
       .innerJoin(saudiVendorAccounts,eq(saudiVendorAccounts.id,saudiVendorSessions.vendorId))
       .innerJoin(sellerEnquiries,and(eq(sellerEnquiries.id,saudiVendorAccounts.enquiryId),
         eq(sellerEnquiries.source,SOURCE),eq(sellerEnquiries.status,"APPROVED")))
-      .where(and(eq(saudiVendorSessions.tokenHash,sha256Token(match[1])),
+      .where(and(eq(saudiVendorSessions.tokenHash,sha256Token(tokens[0][1])),
         isNull(saudiVendorSessions.revokedAt),gt(saudiVendorSessions.expiresAt,new Date())))
       .limit(1);
     if(!row)return res.status(401).json({error:"Session expired or seller no longer approved"});
@@ -132,12 +145,14 @@ export function registerSaudiVendor(app:Express):void{
         await tx.insert(saudiVendorSessions).values({
           id:randomId("SVS_"),vendorId:invite.vendorId,
           tokenHash:sha256Token(sessionToken),
-          expiresAt:new Date(Date.now()+sessionDays*24*60*60*1000)
+          expiresAt:new Date(Date.now()+sessionHours*60*60*1000)
         });
         return true;
       });
       if(!created)return res.status(401).json({error:"Invitation expired, used, or seller approval revoked"});
-      return res.json({sessionToken,expiresInDays:sessionDays,mode:"DRAFT_ONLY"});
+      res.setHeader("Set-Cookie",COOKIE_NAME+"="+sessionToken+"; "+COOKIE_FLAGS+
+        "; Max-Age="+(sessionHours*60*60));
+      return res.json({activated:true,expiresInHours:sessionHours,mode:"DRAFT_ONLY"});
     }catch(err){console.error("[SAUDI_VENDOR] Activate",err);
       return res.status(503).json({error:"Vendor activation unavailable"});}
   });
@@ -200,14 +215,23 @@ export function registerSaudiVendor(app:Express):void{
     if(!parsed.ok)return res.status(400).json({error:parsed.error});
     const vendorId=requestVendor(res).id;
     try{
-      const [counter]=await db.select({n:sql<number>`count(*)::int`})
-        .from(saudiVendorDraftProducts).where(eq(saudiVendorDraftProducts.vendorId,vendorId));
-      if((counter?.n||0)>=SAUDI_DRAFT_LIMIT)return res.status(409).json({error:"Draft product limit reached"});
-      const [product]=await db.insert(saudiVendorDraftProducts)
-        .values({id:randomId("SVP_"),vendorId,...parsed.value,status:"DRAFT"})
-        .returning({id:saudiVendorDraftProducts.id,title:saudiVendorDraftProducts.title,
-          description:saudiVendorDraftProducts.description,priceHalalas:saudiVendorDraftProducts.priceHalalas,
-          stock:saudiVendorDraftProducts.stock,status:saudiVendorDraftProducts.status});
+      const product=await db.transaction(async tx=>{
+        // Serializes concurrent additions for the same vendor, enforcing the cap.
+        const [locked]=await tx.select({id:saudiVendorAccounts.id})
+          .from(saudiVendorAccounts)
+          .where(eq(saudiVendorAccounts.id,vendorId)).for("update").limit(1);
+        if(!locked)throw new Error("Vendor account unavailable");
+        const [counter]=await tx.select({n:sql<number>`count(*)::int`})
+          .from(saudiVendorDraftProducts).where(eq(saudiVendorDraftProducts.vendorId,vendorId));
+        if((counter?.n||0)>=SAUDI_DRAFT_LIMIT)return null;
+        const [created]=await tx.insert(saudiVendorDraftProducts)
+          .values({id:randomId("SVP_"),vendorId,...parsed.value,status:"DRAFT"})
+          .returning({id:saudiVendorDraftProducts.id,title:saudiVendorDraftProducts.title,
+            description:saudiVendorDraftProducts.description,priceHalalas:saudiVendorDraftProducts.priceHalalas,
+            stock:saudiVendorDraftProducts.stock,status:saudiVendorDraftProducts.status});
+        return created;
+      });
+      if(!product)return res.status(409).json({error:"Draft product limit reached"});
       return res.status(201).json({product,public:false});
     }catch(err){console.error("[SAUDI_VENDOR] Add product",err);return res.status(503).json({error:"Could not save draft"});}
   });
@@ -252,6 +276,7 @@ export function registerSaudiVendor(app:Express):void{
     try{
       await db.update(saudiVendorSessions).set({revokedAt:new Date()})
         .where(eq(saudiVendorSessions.id,requestVendor(res).sessionId));
+      clearVendorCookie(res);
       return res.json({loggedOut:true});
     }catch(err){console.error("[SAUDI_VENDOR] Logout",err);return res.status(503).json({error:"Session revocation unavailable"});}
   });
