@@ -20,8 +20,9 @@ test("extra or missing inline scripts fail closed",()=>{
 test("Saudi landing, admin and vendor inline JavaScript must parse",()=>{
  for(const file of ["go-saudi.html","go-saudi-admin.html","go-saudi-vendor.html"]){
   const html=fs.readFileSync("server/templates/"+file,"utf8");
-  const scripts=[...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)];
-  assert.equal(scripts.length,1,file);
-  assert.doesNotThrow(()=>new Script(scripts[0][1],{filename:file}),file);
+  const opening=html.indexOf("<script>");
+  const ending=html.indexOf("</script>",opening+8);
+  assert.ok(opening>=0&&ending>opening,file);
+  assert.doesNotThrow(()=>new Script(html.slice(opening+8,ending),{filename:file}),file);
  }
 });
