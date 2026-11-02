@@ -44,6 +44,17 @@
 <section id="dashboard" class="hidden">
   <div class="subhead"><div><h1>Vendor Onboarding Pipeline</h1><p>Saudi enquiries only. Admin reviews are logged; approving an enquiry does not make a store live.</p></div><button class="button button-outline" id="refresh">Refresh</button></div>
   <div class="stats" id="stats" aria-label="Seller statuses"></div>
+  <div class="panel" id="privacyRequestsPanel">
+    <div class="subhead">
+      <div><h2>Vendor data deletion requests</h2>
+        <p class="hint">Protected admin queue. Erasure requires a verified request, privacy/retention review, explicit confirmation and a separate server-side enable flag.</p>
+      </div>
+      <button class="button button-outline" type="button" id="refreshDeletionRequests">Refresh requests</button>
+    </div>
+    <div class="notice" id="erasureGate">Account erasure is disabled by default.</div>
+    <div id="deletionRequests" class="table-wrap"></div>
+    <div id="deletionError" class="error" role="status"></div>
+  </div>
   <div class="panel">
     <div class="subhead"><div><h2>Seller applications</h2><p class="hint">Search is limited to the current results page. Use status filters and pagination for more.</p></div>
       <div class="toolbar"><select id="filter" class="input" aria-label="Filter by status" style="width:auto">
@@ -172,6 +183,51 @@
       if(e.message.toLowerCase().includes("token"))lock();
     }finally{loading=false;$("refresh").disabled=false;}
   }
+  async function loadDeletionRequests(){
+    const el=$("deletionRequests");
+    $("deletionError").textContent="";
+    try{
+      const data=await api("/api/saudi/admin/data-requests");
+      $("erasureGate").textContent=data.erasureEnabled
+        ?"Erasure enabled by server operator. Complete each request only after independent identity and lawful retention review."
+        :"Erasure LOCKED: GO_SAUDI_ACCOUNT_ERASURE_ENABLED is not approved. Requests remain pending.";
+      el.replaceChildren();
+      if(!(data.requests||[]).length){el.append(make("p","hint","No pending deletion requests."));return;}
+      const table=make("table","table");
+      const head=make("thead"),row=make("tr");
+      ["Business","Phone","City","Submitted","Action"].forEach(v=>row.append(make("th","",v)));
+      head.append(row);table.append(head);
+      const body=make("tbody");
+      data.requests.forEach(r=>{
+        const tr=make("tr");
+        [r.businessName||"—",r.phone||"—",r.city||"—",fmtDate(r.requestedAt)]
+          .forEach(v=>tr.append(make("td","",v)));
+        const cell=make("td");
+        const btn=make("button","button button-outline","Review deletion");
+        btn.disabled=!data.erasureEnabled;
+        btn.type="button";
+        btn.addEventListener("click",async()=>{
+          const acknowledge=window.confirm("Confirm you independently verified this merchant's identity AND reviewed lawful data retention obligations. Proceed with irreversible personal-data erasure?");
+          if(!acknowledge)return;
+          const phrase=r.id+":ERASE";
+          const typed=window.prompt("Enter the exact confirmation phrase to permanently erase this vendor's data:",phrase);
+          if(typed!==phrase){$("deletionError").textContent="Erasure cancelled — confirmation mismatch.";return;}
+          btn.disabled=true;
+          try{
+            await api("/api/saudi/admin/data-requests/"+encodeURIComponent(r.id)+"/complete",{
+              method:"POST",body:JSON.stringify({
+                identityVerified:true,retentionReviewed:true,confirmation:phrase
+              })
+            });
+            await loadDeletionRequests();
+            await load();
+          }catch(e){$("deletionError").textContent=e.message;btn.disabled=false;}
+        });
+        cell.append(btn);tr.append(cell);body.append(tr);
+      });
+      table.append(body);el.append(table);
+    }catch(e){$("deletionError").textContent=e.message}
+  }
   function fillDetails(row){
     const box=$("sellerDetails");box.replaceChildren();
     [["Business",row.businessName],["Saudi city",row.city],["Category",row.category],["Phone",row.phone],
@@ -219,11 +275,13 @@
       const data=await api("/api/saudi/admin/seller-enquiries?page=1");
       $("adminToken").value="";$("login").classList.add("hidden");$("dashboard").classList.remove("hidden");$("lock").classList.remove("hidden");
       page=1;items=data.leads;total=data.pagination.total;summary=data.summary;paintStats();renderTable();
+      loadDeletionRequests();
     }catch(e){token="";$("loginError").textContent=e.message;}finally{$("unlock").disabled=false;}
   });
   $("adminToken").addEventListener("keydown",e=>{if(e.key==="Enter")$("unlock").click()});
   $("lock").addEventListener("click",lock);
   $("refresh").addEventListener("click",load);
+  $("refreshDeletionRequests").addEventListener("click",loadDeletionRequests);
   $("filter").addEventListener("change",()=>{page=1;load()});
   $("search").addEventListener("input",renderTable);
   $("prev").addEventListener("click",()=>{if(page>1){page--;load()}});
