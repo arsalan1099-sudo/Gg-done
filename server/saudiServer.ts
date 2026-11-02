@@ -43,7 +43,6 @@ app.use("/api/saudi",(req,res,next)=>{
   if(origin && origin!==own)return res.status(403).json({error:"Cross-origin writes are disabled"});
   next();
 });
-registerSaudiMarket(app);
 app.get("/api/health",async(_req,res)=>{
   try{
     await db.execute(sql`select 1 as ok`);
@@ -54,6 +53,7 @@ app.get("/api/health",async(_req,res)=>{
     return res.status(503).json({status:"unhealthy",service:"go-saudi",database:"unavailable"});
   }
 });
+registerSaudiMarket(app);
 app.use((_req,res)=>res.status(404).json({error:"Go Saudi route not found"}));
 app.use((err:unknown,_req:express.Request,res:express.Response,_next:express.NextFunction)=>{
   // Never return driver errors or PII.
