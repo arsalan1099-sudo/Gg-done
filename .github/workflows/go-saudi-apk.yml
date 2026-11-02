@@ -48,8 +48,17 @@ jobs:
           grep -q "package: name='com.aasaa.gosaudi'" apk-output/manifest.txt
           # Standalone release-mode builds must ship bundled JS, not Metro dev server.
           grep -q "targetSdkVersion:'36'" apk-output/manifest.txt
-          unzip -p apk-output/Go-Saudi-Testing.apk assets/index.android.bundle | head -c 4 | od -An -tx1 >/tmp/go-saudi-js-header
-          test -s /tmp/go-saudi-js-header
+          unzip -Z1 apk-output/Go-Saudi-Testing.apk > /tmp/go-saudi-apk-files.txt
+          grep -q '^assets/index.android.bundle
+          sha256sum apk-output/Go-Saudi-Testing.apk > apk-output/SHA256SUMS.txt
+          printf '%s\n' 'Go Saudi PRELAUNCH standalone testing APK, arm64 Android only, release-mode bundled JavaScript with test/debug signing key. Arabic/English shopping demo: product search, categories, wishlist and local cart. Demo products are not for sale. Vendor enquiries require an approved Saudi backend/privacy configuration. Real checkout, orders and payments are disabled. Not Play Store publication; test only. Real-device QA still required.' > apk-output/READ-ME.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Go-Saudi-Testing-APK
+          path: apk-output/
+          retention-days: 14
+          if-no-files-found: error
+ /tmp/go-saudi-apk-files.txt
           sha256sum apk-output/Go-Saudi-Testing.apk > apk-output/SHA256SUMS.txt
           printf '%s\n' 'Go Saudi PRELAUNCH standalone testing APK, arm64 Android only, release-mode bundled JavaScript with test/debug signing key. Arabic/English shopping demo: product search, categories, wishlist and local cart. Demo products are not for sale. Vendor enquiries require an approved Saudi backend/privacy configuration. Real checkout, orders and payments are disabled. Not Play Store publication; test only. Real-device QA still required.' > apk-output/READ-ME.txt
       - uses: actions/upload-artifact@v4
