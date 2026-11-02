@@ -9,7 +9,7 @@ BEGIN
    RAISE EXCEPTION 'Saudi marker required before migration 002';
  END IF;
  SELECT schema_version INTO v FROM saudi_market_metadata WHERE market='go-saudi';
- IF v IS NULL OR v NOT IN (1,2) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
+ IF v IS NULL OR v NOT IN (1,2,3) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
    RAISE EXCEPTION 'Incorrect market / schema version for Saudi migration 002';
  END IF;
  IF to_regclass('public.saudi_vendor_accounts') IS NULL THEN
