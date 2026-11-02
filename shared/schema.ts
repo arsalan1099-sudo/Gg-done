@@ -605,6 +605,22 @@ export const sellerEnquiries = pgTable("seller_enquiries", {
   index("idx_seller_enquiries_phone").on(table.phone),
 ]);
 
+// Go Saudi prelaunch seller review audit trail. Store no uploaded document bytes here.
+export const saudiSellerReviewEvents = pgTable("saudi_seller_review_events", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  enquiryId: varchar("enquiry_id", { length: 64 }).notNull(),
+  fromStatus: varchar("from_status", { length: 24 }).notNull(),
+  toStatus: varchar("to_status", { length: 24 }).notNull(),
+  reviewer: varchar("reviewer", { length: 80 }).notNull(),
+  note: text("note").notNull().default(""),
+  phoneConfirmed: boolean("phone_confirmed").notNull().default(false),
+  businessDocumentsChecked: boolean("business_documents_checked").notNull().default(false),
+  complianceReviewed: boolean("compliance_reviewed").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_saudi_review_enquiry_created").on(table.enquiryId, table.createdAt),
+]);
+
 export const coinGrants = pgTable("coin_grants", {
   id: varchar("id", { length: 64 }).primaryKey(),
   phone: varchar("phone", { length: 15 }).notNull(),
