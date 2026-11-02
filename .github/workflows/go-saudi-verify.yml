@@ -69,10 +69,13 @@ jobs:
         run: |
           set -euo pipefail
           export PGPASSWORD=saudi_ci_only
-          pg_dump --format=custom --no-owner --no-acl "$DATABASE_URL" > /tmp/go-saudi-ci.backup
+          PG16_BIN=/usr/lib/postgresql/16/bin
+          test -x "$PG16_BIN/pg_dump"
+          test -x "$PG16_BIN/pg_restore"
+          "$PG16_BIN/pg_dump" --format=custom --no-owner --no-acl "$DATABASE_URL" > /tmp/go-saudi-ci.backup
           test -s /tmp/go-saudi-ci.backup
           createdb -h localhost -U saudi_ci go_saudi_restore
-          pg_restore --no-owner --no-acl \
+          "$PG16_BIN/pg_restore" --no-owner --no-acl \
             -d postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore /tmp/go-saudi-ci.backup
           marker="$(psql postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore -Atqc \
             "SELECT market || ':' || schema_version FROM saudi_market_metadata")"
