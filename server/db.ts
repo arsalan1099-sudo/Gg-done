@@ -20,7 +20,12 @@ export const pool = new Pool({
 });
 
 pool.on("error", (err) => {
-  console.error("Database pool connection error (non-fatal, pool will reconnect):", err.message);
+  // Saudi pilot logs must never print DB driver messages / connection strings.
+  if (process.env.GO_SAUDI_MODE === "true") {
+    console.error("[SAUDI_DB] Connection pool error (details redacted)");
+  } else {
+    console.error("Database pool connection error (non-fatal, pool will reconnect):", err.message);
+  }
 });
 
 pool.on("connect", () => {
