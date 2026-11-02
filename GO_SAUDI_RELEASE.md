@@ -32,6 +32,17 @@ The Saudi branch now additionally implements:
 
 Never use the existing Go Bharat Render service or GitHub `main` branch for this pilot. Confirm workspace before any Render service creation, and use private trusted channels for credentials.
 
+## Vendor personal-data rights and database recovery (schema v002)
+
+- `migrations/saudi/002_data_requests.sql` updates the dedicated Saudi database marker to **schema version 2**. New deployments and upgrades must run `GO_SAUDI_MODE=true npm run db:saudi:migrate` with the **Saudi-only** database. The boot process now refuses older schemas.
+- Logged-in sellers can download their own contact, store profile and private product draft data from `GET /api/saudi/vendor/data-export`. This is a sensitive personal-data export; send only over HTTPS and store local downloaded copies securely.
+- Sellers can submit a **pending** deletion request via `POST /api/saudi/vendor/data-requests` with `{"requestType":"DELETE_ACCOUNT","confirm":true}`. Repeated requests are deduplicated. The admin can review pending requests in `/saudi-admin`.
+- **No erasure by default.** `GO_SAUDI_ACCOUNT_ERASURE_ENABLED=false` in Render. Only after an approved retention/legal policy, an independently verified merchant identity, and an explicit operator decision should the setting temporarily be enabled for the authenticated admin request-completion action.
+- Completing a deletion with two manual attestations and exact confirmation deletes the seller lead, vendor account, draft products, invitations, sessions and onboarding review history transactionally through database FK cascades. A minimal anonymous completed-request receipt remains. This feature has been exercised only in disposable CI, not on real users.
+- CI performs a **custom-format PostgreSQL export and full restore into a separate test database**, checks schema version and restored records. This is not a real production backup. Configure encrypted scheduled production backups, off-site storage, least-privilege access and documented periodic restore tests separately.
+
+**Before real users:** specify request-response deadlines and lawful-retention exceptions in the approved Arabic/English privacy policy; implement secure support and named reviewer identity. Do not treat an anonymous test deletion receipt as a comprehensive compliance audit.
+
 ## Required checks — dev/CI
 
 ```sh
@@ -50,7 +61,7 @@ Integration tests need a newly migrated **disposable test database**, not a prod
 1. Choose and confirm the **Render workspace** for Go Saudi. Create a distinct Saudi web service and a **new isolated database**; never share Go Bharat's `DATABASE_URL`, tables, credentials, payment secrets or Expo project.
 2. Assess Saudi PDPL, relevant Saudi data residency/transfer obligations and the proposed hosting region. Render's offered regions are **not assumed** to be Saudi.
 3. Prepare and approve Arabic/English privacy notice, cookie notice (where relevant), consent, retention/deletion and incident response policy. Consult local Saudi counsel.
-4. Apply the dedicated DB migration once on new Saudi DB with `GO_SAUDI_MODE=true`; verify the `saudi_market_metadata` row (`market='go-saudi'`, `schema_version=1`).
+4. Apply dedicated Saudi migrations 001 and 002 (or upgrade the isolated v001 schema) using `GO_SAUDI_MODE=true npm run db:saudi:migrate`; verify the marker (`market='go-saudi'`, `schema_version=2`).
 5. Generate a new 64-character private admin token on a trusted machine and configure **only its SHA-256 hex digest** in `GO_SAUDI_ADMIN_TOKEN_SHA256`:
    ```sh
    node -e "const c=require('node:crypto');const t=c.randomBytes(32).toString('hex');console.log('PRIVATE_TOKEN='+t);console.log('GO_SAUDI_ADMIN_TOKEN_SHA256='+c.createHash('sha256').update(t).digest('hex'))"
@@ -64,12 +75,13 @@ Integration tests need a newly migrated **disposable test database**, not a prod
    APP_PUBLIC_URL=https://<your-saudi-service-host>
    GO_SAUDI_ADMIN_TOKEN_SHA256=<SHA256 hex of private admin token>
    GO_SAUDI_PRIVACY_APPROVED=false
+   GO_SAUDI_ACCOUNT_ERASURE_ENABLED=false
    VENDOR_MEMBERSHIP_PAYMENTS_ENABLED=false
    ```
    Set `APP_PUBLIC_URL` to the actual **HTTPS origin without a path**. Use `npm ci && npm run render:build` to build, and `npm run render:start` to serve. No auto-running destructive schema pushes on service startup.
 7. Check `GET /api/health` returns HTTP 200 with `database: connected`; `GET /`, `GET /sell`, `GET /vendor`, `GET /saudi-admin` load; `/api/vendors` and Go Bharat India commerce paths return 423/404; neither payments nor product publishing work.
 8. With **test data only**, verify approval → invitation → activation → draft CRUD → revoke, negative cross-vendor ownership, token reuse, CORS/CSRF, access logs and backups.
-9. Turn on `GO_SAUDI_PRIVACY_APPROVED=true` *only after approved legal/privacy process*. Before real use, add individual admin MFA, Saudi vendor OTP/identity recovery, support, backup/restoration exercises, monitoring and data subject deletion/retention workflows.
+9. Turn on `GO_SAUDI_PRIVACY_APPROVED=true` *only after approved legal/privacy process*. Keep `GO_SAUDI_ACCOUNT_ERASURE_ENABLED=false` except during explicitly authorized, legally reviewed deletion processing. Before real use, add individual admin MFA, Saudi vendor OTP/identity recovery, support, backup/restoration exercises, monitoring and data subject deletion/retention workflows.
 10. **Commercial launch remains BLOCKED** pending actual legal entity/eligible merchant validation, Saudi Business Center e-store authentication as applicable, payment provider with mada and signed webhook reconciliation, ZATCA VAT/e-invoice requirements, refunds, buyer rights, delivery, comprehensive pen-test and real device QA.
 
 ## Access paths
