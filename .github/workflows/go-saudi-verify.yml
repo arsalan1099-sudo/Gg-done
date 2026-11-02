@@ -89,6 +89,24 @@ jobs:
           if [ "$ready" -ne 1 ]; then cat /tmp/go-saudi-boot.log; exit 1; fi
           grep -q '"status":"healthy"' /tmp/go-saudi-health.json
           curl -sf http://127.0.0.1:5011/api/saudi/market | grep -q '"PRELAUNCH"'
+          curl -sf http://127.0.0.1:5011/api/saudi/readiness > /tmp/go-saudi-readiness.json
+          node - <<'NODE'
+          const r=require('/tmp/go-saudi-readiness.json');
+          if(r.commercialLaunchReady!==false||r.livePayments!==false||
+             r.liveOrders!==false||r.publicProducts!==false||
+             r.technicalConfiguration?.sellerEnquiriesOpen!==false){
+            throw Error('Saudi commercial or seller-privacy gate incorrectly open');
+          }
+          NODE
+          test "$(curl -s -o /dev/null -w '%{http_code}' \
+            -H 'Content-Type: application/json' -d '{"businessName":"Demo Seller","city":"Jeddah","category":"Food","phone":"0551234567","consent":true}' \
+            http://127.0.0.1:5011/api/saudi/seller-enquiries)" = "503"
+          test "$(curl -s -o /dev/null -w '%{http_code}' \
+            -X POST -H 'Content-Type: application/json' \
+            -d '{"inviteToken":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}' \
+            -H 'Origin: https://attacker.example' \
+            http://127.0.0.1:5011/api/saudi/vendor/activate)" = "403"
+
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5011/api/vendors)" = "423"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5011/vendor)" = "200"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5011/admin)" = "302"
