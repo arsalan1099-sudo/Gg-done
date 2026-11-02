@@ -1,3 +1,4 @@
+import {logSaudiError} from "./saudiLog";
 import type { Express, Request, Response, NextFunction } from "express";
 import crypto from "node:crypto";
 import {sendSaudiPage} from "./saudiCsp";
@@ -53,7 +54,7 @@ async function vendorAuthorized(req:Request,res:Response,next:NextFunction) {
     if(!row)return res.status(401).json({error:"Session expired or seller no longer approved"});
     res.locals.saudiVendor={id:row.vendorId,enquiryId:row.enquiryId,sessionId:row.id};
     next();
-  }catch(err){console.error("[SAUDI_VENDOR_AUTH] Query error",err);
+  }catch(err){logSaudiError("SAUDI_VENDOR_AUTH",err);
     return res.status(503).json({error:"Vendor authentication temporarily unavailable"});}
 }
 const requestVendor=(res:Response)=>res.locals.saudiVendor as {id:string;enquiryId:string;sessionId:string};
@@ -97,7 +98,7 @@ export function registerSaudiVendor(app:Express):void{
         delivery:"Share privately with approved merchant after out-of-band identity check. Never put in a URL.",
         storeLive:false
       });
-    }catch(err){console.error("[SAUDI_VENDOR] Invite creation",err);
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);
       return res.status(503).json({error:"Could not create invitation"});}
   });
 
@@ -118,7 +119,7 @@ export function registerSaudiVendor(app:Express):void{
           .where(and(eq(saudiVendorInvites.vendorId,vendor.id),isNull(saudiVendorInvites.consumedAt)));
       });
       return res.json({success:true});
-    }catch(err){console.error("[SAUDI_VENDOR] Revoke",err);return res.status(503).json({error:"Could not revoke vendor sessions"});}
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);return res.status(503).json({error:"Could not revoke vendor sessions"});}
   });
 
   // No Saudi phone OTP provider is configured. One-time admin-issued invitation
@@ -153,7 +154,7 @@ export function registerSaudiVendor(app:Express):void{
       res.setHeader("Set-Cookie",COOKIE_NAME+"="+sessionToken+"; "+COOKIE_FLAGS+
         "; Max-Age="+(sessionHours*60*60));
       return res.json({activated:true,expiresInHours:sessionHours,mode:"DRAFT_ONLY"});
-    }catch(err){console.error("[SAUDI_VENDOR] Activate",err);
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);
       return res.status(503).json({error:"Vendor activation unavailable"});}
   });
 
@@ -177,7 +178,7 @@ export function registerSaudiVendor(app:Express):void{
         counts:{products:counter?.count||0,orders:0},currency:"SAR",mode:"PRELAUNCH",
         paymentsEnabled:false,ordersEnabled:false,
         note:"Approved onboarding review grants draft editing only. No public store or buyer orders."});
-    }catch(err){console.error("[SAUDI_VENDOR] Store lookup",err);return res.status(503).json({error:"Store unavailable"});}
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);return res.status(503).json({error:"Store unavailable"});}
   });
 
   app.patch("/api/saudi/vendor/store",async(req,res)=>{
@@ -190,7 +191,7 @@ export function registerSaudiVendor(app:Express):void{
         .where(eq(saudiVendorAccounts.id,requestVendor(res).id))
         .returning({description:saudiVendorAccounts.description});
       return res.json({success:!!updated,store:updated,storeLive:false});
-    }catch(err){console.error("[SAUDI_VENDOR] Store update",err);return res.status(503).json({error:"Could not save description"});}
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);return res.status(503).json({error:"Could not save description"});}
   });
 
   app.get("/api/saudi/vendor/products",async(_req,res)=>{
@@ -206,7 +207,7 @@ export function registerSaudiVendor(app:Express):void{
       .where(eq(saudiVendorDraftProducts.vendorId,requestVendor(res).id))
       .orderBy(desc(saudiVendorDraftProducts.updatedAt)).limit(SAUDI_DRAFT_LIMIT);
       return res.json({products,currency:"SAR",allDrafts:true});
-    }catch(err){console.error("[SAUDI_VENDOR] Products lookup",err);return res.status(503).json({error:"Could not load drafts"});}
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);return res.status(503).json({error:"Could not load drafts"});}
   });
 
   app.post("/api/saudi/vendor/products",async(req,res)=>{
@@ -233,7 +234,7 @@ export function registerSaudiVendor(app:Express):void{
       });
       if(!product)return res.status(409).json({error:"Draft product limit reached"});
       return res.status(201).json({product,public:false});
-    }catch(err){console.error("[SAUDI_VENDOR] Add product",err);return res.status(503).json({error:"Could not save draft"});}
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);return res.status(503).json({error:"Could not save draft"});}
   });
 
   app.patch("/api/saudi/vendor/products/:id",async(req,res)=>{
@@ -253,7 +254,7 @@ export function registerSaudiVendor(app:Express):void{
           stock:saudiVendorDraftProducts.stock,status:saudiVendorDraftProducts.status});
       if(!product)return res.status(404).json({error:"Draft not found"});
       return res.json({product,public:false});
-    }catch(err){console.error("[SAUDI_VENDOR] Update draft",err);return res.status(503).json({error:"Could not update draft"});}
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);return res.status(503).json({error:"Could not update draft"});}
   });
 
   app.delete("/api/saudi/vendor/products/:id",async(req,res)=>{
@@ -268,7 +269,7 @@ export function registerSaudiVendor(app:Express):void{
         .returning({id:saudiVendorDraftProducts.id});
       if(!deleted)return res.status(404).json({error:"Draft not found"});
       return res.json({deleted:true});
-    }catch(err){console.error("[SAUDI_VENDOR] Delete draft",err);return res.status(503).json({error:"Could not delete draft"});}
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);return res.status(503).json({error:"Could not delete draft"});}
   });
 
   app.post("/api/saudi/vendor/logout",async(_req,res)=>{
@@ -278,6 +279,6 @@ export function registerSaudiVendor(app:Express):void{
         .where(eq(saudiVendorSessions.id,requestVendor(res).sessionId));
       clearVendorCookie(res);
       return res.json({loggedOut:true});
-    }catch(err){console.error("[SAUDI_VENDOR] Logout",err);return res.status(503).json({error:"Session revocation unavailable"});}
+    }catch(err){logSaudiError("SAUDI_VENDOR",err);return res.status(503).json({error:"Session revocation unavailable"});}
   });
 }
