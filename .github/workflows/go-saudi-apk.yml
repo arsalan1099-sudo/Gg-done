@@ -1,4 +1,4 @@
-name: Go Saudi testing APK
+name: Go Saudi testing APK — local shopping and vendor prelaunch
 on:
   push:
     branches: [go-saudi]
@@ -33,21 +33,21 @@ jobs:
       - run: npm run test:saudi:mobile
       - name: Generate native Android project
         run: npx expo prebuild --platform android --clean --no-install
-      - name: Build standalone testing APK (test signing only)
+      - name: Build debug-signed testing APK (NOT Google Play release)
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+        run: ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
       - name: Verify and package APK
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p apk-output
-          cp android/app/build/outputs/apk/release/app-release.apk apk-output/Go-Saudi-Testing.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk apk-output/Go-Saudi-Testing.apk
           SDK_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
           "$SDK_TOOLS/apksigner" verify --verbose --print-certs apk-output/Go-Saudi-Testing.apk > apk-output/signature.txt
           "$SDK_TOOLS/aapt" dump badging apk-output/Go-Saudi-Testing.apk > apk-output/manifest.txt
           grep -q "package: name='com.aasaa.gosaudi'" apk-output/manifest.txt
           sha256sum apk-output/Go-Saudi-Testing.apk > apk-output/SHA256SUMS.txt
-          printf '%s\n' 'Go Saudi prelaunch testing APK. ARM64 Android only. Test signing; not a store release. Arabic/English UI available. Backend, shopping, orders and payments are not active. No real-device testing has been performed.' > apk-output/READ-ME.txt
+          printf '%s\n' 'Go Saudi PRELAUNCH testing APK, arm64 Android only, debug signed. Arabic/English shopping demo: product search, categories, wishlist and local cart. Demo products are not for sale. Vendor enquiries require an approved Saudi backend/privacy configuration. Real checkout, orders and payments are disabled. Not Play Store publication; test only. Real-device QA still required.' > apk-output/READ-ME.txt
       - uses: actions/upload-artifact@v4
         with:
           name: Go-Saudi-Testing-APK
