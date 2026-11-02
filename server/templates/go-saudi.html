@@ -122,7 +122,7 @@
         <div class="field"><label for="phone" data-i18n="phone">رقم الجوال السعودي</label><input id="phone" name="phone" dir="ltr" required type="tel" inputmode="tel" autocomplete="tel" placeholder="05XXXXXXXX"></div>
         <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-10000px" aria-hidden="true">
         <label class="consent"><input type="checkbox" name="consent" required><span data-i18n="consent">أوافق على حفظ بيانات الطلب والتواصل معي بشأن انضمام المتجر. هذا ليس شراءً أو اشتراكاً.</span></label>
-        <button class="btn btn-primary" id="submitBtn" type="submit" data-i18n="submit">إرسال الطلب مجاناً</button><div class="form-message" id="formMessage" role="status" aria-live="polite"></div>
+        <button class="btn btn-primary" id="submitBtn" type="submit" disabled data-i18n="submit">إرسال الطلب مجاناً</button><div class="form-message" id="formMessage" role="status" aria-live="polite"></div>
       </form>
     </div>
   </div></section>
@@ -213,5 +213,18 @@
       finally{btn.disabled=false;btn.textContent=tr[lang].submit}
     });
     renderLanguage();
+    // Seller PII collection stays disabled in production until the Saudi
+    // privacy notice, retention controls and transfer assessment are signed off.
+    const privacyMsg=document.getElementById("formMessage");
+    fetch("/api/saudi/market",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject())
+      .then(info=>{
+        if(info.sellerEnquiriesOpen===true){
+          document.getElementById("submitBtn").disabled=false;
+        }else{
+          privacyMsg.textContent="التسجيل مغلق مؤقتاً لمراجعة الخصوصية · Seller registration temporarily closed pending privacy review";
+        }
+      }).catch(()=>{
+        privacyMsg.textContent="التسجيل مغلق مؤقتاً · Registration temporarily unavailable";
+      });
   </script>
 </body></html>
