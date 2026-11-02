@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SaudiShop from "@/components/saudi/SaudiShop";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
 
 
@@ -57,6 +58,7 @@ const strings = {
 
 export default function GoSaudiPreview() {
   const [lang,setLang] = useState<Lang>("ar");
+  const [screen,setScreen] = useState<"shop"|"seller">("shop");
   const [businessName,setBusinessName]=useState("");
   const [phone,setPhone]=useState("");
   const [city,setCity]=useState("");
@@ -102,6 +104,14 @@ export default function GoSaudiPreview() {
   return (
     <View style={styles.page}>
       <StatusBar barStyle="light-content" backgroundColor="#054634"/>
+      {screen==="shop"?(
+        <SaudiShop lang={lang} setLang={setLang} origin={saudiOrigin} onSell={()=>setScreen("seller")}/>
+      ):<>
+      <View style={{backgroundColor:"#064b3a",paddingHorizontal:20,paddingTop:14,paddingBottom:9}}>
+        <Pressable onPress={()=>setScreen("shop")} accessibilityRole="button">
+          <Text style={{color:"#e0f2e8",fontWeight:"900",fontSize:15}}>{lang==="ar"?"← العودة إلى السوق":"← Back to marketplace"}</Text>
+        </Pressable>
+      </View>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
         <View style={styles.hero}>
           <View style={styles.nav}>
@@ -168,6 +178,7 @@ export default function GoSaudiPreview() {
           <Text style={styles.footer}>{tr.powered}</Text>
         </View>
       </ScrollView>
+      </>}
     </View>
   );
 }
