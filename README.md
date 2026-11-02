@@ -1,32 +1,28 @@
-# Go Bharat — Digital Storefront for Indian Sellers
+# Go Saudi 🇸🇦 | جو سعودي
 
-**Go Bharat** is a marketplace app by AASAA Private Limited, designed to help local shop owners bring their businesses online.
+A Saudi-first marketplace edition based on the existing Go Bharat codebase.
 
-## 🏬 Are you a shop owner? Become a Go Bharat seller
+> **PRELAUNCH — NOT A LIVE SHOPPING OR PAYMENT APP.** The production Indian Go Bharat service remains on `main` and has not been modified.
 
-**[Request seller onboarding → https://go-bharat.onrender.com/sell](https://go-bharat.onrender.com/sell)**
+## What works in this development branch
+- Saudi Arabic/English responsive storefront, Arabic RTL default: `/`
+- Saudi cities and category selection
+- Free seller-interest enquiry form: `/sell`
+- Saudi phone normalization and API input validation
+- Seller lead storage with database configuration, rate limit and duplicate protection
+- Market and readiness APIs, independent Render preview configuration
+- Prelaunch gate blocks all legacy Indian commerce APIs
 
-- Create a digital profile for your store
-- List products and manage incoming orders through the platform
-- Enquire about seller eligibility, onboarding requirements and the introductory annual plan
-- Registration enquiries are free to submit
+## What remains before launch
+- Full customer/vendor/admin/delivery Expo and backend localization, authentication and real ordering
+- Saudi business registration, identity verification, ZATCA compliance and PDPL privacy
+- Saudi gateway (mada through a suitable licensed provider), verified webhooks and safe settlement
+- New standalone repository, database, branded assets, app-store configuration, live integration tests
 
-**Annual vendor plan:** ₹1,000/year introductory offer, subject to seller approval, final terms and payment availability. The page does **not** collect payment. Separate platform order commission terms may apply. No number of orders, customers, or earnings is guaranteed.
+**No payments are accepted, and no membership price is finalized.**
 
-**Android app:** [Go Bharat on Google Play](https://play.google.com/store/apps/details?id=co.median.android.odmalem)
+See [Go Saudi implementation and deployment instructions](GO_SAUDI.md).
 
-### दुकानदारों के लिए / For local businesses
-
-**अपनी दुकान ऑनलाइन लाएं।** Go Bharat पर अपना बिज़नेस रजिस्टर करने की जानकारी पाने के लिए यहाँ जाएं:
-
-**👉 https://go-bharat.onrender.com/sell**
-
-अपनी दुकान की जानकारी दें और हमारी टीम से संपर्क करने की अनुमति दें। आवेदन और उपलब्ध प्लान की जानकारी मिलने के बाद ही कोई भुगतान करें।
-
-### Quick links
-
-- [Seller enquiry page](https://go-bharat.onrender.com/sell)
-- [Go Bharat website](https://go-bharat.onrender.com/)
-- [Android application](https://play.google.com/store/apps/details?id=co.median.android.odmalem)
-
-> This repository is the Go Bharat app codebase. Vendor eligibility, product functionality and payment activation are subject to the platform's published terms. Do not share account passwords, OTPs or sensitive banking information via seller enquiries.
+### Source and branch
+Go Bharat source: `arsalan1099-sudo/Gg-done`
+Saudi branch: `go-saudi`
