@@ -3,13 +3,36 @@
 BEGIN;
 SELECT pg_advisory_xact_lock(92370421001);
 DO $guard$
+DECLARE
+  existing_tables text;
+  market_count integer;
+  market_ok integer;
 BEGIN
- IF to_regclass('public.vendor_applications') IS NOT NULL
-   OR to_regclass('public.app_users') IS NOT NULL
-   OR to_regclass('public.orders') IS NOT NULL
-   OR to_regclass('public.vendors') IS NOT NULL
- THEN RAISE EXCEPTION 'Refusing migration: existing non-Saudi / Go Bharat tables detected';
- END IF;
+  -- A never-migrated DB must be empty. Existing non-Saudi tables are an
+  -- absolute failure, even when they do not have standard Go Bharat names.
+  IF to_regclass('public.saudi_market_metadata') IS NULL THEN
+    SELECT string_agg(tablename, ', ') INTO existing_tables
+    FROM pg_tables WHERE schemaname='public';
+    IF existing_tables IS NOT NULL THEN
+      RAISE EXCEPTION 'Refusing Saudi initial migration: nonempty unmarked database';
+    END IF;
+  ELSE
+    SELECT count(*),count(*) FILTER (WHERE market='go-saudi' AND schema_version=1)
+      INTO market_count,market_ok
+    FROM saudi_market_metadata;
+    IF market_count<>1 OR market_ok<>1 THEN
+      RAISE EXCEPTION 'Refusing Saudi migration: incompatible market marker/version';
+    END IF;
+    SELECT string_agg(tablename, ', ') INTO existing_tables
+    FROM pg_tables WHERE schemaname='public' AND tablename NOT IN (
+      'saudi_market_metadata','seller_enquiries','saudi_seller_review_events',
+      'saudi_vendor_accounts','saudi_vendor_invites',
+      'saudi_vendor_sessions','saudi_vendor_draft_products'
+    );
+    IF existing_tables IS NOT NULL THEN
+      RAISE EXCEPTION 'Refusing Saudi migration: unexpected public tables detected';
+    END IF;
+  END IF;
 END $guard$;
 
 CREATE TABLE IF NOT EXISTS saudi_market_metadata (
@@ -19,7 +42,7 @@ CREATE TABLE IF NOT EXISTS saudi_market_metadata (
 );
 INSERT INTO saudi_market_metadata (market,schema_version)
  VALUES ('go-saudi',1)
- ON CONFLICT(market) DO UPDATE SET schema_version=GREATEST(saudi_market_metadata.schema_version,EXCLUDED.schema_version);
+ ON CONFLICT(market) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS seller_enquiries (
   id varchar(64) PRIMARY KEY,
