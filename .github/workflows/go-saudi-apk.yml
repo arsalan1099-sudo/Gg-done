@@ -1,0 +1,53 @@
+name: Go Saudi testing APK
+on:
+  push:
+    branches: [go-saudi]
+    paths:
+      - '.github/workflows/go-saudi-apk.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CI: "1"
+      EXPO_PUBLIC_SAUDI_API_URL: ""
+      EXPO_PUBLIC_SAUDI_STAGE: PRELAUNCH
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:saudi:mobile
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --clean --no-install
+      - name: Build standalone testing APK (test signing only)
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+      - name: Verify and package APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p apk-output
+          cp android/app/build/outputs/apk/release/app-release.apk apk-output/Go-Saudi-Testing.apk
+          SDK_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          "$SDK_TOOLS/apksigner" verify --verbose --print-certs apk-output/Go-Saudi-Testing.apk > apk-output/signature.txt
+          "$SDK_TOOLS/aapt" dump badging apk-output/Go-Saudi-Testing.apk > apk-output/manifest.txt
+          grep -q "package: name='com.aasaa.gosaudi'" apk-output/manifest.txt
+          sha256sum apk-output/Go-Saudi-Testing.apk > apk-output/SHA256SUMS.txt
+          printf '%s\n' 'Go Saudi prelaunch testing APK. ARM64 Android only. Test signing; not a store release. Arabic/English UI available. Backend, shopping, orders and payments are not active. No real-device testing has been performed.' > apk-output/READ-ME.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Go-Saudi-Testing-APK
+          path: apk-output/
+          retention-days: 14
+          if-no-files-found: error
