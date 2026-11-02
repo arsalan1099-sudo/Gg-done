@@ -1,252 +1,188 @@
-import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated, Easing, Dimensions } from "react-native";
-import { Image } from "expo-image";
-import { router } from "expo-router";
-import { useApp } from "@/lib/store";
+import React, { useState } from "react";
+import { ActivityIndicator, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
+import { getApiUrl } from "@/lib/query-client";
 
-const { width, height } = Dimensions.get("window");
+type Lang = "ar" | "en";
+const cities = [
+  ["Riyadh","الرياض"],["Jeddah","جدة"],["Makkah","مكة"],["Madinah","المدينة"],
+  ["Dammam","الدمام"],["Khobar","الخبر"],["Taif","الطائف"],["Tabuk","تبوك"],
+  ["Abha","أبها"],["Jazan","جازان"],["Other","أخرى"]
+] as const;
+const categories = [
+  ["Grocery","🛒","البقالة"],["Fashion","👗","الأزياء"],["Food","🥘","الطعام"],
+  ["Electronics","📱","الإلكترونيات"],["Home","🏠","المنزل"],["Beauty","🌷","الجمال"],
+  ["Services","🧰","الخدمات"],["Wholesale","📦","الجملة"]
+] as const;
+const strings = {
+  ar: {
+    status:"🇸🇦 إصدار سعودي · المرحلة التجريبية",
+    headline:"مدينتك، متاجرك، في مكان واحد",
+    subtitle:"اكتشف فئات السوق المحلي وسجّل اهتمامك بفتح متجر إلكتروني على جو سعودي.",
+    warning:"المنصة قيد الإعداد. لا تتوفر طلبات الشراء أو المدفوعات الآن.",
+    categories:"فئات السوق", prelaunch:"قريباً في مدينتك",
+    seller:"سجّل اهتمام متجرك", details:"التسجيل الأولي مجاني ولا يمثل عضوية مدفوعة.",
+    business:"اسم المتجر", nameHint:"اسم نشاطك التجاري", phone:"رقم الجوال السعودي",phoneHint:"05XXXXXXXX",
+    city:"اختر المدينة",category:"نوع النشاط",consent:"أوافق على حفظ بياناتي والتواصل معي بشأن انضمام المتجر.",
+    submit:"إرسال الطلب",sending:"جار الإرسال…",success:"تم تسجيل اهتمامك بنجاح.",
+    error:"تعذر حفظ الطلب. حاول مرة أخرى.",invalid:"راجع البيانات، رقم الجوال والموافقة.",
+    coming:"التسوق والمدفوعات سيتم تفعيلها بعد اعتماد الشروط والتحقق.", powered:"GO SAUDI · AASAA"
+  },
+  en: {
+    status:"🇸🇦 Saudi edition · Prelaunch",
+    headline:"Your city. Your stores. All together.",
+    subtitle:"Explore planned local marketplace categories and register interest in opening a Go Saudi shop.",
+    warning:"The platform is in prelaunch. Orders and payments are not available.",
+    categories:"Marketplace categories",prelaunch:"Coming to your city",
+    seller:"Register your store interest",details:"Seller enquiries are free, not paid memberships.",
+    business:"Business name",nameHint:"Your store name",phone:"Saudi mobile",phoneHint:"05XXXXXXXX",
+    city:"Select city",category:"Business category",consent:"I agree to store my details and be contacted about seller onboarding.",
+    submit:"Send enquiry",sending:"Submitting…",success:"Your enquiry has been recorded.",
+    error:"Could not save your enquiry. Try again.",invalid:"Check the details, Saudi phone and consent.",
+    coming:"Shopping and payments will be enabled after verification and compliance review.",powered:"GO SAUDI · AASAA"
+  }
+} as const;
 
-export default function SplashScreen() {
-  const { user } = useApp();
-  const hasNavigated = useRef(false);
+export default function GoSaudiPreview() {
+  const [lang,setLang] = useState<Lang>("ar");
+  const [businessName,setBusinessName]=useState("");
+  const [phone,setPhone]=useState("");
+  const [city,setCity]=useState("");
+  const [category,setCategory]=useState("");
+  const [consent,setConsent]=useState(false);
+  const [busy,setBusy]=useState(false);
+  const [notice,setNotice]=useState<"success"|"error"|"invalid"|null>(null);
+  const tr=strings[lang];
+  const ar=lang==="ar";
+  const textAlign=ar?"right" as const:"left" as const;
 
-  const bgScale    = useRef(new Animated.Value(0)).current;
-  const bgOpacity  = useRef(new Animated.Value(0)).current;
-  const logoScale  = useRef(new Animated.Value(0.6)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const textOpacity = useRef(new Animated.Value(0)).current;
-  const textTransY  = useRef(new Animated.Value(16)).current;
-  const tagOpacity  = useRef(new Animated.Value(0)).current;
-  const barWidth   = useRef(new Animated.Value(0)).current;
-  const screenOpacity = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    // Phase 1: White logo card scales in (0–400ms)
-    Animated.parallel([
-      Animated.spring(bgScale, {
-        toValue: 1,
-        tension: 60,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bgOpacity, {
-        toValue: 1,
-        duration: 350,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
-      Animated.spring(logoScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 400,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Phase 2: Brand name slides up (400–750ms)
-      Animated.parallel([
-        Animated.timing(textOpacity, {
-          toValue: 1,
-          duration: 320,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(textTransY, {
-          toValue: 0,
-          duration: 320,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Phase 3: Tagline fades in
-        Animated.timing(tagOpacity, {
-          toValue: 1,
-          duration: 280,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }).start();
+  const submit=async()=>{
+    if(busy)return;
+    const cleaned=phone.replace(/[\s()+-]/g,"");
+    if(businessName.trim().length < 2 || !city || !category || !consent || !/^(?:0?5[0-9]{8}|9665[0-9]{8})$/.test(cleaned)){
+      setNotice("invalid");return;
+    }
+    setNotice(null);setBusy(true);
+    try {
+      const response=await fetch(new URL("/api/saudi/seller-enquiries",getApiUrl()).toString(),{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({businessName:businessName.trim(),phone,city,category,consent:true})
       });
-    });
-
-    // Loading bar fills over 1900ms (starts at 300ms delay)
-    Animated.timing(barWidth, {
-      toValue: 1,
-      duration: 1900,
-      delay: 300,
-      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-      useNativeDriver: false,
-    }).start();
-
-    // Navigate at 2.3s
-    const timer = setTimeout(() => {
-      if (hasNavigated.current) return;
-      hasNavigated.current = true;
-
-      // Fade out before leaving
-      Animated.timing(screenOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start(() => {
-        const roleRoute: Record<string, string> = {
-          CUSTOMER: "/(customer)",
-          VENDOR: "/(vendor)",
-          DELIVERY: "/(delivery)",
-          FRANCHISE: "/(franchise)",
-          MARKETING: "/(marketing)",
-          SUPER_ADMIN: "/(admin)",
-        };
-        if (user) {
-          router.replace(roleRoute[user.role] as any);
-        } else {
-          router.replace("/auth" as any);
-        }
-      });
-    }, 2300);
-
-    return () => clearTimeout(timer);
-  }, [user]);
+      if(!response.ok)throw new Error("Server rejected enquiry");
+      setBusinessName("");setPhone("");setCity("");setCategory("");setConsent(false);setNotice("success");
+    }catch(_error){setNotice("error");}finally{setBusy(false);}
+  };
 
   return (
-    <Animated.View style={[styles.container, { opacity: screenOpacity }]}>
-      {/* Orange radial glow behind the card */}
-      <View style={styles.glow} />
-
-      {/* White logo card */}
-      <Animated.View
-        style={[
-          styles.logoCard,
-          {
-            opacity: bgOpacity,
-            transform: [{ scale: bgScale }],
-          },
-        ]}
-      >
-        <Animated.View style={{ transform: [{ scale: logoScale }], opacity: logoOpacity }}>
-          <Image
-            source={require("@/assets/images/go-bharat-logo-nobg.png")}
-            style={styles.logo}
-            contentFit="contain"
-            accessibilityLabel="Go Bharat"
-          />
-        </Animated.View>
-      </Animated.View>
-
-      {/* Brand name */}
-      <Animated.Text
-        style={[
-          styles.brandName,
-          {
-            opacity: textOpacity,
-            transform: [{ translateY: textTransY }],
-          },
-        ]}
-      >
-        Go Bharat
-      </Animated.Text>
-
-      {/* Tagline */}
-      <Animated.Text style={[styles.tagline, { opacity: tagOpacity }]}>
-        Your Local Marketplace
-      </Animated.Text>
-
-      {/* Bottom loading bar */}
-      <View style={styles.bottomArea}>
-        <View style={styles.track}>
-          <Animated.View
-            style={[
-              styles.fill,
-              {
-                width: barWidth.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["0%", "100%"],
-                }),
-              },
-            ]}
-          />
+    <View style={styles.page}>
+      <StatusBar barStyle="light-content" backgroundColor="#054634"/>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
+        <View style={styles.hero}>
+          <View style={styles.nav}>
+            <View style={styles.brandRow}><View style={styles.brandIcon}><Text style={styles.brandMark}>✦</Text></View><Text style={styles.brand}>GO SAUDI</Text></View>
+            <Pressable onPress={()=>setLang(ar?"en":"ar")} style={styles.lang} accessibilityRole="button">
+              <Text style={styles.langText}>{ar?"English":"العربية"}</Text>
+            </Pressable>
+          </View>
+          <Text style={[styles.kicker,{textAlign}]}>{tr.status}</Text>
+          <Text style={[styles.heading,{textAlign}]}>{tr.headline}</Text>
+          <Text style={[styles.heroDesc,{textAlign}]}>{tr.subtitle}</Text>
+          <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>{tr.prelaunch}  •  SAR</Text></View>
         </View>
-        <Text style={styles.poweredBy}>Powered by AASAA PVT. LTD.</Text>
-      </View>
-    </Animated.View>
+
+        <View style={styles.body}>
+          <View style={styles.warning}><Text style={[styles.warningText,{textAlign}]}>{tr.warning}</Text></View>
+          <Text style={[styles.sectionTitle,{textAlign}]}>{tr.categories}</Text>
+          <View style={styles.categories}>
+            {categories.map(([id,emoji,arabic])=>(
+              <Pressable key={id} accessibilityRole="button"
+                onPress={()=>{setCategory(id);setNotice(null);}}
+                style={[styles.category,category===id&&styles.categorySelected]}>
+                <Text style={styles.catEmoji}>{emoji}</Text>
+                <Text style={styles.categoryLabel}>{ar?arabic:id}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <View style={styles.form}>
+            <Text style={[styles.sectionTitle,{textAlign}]}>{tr.seller}</Text>
+            <Text style={[styles.help,{textAlign}]}>{tr.details}</Text>
+            <Text style={[styles.fieldLabel,{textAlign}]}>{tr.business}</Text>
+            <TextInput value={businessName} onChangeText={setBusinessName} maxLength={100}
+              placeholder={tr.nameHint} style={[styles.input,{textAlign}]} placeholderTextColor="#829389"/>
+            <Text style={[styles.fieldLabel,{textAlign}]}>{tr.phone}</Text>
+            <TextInput value={phone} onChangeText={setPhone} keyboardType="phone-pad" maxLength={20}
+              placeholder={tr.phoneHint} style={[styles.input,{textAlign:"left"}]} placeholderTextColor="#829389"/>
+            <Text style={[styles.fieldLabel,{textAlign}]}>{tr.city}</Text>
+            <View style={styles.options}>
+              {cities.map(([id,arLabel])=>(
+                <Pressable key={id} onPress={()=>setCity(id)} style={[styles.chip,city===id&&styles.chipSelected]}>
+                  <Text style={[styles.chipText,city===id&&styles.chipTextSelected]}>{ar?arLabel:id}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={[styles.fieldLabel,{textAlign}]}>{tr.category}</Text>
+            <View style={styles.options}>
+              {categories.map(([id,,arLabel])=>(
+                <Pressable key={id} onPress={()=>setCategory(id)} style={[styles.chip,category===id&&styles.chipSelected]}>
+                  <Text style={[styles.chipText,category===id&&styles.chipTextSelected]}>{ar?arLabel:id}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable onPress={()=>setConsent(!consent)} style={[styles.consentRow,{flexDirection:ar?"row-reverse":"row"}]}
+              accessibilityRole="checkbox" accessibilityState={{checked:consent}}>
+              <View style={[styles.checkbox,consent&&styles.checkboxChecked]}>{consent&&<Text style={styles.checkmark}>✓</Text>}</View>
+              <Text style={[styles.consentText,{textAlign}]}>{tr.consent}</Text>
+            </Pressable>
+            <Pressable onPress={submit} disabled={busy} style={styles.submit} accessibilityRole="button">
+              {busy?<ActivityIndicator color="#fff"/>:<Text style={styles.submitText}>{tr.submit}</Text>}
+            </Pressable>
+            {notice&&<Text accessibilityRole="alert" style={[styles.feedback,{color:notice==="success"?"#067146":"#a92b30",textAlign}]}>{tr[notice]}</Text>}
+          </View>
+          <Text style={[styles.coming,{textAlign}]}>{tr.coming}</Text>
+          <Text style={styles.footer}>{tr.powered}</Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
-
-const CARD_SIZE = Math.min(width * 0.48, 200);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFF",
-  },
-  glow: {
-    position: "absolute",
-    width: CARD_SIZE * 2.2,
-    height: CARD_SIZE * 2.2,
-    borderRadius: CARD_SIZE * 1.1,
-    backgroundColor: "#FF6B00",
-    opacity: 0.07,
-  },
-  logoCard: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
-    borderRadius: 32,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#FF6B00",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  logo: {
-    width: CARD_SIZE * 0.82,
-    height: CARD_SIZE * 0.82,
-  },
-  brandName: {
-    marginTop: 24,
-    fontFamily: "Poppins_700Bold",
-    fontSize: 30,
-    color: "#1A1A2E",
-    letterSpacing: 0.5,
-  },
-  tagline: {
-    marginTop: 6,
-    fontFamily: "Poppins_400Regular",
-    fontSize: 14,
-    color: "#FF6B00",
-    letterSpacing: 1.2,
-  },
-  bottomArea: {
-    position: "absolute",
-    bottom: 56,
-    width: "52%",
-    alignItems: "center",
-    gap: 12,
-  },
-  track: {
-    width: "100%",
-    height: 3,
-    backgroundColor: "rgba(0,0,0,0.07)",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  fill: {
-    height: "100%",
-    backgroundColor: "#FF6B00",
-    borderRadius: 2,
-  },
-  poweredBy: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: 11,
-    color: "rgba(0,0,0,0.3)",
-    letterSpacing: 0.5,
-  },
+const styles=StyleSheet.create({
+  page:{flex:1,backgroundColor:"#f6faf7"},
+  container:{paddingBottom:35},
+  hero:{backgroundColor:"#064b3a",paddingTop:Platform.OS==="web"?34:48,paddingHorizontal:23,paddingBottom:41},
+  nav:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginBottom:35},
+  brandRow:{flexDirection:"row",alignItems:"center",gap:9},
+  brandIcon:{backgroundColor:"#258568",borderRadius:13,width:41,height:41,alignItems:"center",justifyContent:"center"},
+  brandMark:{fontSize:24,color:"#fff"},brand:{fontSize:20,fontWeight:"900",color:"#fff",letterSpacing:.5},
+  lang:{paddingVertical:10,paddingHorizontal:13,backgroundColor:"#ffffff19",borderRadius:12,borderWidth:1,borderColor:"#ffffff44"},
+  langText:{color:"#fff",fontSize:13,fontWeight:"800"},
+  kicker:{color:"#d9bb80",fontSize:13,fontWeight:"800",marginBottom:17},
+  heading:{color:"#fff",fontSize:34,fontWeight:"900",lineHeight:45,marginBottom:17},
+  heroDesc:{color:"#d5ebe0",fontSize:16,lineHeight:27,marginBottom:21},
+  heroBadge:{backgroundColor:"#ffffff19",alignSelf:"flex-start",paddingVertical:10,paddingHorizontal:15,borderRadius:20},
+  heroBadgeText:{color:"#fff",fontSize:13,fontWeight:"700"},
+  body:{paddingHorizontal:20,paddingTop:22,maxWidth:660,width:"100%",alignSelf:"center"},
+  warning:{backgroundColor:"#fff7e6",borderColor:"#f2dfad",borderWidth:1,padding:16,borderRadius:14,marginBottom:22},
+  warningText:{color:"#665127",fontSize:13,lineHeight:23},
+  sectionTitle:{fontSize:24,fontWeight:"900",color:"#193b2e",marginBottom:15},
+  categories:{flexDirection:"row",flexWrap:"wrap",gap:9,marginBottom:26},
+  category:{width:"48%",backgroundColor:"#fff",borderWidth:1,borderColor:"#e0ebe4",padding:21,borderRadius:17,alignItems:"center",gap:8},
+  categorySelected:{borderColor:"#08784d",borderWidth:2,backgroundColor:"#e8f7ee"},
+  catEmoji:{fontSize:31},categoryLabel:{fontSize:13,fontWeight:"800",color:"#284c3b"},
+  form:{backgroundColor:"#fff",borderWidth:1,borderColor:"#e4eee7",borderRadius:22,padding:20},
+  help:{color:"#61746a",fontSize:13,lineHeight:22,marginBottom:20},
+  fieldLabel:{color:"#2a4637",fontSize:13,fontWeight:"800",marginTop:10,marginBottom:8},
+  input:{borderRadius:12,borderWidth:1,borderColor:"#cadbd0",backgroundColor:"#fcfefc",paddingHorizontal:15,paddingVertical:12,fontSize:15,color:"#142f24",minHeight:49},
+  options:{flexDirection:"row",flexWrap:"wrap",gap:7,marginBottom:10},
+  chip:{paddingVertical:9,paddingHorizontal:12,backgroundColor:"#f4f8f5",borderRadius:20,borderWidth:1,borderColor:"#dfe9e2"},
+  chipSelected:{backgroundColor:"#0b7650",borderColor:"#0b7650"},
+  chipText:{color:"#3c5548",fontWeight:"600",fontSize:12},
+  chipTextSelected:{color:"#fff"},
+  consentRow:{gap:10,alignItems:"center",marginVertical:19},
+  checkbox:{width:22,height:22,borderWidth:1.5,borderColor:"#6c9d80",borderRadius:6,alignItems:"center",justifyContent:"center"},
+  checkboxChecked:{backgroundColor:"#09744f",borderColor:"#09744f"},checkmark:{color:"#fff",fontWeight:"900"},
+  consentText:{flex:1,fontSize:12,color:"#536658",lineHeight:20},
+  submit:{backgroundColor:"#0a704d",padding:17,borderRadius:13,alignItems:"center",justifyContent:"center"},
+  submitText:{color:"#fff",fontSize:15,fontWeight:"900"},
+  feedback:{fontSize:13,marginTop:13,fontWeight:"700"},
+  coming:{textAlign:"center",marginTop:25,color:"#6e7d73",fontSize:13,lineHeight:21},
+  footer:{textAlign:"center",marginTop:23,color:"#0b704c",fontSize:13,fontWeight:"900"}
 });
