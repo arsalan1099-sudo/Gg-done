@@ -97,6 +97,46 @@ test("Saudi vendor onboarding, draft isolation, invitation replay and revocation
  const list=await json("/api/saudi/vendor/products",{headers:{Cookie:cookieA}});
  assert.equal(list.res.status,200);
  assert.ok(list.data.products.some((p:any)=>p.id===prodId&&p.status==="DRAFT"));
+ const catalogBefore=await json("/api/saudi/catalog");
+ assert.equal(catalogBefore.res.status,200);
+ assert.equal(catalogBefore.data.available,false);
+ assert.deepEqual(catalogBefore.data.products,[]);
+ const submission=await post("/api/saudi/vendor/catalog-submissions",{draftId:prodId},{Cookie:cookieA});
+ assert.equal(submission.res.status,201,JSON.stringify(submission.data));
+ const submissionId=submission.data.submission.id as string;
+ const catalogQueue=await json("/api/saudi/admin/catalog-submissions?status=PENDING",{
+   headers:{Authorization:"Bearer "+adminToken}
+ });
+ assert.equal(catalogQueue.res.status,200);
+ assert.ok(catalogQueue.data.submissions.some((p:any)=>p.id===submissionId));
+ const blockedApproval=await patch("/api/saudi/admin/catalog-submissions/"+submissionId,{
+   status:"APPROVED",note:"Reviewed product and shop documents"
+ },adminHeaders());
+ assert.equal(blockedApproval.res.status,423,"Approval forbidden without Saudi privacy and merchant checks");
+ process.env.GO_SAUDI_PRIVACY_APPROVED="true";
+ process.env.GO_SAUDI_MERCHANT_VERIFICATION_APPROVED="true";
+ try{
+   const approved=await patch("/api/saudi/admin/catalog-submissions/"+submissionId,{
+     status:"APPROVED",note:"Merchant and catalog checks completed"
+   },adminHeaders());
+   assert.equal(approved.res.status,200,JSON.stringify(approved.data));
+   assert.equal(approved.data.public,false);
+   const stillClosed=await json("/api/saudi/catalog");
+   assert.equal(stillClosed.data.available,false);
+   process.env.GO_SAUDI_MARKETPLACE_LAUNCH_APPROVED="true";
+   process.env.GO_SAUDI_CATALOG_PUBLIC="true";
+   const visible=await json("/api/saudi/catalog?city=Jeddah&category=Food");
+   assert.equal(visible.res.status,200);
+   assert.equal(visible.data.available,true);
+   assert.equal(visible.data.checkoutEnabled,false);
+   assert.ok(visible.data.products.some((p:any)=>p.id===submissionId&&p.priceHalalas===1599));
+   assert.ok(visible.data.products.every((p:any)=>!p.phone&&!p.vendorId));
+ }finally{
+   delete process.env.GO_SAUDI_PRIVACY_APPROVED;
+   delete process.env.GO_SAUDI_MERCHANT_VERIFICATION_APPROVED;
+   delete process.env.GO_SAUDI_MARKETPLACE_LAUNCH_APPROVED;
+   delete process.env.GO_SAUDI_CATALOG_PUBLIC;
+ }
  const bad=await post("/api/saudi/vendor/products",{...item,priceHalalas:1.15},{Cookie:cookieA});
  assert.equal(bad.res.status,400,"Fractional halalas invalid");
  const activateB=await post("/api/saudi/vendor/activate",{inviteToken:invB.data.inviteToken});
