@@ -15,7 +15,8 @@
     "render:build": "npm run test:saudi && npm run test:revenue && npm run server:build",
     "render:start": "NODE_ENV=production node server_dist/saudiServer.js",
     "test:saudi": "tsx --test server/__tests__/saudiRules.test.ts server/__tests__/saudiAdminRules.test.ts server/__tests__/saudiAdminAuth.test.ts server/__tests__/saudiVendorRules.test.ts server/__tests__/saudiCsp.test.ts",
-    "db:saudi:migrate": "tsx server/saudiMigrate.ts"
+    "db:saudi:migrate": "tsx server/saudiMigrate.ts",
+    "test:saudi:integration": "tsx --test server/__tests__/saudiVendor.integration.test.ts"
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",
