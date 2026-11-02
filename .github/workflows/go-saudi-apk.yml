@@ -9,7 +9,7 @@ permissions:
   contents: read
 jobs:
   apk:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       CI: "1"
@@ -26,6 +26,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - run: npm ci --no-audit --no-fund
       - run: npm run test:saudi:mobile
       - name: Generate native Android project
