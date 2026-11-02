@@ -84,4 +84,12 @@ export function registerSaudiMarket(app: Express): void {
     if (req.path === "/health") return next();
     res.status(423).json({error:"Go Saudi is in prelaunch. Legacy Indian commerce APIs are disabled."});
   });
+
+  // Prevent accidental exposure of the inherited Go Bharat mobile/admin
+  // SPA paths in the Saudi preview. Only the Saudi landing, seller form and
+  // protected admin page (registered above) are public pages.
+  app.use((req, res, next) => {
+    if (req.path === "/api/health") return next();
+    return res.status(404).send("Go Saudi page not available in prelaunch.");
+  });
 }
