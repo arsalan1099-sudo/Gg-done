@@ -105,7 +105,8 @@ function setupRequestLogging(app: express.Application) {
       const duration = Date.now() - start;
 
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
+      // Never log seller PII, private contact details, admin review notes or tokens.
+      if (capturedJsonResponse && !path.startsWith('/api/saudi/')) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
