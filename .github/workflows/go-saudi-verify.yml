@@ -1,4 +1,4 @@
-name: Go Saudi - Preview Verification
+name: Go Saudi - Secure Preview Release Verification
 
 on:
   push:
@@ -6,22 +6,62 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  vendor-pilot:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: saudi_ci
+          POSTGRES_PASSWORD: saudi_ci_only
+          POSTGRES_DB: go_saudi_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U saudi_ci -d go_saudi_ci"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_ci
+      GO_SAUDI_MODE: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
       - run: npm ci
+      - run: npm run db:saudi:migrate
       - run: npm run test:saudi
       - run: npm run test:revenue
+      - run: npm run test:saudi:integration
       - run: npm run server:build
-      # Focused type-check: the inherited Go Bharat repository has existing
-      # unrelated full-project TS failures (mockup sandbox, legacy modules).
-      - run: npx tsc --noEmit --strict --skipLibCheck --esModuleInterop --target ES2022 --module commonjs --moduleResolution node --types node server/saudiAdminAuth.ts server/saudiAdminRules.ts
-      - run: npx expo export --platform web --output-dir static-build
+      - name: Focused Saudi TypeScript verification
+        run: npx tsc --noEmit --strict --skipLibCheck --esModuleInterop --target ES2022 --module commonjs --moduleResolution node --types node server/saudiAdminAuth.ts server/saudiAdminRules.ts server/saudiVendorRules.ts server/saudiCsp.ts
+      - name: Production-mode smoke (isolated Saudi server only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GO_SAUDI_ADMIN_TOKEN_SHA256="$(node -e "const c=require('crypto');console.log(c.createHash('sha256').update('c'.repeat(64)).digest('hex'))")"
+          export APP_PUBLIC_URL="https://go-saudi-ci.example"
+          export NODE_ENV="production"
+          export PORT=5011
+          node server_dist/saudiServer.js > /tmp/go-saudi-boot.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:5011/api/health > /tmp/go-saudi-health.json; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then cat /tmp/go-saudi-boot.log; exit 1; fi
+          grep -q '"status":"healthy"' /tmp/go-saudi-health.json
+          curl -sf http://127.0.0.1:5011/api/saudi/market | grep -q '"PRELAUNCH"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5011/api/vendors)" = "423"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5011/vendor)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5011/admin)" = "302"
