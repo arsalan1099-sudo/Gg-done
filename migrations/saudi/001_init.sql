@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS seller_enquiries (
   updated_at timestamp DEFAULT now(),
   CONSTRAINT saudi_enquiry_source CHECK (source = 'SAUDI_LANDING'),
   CONSTRAINT saudi_enquiry_status CHECK (status IN ('NEW','CONTACTED','DOCUMENTS_PENDING','UNDER_REVIEW','APPROVED','REJECTED')),
-  CONSTRAINT saudi_enquiry_phone CHECK (phone ~ '^\\+9665[0-9]{8}$')
+  CONSTRAINT saudi_enquiry_phone CHECK (phone ~ '^[+]9665[0-9]{8}$')
 );
 CREATE INDEX IF NOT EXISTS idx_seller_enquiries_created ON seller_enquiries(created_at);
 CREATE INDEX IF NOT EXISTS idx_seller_enquiries_status ON seller_enquiries(status);
