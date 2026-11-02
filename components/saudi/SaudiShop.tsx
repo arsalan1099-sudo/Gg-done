@@ -56,6 +56,7 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
  const [category,setCategory]=useState("All");
  const [city,setCity]=useState("All");
  const [cart,setCart]=useState<CartLine[]>([]);
+ const [cartLoaded,setCartLoaded]=useState(false);
  const [favs,setFavs]=useState<string[]>([]);
  const [selected,setSelected]=useState<SaudiProduct|null>(null);
  const [networkError,setNetworkError]=useState(false);
@@ -76,15 +77,19 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
  },[origin]);
  useEffect(()=>{loadCatalog();},[loadCatalog]);
  const key=mode==="live"?"go-saudi-live-cart-v1":"go-saudi-demo-cart-v1";
- useEffect(()=>{let active=true;
+ useEffect(()=>{
+  let active=true;
+  setCartLoaded(false);
   AsyncStorage.getItem(key).then(raw=>{
    let stored:unknown=[];try{stored=JSON.parse(raw||"[]")}catch{}
-   if(active)setCart(safeSaudiCart(stored,items));
-  }).catch(()=>{if(active)setCart([])});
+   if(active){setCart(safeSaudiCart(stored,items));setCartLoaded(true);}
+  }).catch(()=>{if(active){setCart([]);setCartLoaded(true);}});
   return()=>{active=false};
- // Intentional cart reload on mode change; different storage for demo vs real.
+ // Demo and real carts are stored separately. Never send cart data to the server.
  },[key,mode]);
- useEffect(()=>{AsyncStorage.setItem(key,JSON.stringify(cart)).catch(()=>{});},[key,cart]);
+ useEffect(()=>{
+  if(cartLoaded)AsyncStorage.setItem(key,JSON.stringify(cart)).catch(()=>{});
+ },[key,cart,cartLoaded]);
  const favorites=useMemo(()=>items.filter(p=>favs.includes(p.id)),[items,favs]);
  const shown=useMemo(()=>items.filter(p=>{
   const q=search.trim().toLocaleLowerCase("en");
@@ -247,7 +252,7 @@ const styles=StyleSheet.create({
  productEmoji:{fontSize:45},
  previewTag:{position:"absolute",bottom:8,right:8,fontSize:10,fontWeight:"900",color:"#28734c",backgroundColor:"#fff",borderRadius:7,paddingHorizontal:6,paddingVertical:2},
  productInfo:{padding:11},
- productTitle:{fontSize:14,fontWeight:"850",color:"#194333"},
+ productTitle:{fontSize:14,fontWeight:"800",color:"#194333"},
  muted:{fontSize:11,color:"#718576",marginTop:5},
  price:{fontWeight:"900",fontSize:15,color:"#08734c",marginTop:10},
  cardActions:{flexDirection:"row",alignItems:"center",gap:7,marginTop:13},
