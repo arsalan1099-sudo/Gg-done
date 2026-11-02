@@ -117,6 +117,68 @@ test("Saudi vendor onboarding, draft isolation, invitation replay and revocation
  assert.equal(expired.res.status,401);
  const stillB=await json("/api/saudi/vendor/me",{headers:{Cookie:cookieB}});
  assert.equal(stillB.res.status,200);
+ // Vendor can export only their own business information and draft catalog.
+ const exportB=await json("/api/saudi/vendor/data-export",{headers:{Cookie:cookieB}});
+ assert.equal(exportB.res.status,200);
+ assert.equal(exportB.data.profile.businessName.includes("Saudi Test B"),true);
+ assert.equal(exportB.data.profile.businessName.includes("Saudi Test A"),false);
+ assert.equal(exportB.data.draftProducts.length,0);
+ const exportUnauth=await json("/api/saudi/vendor/data-export");
+ assert.equal(exportUnauth.res.status,401);
+ const requestDelete=await post("/api/saudi/vendor/data-requests",{
+   requestType:"DELETE_ACCOUNT",confirm:true
+ },{Cookie:cookieB});
+ assert.equal(requestDelete.res.status,201,JSON.stringify(requestDelete.data));
+ const requestId=requestDelete.data.request.id as string;
+ const duplicate=await post("/api/saudi/vendor/data-requests",{
+   requestType:"DELETE_ACCOUNT",confirm:true
+ },{Cookie:cookieB});
+ assert.equal(duplicate.res.status,200);
+ assert.equal(duplicate.data.request.id,requestId);
+ const ownReq=await json("/api/saudi/vendor/data-requests",{headers:{Cookie:cookieB}});
+ assert.equal(ownReq.res.status,200);
+ assert.ok(ownReq.data.requests.some((r:any)=>r.id===requestId&&r.status==="PENDING"));
+ const adminRequests=await json("/api/saudi/admin/data-requests",{
+   headers:{Authorization:"Bearer "+adminToken}
+ });
+ assert.equal(adminRequests.res.status,200);
+ assert.ok(adminRequests.data.requests.some((r:any)=>r.id===requestId));
+ assert.equal(adminRequests.data.erasureEnabled,false);
+ // Actual deletion is off by default; neither consent nor the admin key
+ // alone permits irreversible removal.
+ const locked=await post("/api/saudi/admin/data-requests/"+requestId+"/complete",{
+   identityVerified:true,retentionReviewed:true,confirmation:requestId+":ERASE"
+ },adminHeaders());
+ assert.equal(locked.res.status,423);
+ const remaining=await json("/api/saudi/vendor/me",{headers:{Cookie:cookieB}});
+ assert.equal(remaining.res.status,200);
+ process.env.GO_SAUDI_ACCOUNT_ERASURE_ENABLED="true";
+ try{
+   const unverified=await post("/api/saudi/admin/data-requests/"+requestId+"/complete",{
+     identityVerified:false,retentionReviewed:true,confirmation:requestId+":ERASE"
+   },adminHeaders());
+   assert.equal(unverified.res.status,400);
+   const completed=await post("/api/saudi/admin/data-requests/"+requestId+"/complete",{
+     identityVerified:true,retentionReviewed:true,confirmation:requestId+":ERASE"
+   },adminHeaders());
+   assert.equal(completed.res.status,200,JSON.stringify(completed.data));
+   assert.equal(completed.data.personalDataDeleted,true);
+   const revokedB=await json("/api/saudi/vendor/me",{headers:{Cookie:cookieB}});
+   assert.equal(revokedB.res.status,401);
+   const completedReceipts=await json("/api/saudi/admin/data-requests?status=COMPLETED",{
+     headers:{Authorization:"Bearer "+adminToken}
+   });
+   assert.equal(completedReceipts.res.status,200);
+   const receipt=completedReceipts.data.requests.find((r:any)=>r.id===requestId);
+   assert.ok(receipt);
+   assert.equal(receipt.status,"COMPLETED");
+   assert.equal(receipt.phone,null);
+   assert.equal(receipt.businessName,null);
+   const retry=await post("/api/saudi/admin/data-requests/"+requestId+"/complete",{
+     identityVerified:true,retentionReviewed:true,confirmation:requestId+":ERASE"
+   },adminHeaders());
+   assert.equal(retry.res.status,409);
+ }finally{delete process.env.GO_SAUDI_ACCOUNT_ERASURE_ENABLED}
 });
 test("concurrent same seller submissions deduplicate transactionally",async()=>{
  const businessName="Saudi Duplicate Race "+Date.now();
