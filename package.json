@@ -14,7 +14,7 @@
     "test:revenue": "tsx --test server/__tests__/vendorBillingRules.test.ts server/__tests__/sellerLeadRules.test.ts",
     "render:build": "npm run test:saudi && npm run test:revenue && npm run server:build",
     "render:start": "NODE_ENV=production node server_dist/saudiServer.mjs",
-    "test:saudi": "tsx --test server/__tests__/saudiRules.test.ts server/__tests__/saudiAdminRules.test.ts server/__tests__/saudiAdminAuth.test.ts server/__tests__/saudiVendorRules.test.ts server/__tests__/saudiCsp.test.ts",
+    "test:saudi": "tsx --test server/__tests__/saudiRules.test.ts server/__tests__/saudiAdminRules.test.ts server/__tests__/saudiAdminAuth.test.ts server/__tests__/saudiVendorRules.test.ts server/__tests__/saudiCsp.test.ts server/__tests__/saudiLog.test.ts",
     "db:saudi:migrate": "tsx server/saudiMigrate.ts",
     "test:saudi:integration": "tsx --test server/__tests__/saudiVendor.integration.test.ts"
   },
