@@ -37,6 +37,33 @@ jobs:
       - run: npm run test:saudi
       - run: npm run test:revenue
       - run: npm run test:saudi:integration
+      - name: Saudi migration must reject a mixed-market database
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const {Client}=require('pg');
+          (async()=>{
+            const c=new Client({connectionString:process.env.DATABASE_URL});
+            await c.connect();
+            await c.query('CREATE TABLE foreign_market_sentinel (id int PRIMARY KEY)');
+            await c.end();
+          })().catch(e=>{console.error(e.message);process.exit(1)});
+          NODE
+          if npm run db:saudi:migrate > /tmp/saudi-migration-guard.log 2>&1; then
+            echo "ERROR: migration accepted a mixed-market database" >&2
+            exit 1
+          fi
+          node - <<'NODE'
+          const {Client}=require('pg');
+          (async()=>{
+            const c=new Client({connectionString:process.env.DATABASE_URL});
+            await c.connect();
+            await c.query('DROP TABLE foreign_market_sentinel');
+            await c.end();
+          })().catch(e=>{console.error(e.message);process.exit(1)});
+          NODE
+          npm run db:saudi:migrate
       - run: npm run server:build
       - name: Focused Saudi TypeScript verification
         run: npx tsc --noEmit --strict --skipLibCheck --esModuleInterop --target ES2022 --module commonjs --moduleResolution node --types node server/saudiAdminAuth.ts server/saudiAdminRules.ts server/saudiVendorRules.ts server/saudiCsp.ts
