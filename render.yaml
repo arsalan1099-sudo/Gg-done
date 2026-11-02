@@ -1,6 +1,7 @@
+# Separate Saudi preview service. Never point DATABASE_URL to Go Bharat's database.
 services:
   - type: web
-    name: go-bharat
+    name: go-saudi-preview
     runtime: node
     plan: free
     buildCommand: npm ci && npm run render:build
@@ -9,31 +10,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: GO_SAUDI_MODE
+        value: "true"
+      - key: VENDOR_MEMBERSHIP_PAYMENTS_ENABLED
+        value: "false"
       - key: DATABASE_URL
-        sync: false
-      - key: GOOGLE_OAUTH_CLIENT_ID
-        sync: false
-      - key: EXPO_PUBLIC_GOOGLE_CLIENT_ID
-        sync: false
-      - key: RAZORPAY_KEY_ID
-        sync: false
-      - key: RAZORPAY_KEY_SECRET
-        sync: false
-      - key: RAZORPAY_WEBHOOK_SECRET
-        sync: false
-      - key: PHONEPE_MERCHANT_ID
-        sync: false
-      - key: PHONEPE_SALT_KEY
-        sync: false
-      - key: PHONEPE_SALT_INDEX
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: ONESIGNAL_APP_ID
-        sync: false
-      - key: ONESIGNAL_REST_API_KEY
-        sync: false
-      - key: ONESIGNAL_ANDROID_CHANNEL_ID
         sync: false
       - key: APP_PUBLIC_URL
         sync: false
