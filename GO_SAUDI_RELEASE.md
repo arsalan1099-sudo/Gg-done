@@ -32,9 +32,9 @@ The Saudi branch now additionally implements:
 
 Never use the existing Go Bharat Render service or GitHub `main` branch for this pilot. Confirm workspace before any Render service creation, and use private trusted channels for credentials.
 
-## Vendor personal-data rights and database recovery (schema v002)
+## Vendor personal-data rights and database recovery (schema v003)
 
-- `migrations/saudi/002_data_requests.sql` updates the dedicated Saudi database marker to **schema version 2**. New deployments and upgrades must run `GO_SAUDI_MODE=true npm run db:saudi:migrate` with the **Saudi-only** database. The boot process now refuses older schemas.
+- `migrations/saudi/002_data_requests.sql` updates the dedicated Saudi database marker to **schema version 3**. New deployments and upgrades must run `GO_SAUDI_MODE=true npm run db:saudi:migrate` with the **Saudi-only** database. The boot process now refuses older schemas.
 - Logged-in sellers can download their own contact, store profile and private product draft data from `GET /api/saudi/vendor/data-export`. This is a sensitive personal-data export; send only over HTTPS and store local downloaded copies securely.
 - Sellers can submit a **pending** deletion request via `POST /api/saudi/vendor/data-requests` with `{"requestType":"DELETE_ACCOUNT","confirm":true}`. Repeated requests are deduplicated. The admin can review pending requests in `/saudi-admin`.
 - **No erasure by default.** `GO_SAUDI_ACCOUNT_ERASURE_ENABLED=false` in Render. Only after an approved retention/legal policy, an independently verified merchant identity, and an explicit operator decision should the setting temporarily be enabled for the authenticated admin request-completion action.
@@ -42,6 +42,17 @@ Never use the existing Go Bharat Render service or GitHub `main` branch for this
 - CI performs a **custom-format PostgreSQL export and full restore into a separate test database**, checks schema version and restored records. This is not a real production backup. Configure encrypted scheduled production backups, off-site storage, least-privilege access and documented periodic restore tests separately.
 
 **Before real users:** specify request-response deadlines and lawful-retention exceptions in the approved Arabic/English privacy policy; implement secure support and named reviewer identity. Do not treat an anonymous test deletion receipt as a comprehensive compliance audit.
+
+## Moderated product catalog and mobile shopping preview (migration 003)
+
+- New `saudi_catalog_submissions` table isolates admin-reviewed product snapshots from vendors' private drafts. Pending submissions require an approved Saudi vendor account.
+- Vendor dashboard can submit a product for review. Saudi admin dashboard can approve or reject with a 10–500-character reason. Approved does not mean publicly listed.
+- In production, the public catalog requires independent explicit gates:
+  `GO_SAUDI_PRIVACY_APPROVED=true`, `GO_SAUDI_MARKETPLACE_LAUNCH_APPROVED=true`, `GO_SAUDI_CATALOG_PUBLIC=true`. Admin approval additionally requires a separate merchant verification flag. All default to **false**, including the Render template.
+- `GET /api/saudi/catalog` gives an empty, non-PII catalog when disabled; on a fully approved launch returns only reviewed products from approved sellers with city/category filters. There is **no order or payment endpoint**.
+- Native Saudi Shop preview (Arabic/English) supports product search, filters, details, wishlist and local persistent cart. Until a valid live backend is configured, sample products are explicitly labeled **DEMO** and cannot be purchased. This is not full Saudi marketplace functionality.
+- Apply `GO_SAUDI_MODE=true npm run db:saudi:migrate` on the isolated Saudi DB to upgrade marker to **v3**. Backups from the older schema must be tested; server refuses older versions. CI migrates disposable PG16 and runs API tests.
+- Pending: actual secure customer login, order processing, fulfilment, settlement, payment integration, VAT, returns, legal privacy and device testing.
 
 ## Required checks — dev/CI
 
@@ -61,7 +72,7 @@ Integration tests need a newly migrated **disposable test database**, not a prod
 1. Choose and confirm the **Render workspace** for Go Saudi. Create a distinct Saudi web service and a **new isolated database**; never share Go Bharat's `DATABASE_URL`, tables, credentials, payment secrets or Expo project.
 2. Assess Saudi PDPL, relevant Saudi data residency/transfer obligations and the proposed hosting region. Render's offered regions are **not assumed** to be Saudi.
 3. Prepare and approve Arabic/English privacy notice, cookie notice (where relevant), consent, retention/deletion and incident response policy. Consult local Saudi counsel.
-4. Apply dedicated Saudi migrations 001 and 002 (or upgrade the isolated v001 schema) using `GO_SAUDI_MODE=true npm run db:saudi:migrate`; verify the marker (`market='go-saudi'`, `schema_version=2`).
+4. Apply dedicated Saudi migrations 001, 002 and 003 (or upgrade the isolated v001 schema) using `GO_SAUDI_MODE=true npm run db:saudi:migrate`; verify the marker (`market='go-saudi'`, `schema_version=3`).
 5. Generate a new 64-character private admin token on a trusted machine and configure **only its SHA-256 hex digest** in `GO_SAUDI_ADMIN_TOKEN_SHA256`:
    ```sh
    node -e "const c=require('node:crypto');const t=c.randomBytes(32).toString('hex');console.log('PRIVATE_TOKEN='+t);console.log('GO_SAUDI_ADMIN_TOKEN_SHA256='+c.createHash('sha256').update(t).digest('hex'))"
