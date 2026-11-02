@@ -149,17 +149,17 @@ const words={
  saved:"Saved successfully.",deleted:"Draft deleted.",confirmDelete:"Delete this draft product?",unexpected:"The operation failed. Try again later.",expired:"Your session expired. Ask the admin for a new invitation.",invalidPrice:"Enter a valid SAR amount (for example 12.50).",missingToken:"Enter a valid invitation code."
  }
 };
-let lang="ar",token="",store=null,products=[],currentView="overview",editing=null;
+let lang="ar",store=null,products=[],currentView="overview",editing=null;
 const translate=()=>{const w=words[lang];document.documentElement.dir=lang==="ar"?"rtl":"ltr";document.documentElement.lang=lang;$("lang").textContent=lang==="ar"?"English":"العربية";
  document.querySelectorAll("[data-t]").forEach(el=>{const val=w[el.dataset.t];if(val)el.textContent=val;});
  renderProducts();};
 const api=async(url,opts={})=>{
- const headers=Object.assign({},token?{Authorization:"Bearer "+token}:{},opts.body?{"Content-Type":"application/json"}:{});
- const response=await fetch(url,{...opts,headers,cache:"no-store",credentials:"omit"});
+ const headers=Object.assign({},opts.body?{"Content-Type":"application/json"}:{});
+ const response=await fetch(url,{...opts,headers,cache:"no-store",credentials:"same-origin"});
  let data;
  try{data=await response.json()}catch{throw Error(words[lang].unexpected)}
  if(response.status===401&&url!=="/api/saudi/vendor/activate"){
-  $("workspace").classList.add("hidden");$("activation").classList.remove("hidden");$("logout").classList.add("hidden");sessionStorage.removeItem("goSaudiVendorSession");token="";
+  $("workspace").classList.add("hidden");$("activation").classList.remove("hidden");$("logout").classList.add("hidden");
   throw Error(words[lang].expired);
  }
  if(!response.ok)throw Error(data.error||words[lang].unexpected);
@@ -205,13 +205,13 @@ $("activate").addEventListener("click",async()=>{
  if(!/^[a-f0-9]{64}$/.test(inviteToken)){message.textContent=words[lang].missingToken;return;}
  $("activate").disabled=true;
  try{
-  const data=await api("/api/saudi/vendor/activate",{method:"POST",body:JSON.stringify({inviteToken})});
-  token=data.sessionToken;sessionStorage.setItem("goSaudiVendorSession",token);$("invite").value="";
+  await api("/api/saudi/vendor/activate",{method:"POST",body:JSON.stringify({inviteToken})});
+  $("invite").value="";
   await loadAll();
  }catch(e){showError("activateError",e)}finally{$("activate").disabled=false;}
 });
 $("logout").addEventListener("click",async()=>{try{await api("/api/saudi/vendor/logout",{method:"POST"})}catch{}
- token="";sessionStorage.removeItem("goSaudiVendorSession");store=null;products=[];
+ store=null;products=[];
  $("workspace").classList.add("hidden");$("activation").classList.remove("hidden");$("logout").classList.add("hidden");
 });
 $("lang").addEventListener("click",()=>{lang=lang==="ar"?"en":"ar";translate();});
@@ -254,7 +254,7 @@ $("storeForm").addEventListener("submit",async e=>{
  finally{$("saveStore").disabled=false}
 });
 translate();
-const restored=sessionStorage.getItem("goSaudiVendorSession");
-if(restored&&/^[a-f0-9]{64}$/.test(restored)){token=restored;loadAll().catch(e=>showError("activateError",e));}
+// HttpOnly, Secure, SameSite vendor cookie is never read by JavaScript.
+loadAll().catch(()=>{});
 })();
 </script></body></html>
