@@ -28,8 +28,8 @@
         "credentialsSource": "remote"
       },
       "env": {
-        "EXPO_PUBLIC_DOMAIN": "go-bharat.onrender.com",
-        "EXPO_PUBLIC_API_URL": "https://go-bharat.onrender.com"
+        "EXPO_PUBLIC_SAUDI_API_URL": "",
+        "EXPO_PUBLIC_SAUDI_STAGE": "PRELAUNCH"
       }
     },
     "production": {
@@ -44,12 +44,18 @@
       },
       "env": {
         "EXPO_PUBLIC_DEV_MODE": "false",
-        "EXPO_PUBLIC_DOMAIN": "go-bharat.onrender.com",
-        "EXPO_PUBLIC_API_URL": "https://go-bharat.onrender.com"
+        "EXPO_PUBLIC_SAUDI_API_URL": "",
+        "EXPO_PUBLIC_SAUDI_STAGE": "PRELAUNCH"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      },
+      "ios": {}
+    }
   }
 }
