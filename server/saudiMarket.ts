@@ -36,16 +36,31 @@ export function registerSaudiMarket(app: Express): void {
 
   app.get("/api/saudi/readiness", (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
+    const privacyApproved=process.env.GO_SAUDI_PRIVACY_APPROVED==="true";
+    const adminConfigured=/^[0-9a-f]{64}$/i.test(process.env.GO_SAUDI_ADMIN_TOKEN_SHA256||"");
+    const httpsOriginConfigured=(()=>{
+      try{const u=new URL(process.env.APP_PUBLIC_URL||"");return u.protocol==="https:"&&u.pathname==="/"&&!u.search&&!u.hash;}
+      catch{return false;}
+    })();
     res.json({
-      mode: "PRELAUNCH", livePayments: false,
-      onboardingDatabaseConfigured: Boolean(process.env.DATABASE_URL),
-      requiredBeforeLaunch: [
-        "Saudi legal entity and e-commerce store verification",
-        "Saudi-ready authentication, registration and tax/compliance flows",
-        "ZATCA VAT / invoicing rules and privacy/legal documents",
-        "Licensed gateway onboarding, signed webhooks, settlement reconciliation",
-        "Arabic RTL UX and all India-only customer/product/admin flows localized",
-        "Isolated Saudi database and secrets, integration/security tests"
+      market:"go-saudi",mode:"PRELAUNCH",commercialLaunchReady:false,
+      liveOrders:false,livePayments:false,publicProducts:false,
+      vendorPanel:"PRIVATE_DRAFT_ONLY",vendorAuthentication:"ADMIN_INVITE_ONLY",
+      onboardingDatabaseConfigured:Boolean(process.env.DATABASE_URL),
+      technicalConfiguration:{
+        saudiMode:process.env.GO_SAUDI_MODE==="true",
+        adminSecretConfigured:adminConfigured,
+        publicHttpsOriginConfigured:httpsOriginConfigured,
+        sellerPrivacyApprovalRecorded:privacyApproved,
+        sellerEnquiriesOpen:process.env.NODE_ENV!=="production"||privacyApproved
+      },
+      remainingReleaseGates:[
+        "Saudi privacy notice and PDPL cross-border/hosting review",
+        "Legal Saudi merchant identity, company and store verification",
+        "Individual admin MFA, Saudi merchant OTP and account recovery",
+        "Licensed Saudi payment gateway including mada and reconciliation",
+        "Applicable ZATCA VAT/invoicing, customer terms, refunds and delivery",
+        "External security test, restore exercise and live device smoke tests"
       ]
     });
   });
