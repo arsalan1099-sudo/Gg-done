@@ -62,7 +62,7 @@ export function registerSaudiMarket(app: Express): void {
         )).limit(1);
       if (existing) return res.json({success:true, deduplicated:true});
       await db.insert(sellerEnquiries).values({
-        id:"SA_"+crypto.randomBytes(15).toString("hex"),
+        id:"SL_"+crypto.randomBytes(15).toString("hex"),
         businessName:parsed.businessName, city:parsed.city, category:parsed.category,
         phone:parsed.phone!, consent:true, status:"NEW", source:"SAUDI_LANDING"
       });
@@ -77,7 +77,9 @@ export function registerSaudiMarket(app: Express): void {
   // Other write APIs are Indian-origin and cannot be exposed as working Saudi
   // commerce without complete KSA business-logic/payment/auth migration.
   app.use("/api", (req, res, next) => {
-    if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return next();
-    res.status(423).json({error:"Go Saudi is in prelaunch. Transactions and legacy account changes are disabled."});
+    // Existing Go Bharat endpoints are India-specific. Only Saudi APIs and
+    // deployment health are enabled until the full migration has passed review.
+    if (req.path === "/health") return next();
+    res.status(423).json({error:"Go Saudi is in prelaunch. Legacy Indian commerce APIs are disabled."});
   });
 }
