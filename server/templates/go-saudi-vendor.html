@@ -97,6 +97,12 @@ textarea.input{min-height:92px;resize:vertical}.formrow{display:grid;grid-templa
         <div class="headerline"><h2 id="formProductTitle" data-t="productNew">منتج جديد</h2><button class="btn outline" id="cancelProduct" type="button" data-t="cancel">إلغاء</button></div>
         <form id="productForm">
           <div class="formrow">
+            <div><label class="label" for="productMainCategory" data-t="productMainCategory">القسم الرئيسي</label>
+              <select class="input" id="productMainCategory" required></select></div>
+            <div><label class="label" for="productSubcategory" data-t="productSubcategory">القسم الفرعي</label>
+              <select class="input" id="productSubcategory" required></select></div>
+          </div>
+          <div class="formrow">
             <div><label class="label" for="productName" data-t="productName">اسم المنتج</label><input class="input" id="productName" maxlength="120" minlength="2" required></div>
             <div><label class="label" for="priceSar" data-t="price">السعر (ر.س)</label><input class="input" id="priceSar" type="number" min="0.01" max="1000000" step="0.01" required inputmode="decimal"></div>
           </div>
@@ -145,7 +151,7 @@ const words={
  ar:{
  sellerLink:"تسجيل البائعين",logout:"تسجيل خروج",prelaunchBadge:"قبل الإطلاق · لوحة التاجر",welcome:"مرحباً بك في لوحة تاجر جو سعودي",activateHelp:"بعد مراجعة طلبك، يسلّمك مسؤول جو سعودي رمز تفعيل لمرة واحدة. أدخله هنا لفتح مساحة إعداد متجرك.",inviteLabel:"رمز الدعوة الخاص بك",activate:"تفعيل حساب التاجر",loginNotice:"هذه لوحة حقيقية لحفظ مسودات متجرك فقط. لا يتم قبول طلبات أو مدفوعات حتى الموافقة الرسمية والإطلاق.",
  overview:"الرئيسية",products:"المنتجات",orders:"الطلبات",settings:"إعداد المتجر",overviewCaption:"إدارة متجرك وكتالوج منتجاتك قبل الإطلاق.",draftStatus:"مسودات فقط · غير منشور",draftProducts:"منتجات مسودة",totalOrders:"الطلبات",salesSar:"مبيعات (ر.س)",notLive:"غير منشور",storeStatus:"حالة المتجر",draftWarning:"يمكنك إعداد المنتجات والأسعار والمخزون كمسودات فقط. عرض المتجر للعامة، استقبال الطلبات والمدفوعات مغلق حالياً.",quickActions:"إجراءات سريعة",addProduct:"أضف منتجاً",addProductHelp:"اكتب الأسعار بالريال السعودي والمخزون",storeDetails:"بيانات متجرك",editDescription:"أضف وصفاً لنشاطك",checklist:"قائمة التجهيز للإطلاق",approved:"✓ مراجعة البائع",drafting:"✓ إعداد الكتالوج",pendingLive:"⏳ تشغيل المدفوعات والمتجر",nextStep:"سيتم فتح البيع بعد تفعيل الدفع المناسب والتحقق من الامتثال.",
- requestReview:"إرسال للمراجعة",pendingReview:"قيد المراجعة",reviewApproved:"معتمد (غير منشور)",reviewRejected:"مرفوض",confirmReview:"هل تريد إرسال نسخة المنتج الحالية للمراجعة؟ لا ينشر تلقائياً.", productTitle:"إدارة المنتجات",productSubtitle:"مسودات خاصة بك فقط — غير متاحة للمشترين.",productNew:"منتج جديد",productEdit:"تعديل مسودة",cancel:"إلغاء",productName:"اسم المنتج",price:"السعر (ر.س)",stock:"المخزون",productDescription:"وصف المنتج",saveDraft:"حفظ كمسودة",status:"الحالة",actions:"الإجراءات",noProducts:"لا توجد مسودات بعد. أضف منتجك الأول.",draft:"مسودة",edit:"تعديل",delete:"حذف",
+ requestReview:"إرسال للمراجعة",pendingReview:"قيد المراجعة",reviewApproved:"معتمد (غير منشور)",reviewRejected:"مرفوض",confirmReview:"هل تريد إرسال نسخة المنتج الحالية للمراجعة؟ لا ينشر تلقائياً.", productMainCategory:"القسم الرئيسي",productSubcategory:"القسم الفرعي",selectCategory:"اختر القسم",selectSubcategory:"اختر القسم الفرعي",chooseSubcategory:"اختر قسم المنتج قبل الحفظ.",productTitle:"إدارة المنتجات",productSubtitle:"مسودات خاصة بك فقط — غير متاحة للمشترين.",productNew:"منتج جديد",productEdit:"تعديل مسودة",cancel:"إلغاء",productName:"اسم المنتج",price:"السعر (ر.س)",stock:"المخزون",productDescription:"وصف المنتج",saveDraft:"حفظ كمسودة",status:"الحالة",actions:"الإجراءات",noProducts:"لا توجد مسودات بعد. أضف منتجك الأول.",draft:"مسودة",edit:"تعديل",delete:"حذف",
  ordersSubtitle:"الطلبات والمدفوعات سيتم تفعيلها عند إطلاق السوق.",comingSoon:"قريباً",noOrders:"لا توجد طلبات",ordersWarning:"الطلبات الحقيقية غير متاحة في المرحلة الحالية. لا توجد مبيعات أو أرباح حتى الآن.",
  privacyTitle:"بياناتك وخصوصيتك",privacyHelp:"تنزيل نسخة من بيانات متجرك أو تقديم طلب لحذف الحساب ومراجعته.",downloadData:"تنزيل بياناتي",deleteRequest:"طلب حذف حسابي",deletionNotice:"طلب الحذف لا يُنفّذ تلقائياً. يتطلب تحقق الهوية والمراجعة القانونية.",deletionConfirm:"هل تريد إرسال طلب حذف الحساب للمراجعة؟ لن يتم حذف بياناتك فوراً.",requestPending:"طلب حذف الحساب قيد المراجعة.",requestSent:"تم إرسال طلب الحذف للمراجعة.",exportFailed:"تعذر تصدير بيانات المتجر.", settingsHelp:"بيانات النشاط المعتمد ثابتة، ويمكنك تحرير وصف المتجر.",business:"اسم النشاط",city:"المدينة",category:"الفئة",phone:"رقم الجوال",storeDescription:"وصف المتجر",saveChanges:"حفظ التعديلات",identityNotice:"لتعديل اسم النشاط أو رقم الجوال أو بيانات الترخيص، تواصل مع المسؤول لإعادة التحقق.",
  saved:"تم الحفظ بنجاح.",deleted:"تم حذف المسودة.",confirmDelete:"هل تريد حذف هذه المسودة؟",unexpected:"تعذر إكمال العملية. حاول لاحقاً.",expired:"انتهت الجلسة. الرجاء إدخال دعوة جديدة من المسؤول.",invalidPrice:"أدخل سعر ريال سعودي صحيح (مثلاً 12.50).",missingToken:"أدخل رمز دعوة صحيحاً."
@@ -153,16 +159,17 @@ const words={
  en:{
  sellerLink:"Seller registration",logout:"Log out",prelaunchBadge:"PRELAUNCH · VENDOR",welcome:"Welcome to your Go Saudi Vendor Panel",activateHelp:"After admin review, the Go Saudi team issues a one-time activation code. Enter it to open your store draft workspace.",inviteLabel:"Your private invitation code",activate:"Activate vendor account",loginNotice:"This workspace saves real store drafts only. No orders or payments are accepted before official launch.",
  overview:"Dashboard",products:"Products",orders:"Orders",settings:"Store settings",overviewCaption:"Manage your draft storefront and catalog before launch.",draftStatus:"Draft only · Not published",draftProducts:"Draft products",totalOrders:"Orders",salesSar:"Sales (SAR)",notLive:"Not live",storeStatus:"Store status",draftWarning:"You can save product names, Saudi prices and stock as private drafts. Public store listings, orders and payments are disabled.",quickActions:"Quick actions",addProduct:"Add product",addProductHelp:"Set a price in SAR and stock quantity",storeDetails:"Store profile",editDescription:"Edit your shop description",checklist:"Launch checklist",approved:"✓ Seller review",drafting:"✓ Draft catalog",pendingLive:"⏳ Payments and store activation",nextStep:"Selling will open only after compliance review and approved payment gateway activation.",
- requestReview:"Submit for review",pendingReview:"Under review",reviewApproved:"Approved (not live)",reviewRejected:"Rejected",confirmReview:"Submit the current product snapshot for admin review? It will NOT publish automatically.", productTitle:"My products",productSubtitle:"Private drafts only — not visible to shoppers.",productNew:"Add product",productEdit:"Edit draft product",cancel:"Cancel",productName:"Product name",price:"Price (SAR)",stock:"Stock",productDescription:"Product description",saveDraft:"Save draft",status:"Status",actions:"Actions",noProducts:"No products yet. Add your first draft.",draft:"Draft",edit:"Edit",delete:"Delete",
+ requestReview:"Submit for review",pendingReview:"Under review",reviewApproved:"Approved (not live)",reviewRejected:"Rejected",confirmReview:"Submit the current product snapshot for admin review? It will NOT publish automatically.", productMainCategory:"Main category",productSubcategory:"Subcategory",selectCategory:"Select category",selectSubcategory:"Select subcategory",chooseSubcategory:"Choose a subcategory before saving.",productTitle:"My products",productSubtitle:"Private drafts only — not visible to shoppers.",productNew:"Add product",productEdit:"Edit draft product",cancel:"Cancel",productName:"Product name",price:"Price (SAR)",stock:"Stock",productDescription:"Product description",saveDraft:"Save draft",status:"Status",actions:"Actions",noProducts:"No products yet. Add your first draft.",draft:"Draft",edit:"Edit",delete:"Delete",
  ordersSubtitle:"Orders and payments will become available at marketplace launch.",comingSoon:"Coming soon",noOrders:"No orders yet",ordersWarning:"Live orders are not enabled. No real orders or revenue have been recorded.",
  privacyTitle:"Your data and privacy",privacyHelp:"Download a copy of your merchant data or submit an account deletion request for review.",downloadData:"Download my data",deleteRequest:"Request account deletion",deletionNotice:"Submitting a request does not delete your account immediately. Identity and lawful retention must be reviewed.",deletionConfirm:"Submit an account deletion request? Your data will not be deleted immediately.",requestPending:"Account deletion request is pending review.",requestSent:"Deletion request submitted for review.",exportFailed:"Could not export merchant data.", settingsHelp:"Verified business details are read-only; you can edit your description.",business:"Business name",city:"City",category:"Category",phone:"Saudi mobile",storeDescription:"Store description",saveChanges:"Save changes",identityNotice:"Contact the admin to change your business identity, phone number or licence documents.",
  saved:"Saved successfully.",deleted:"Draft deleted.",confirmDelete:"Delete this draft product?",unexpected:"The operation failed. Try again later.",expired:"Your session expired. Ask the admin for a new invitation.",invalidPrice:"Enter a valid SAR amount (for example 12.50).",missingToken:"Enter a valid invitation code."
  }
 };
 let lang="ar",store=null,products=[],currentView="overview",editing=null;
+let taxonomy={groups:[],subcategories:[]};
 const translate=()=>{const w=words[lang];document.documentElement.dir=lang==="ar"?"rtl":"ltr";document.documentElement.lang=lang;$("lang").textContent=lang==="ar"?"English":"العربية";
  document.querySelectorAll("[data-t]").forEach(el=>{const val=w[el.dataset.t];if(val)el.textContent=val;});
- renderProducts();};
+ renderProducts();if(taxonomy.groups.length)fillCategorySelectors($("productSubcategory").value);};
 const api=async(url,opts={})=>{
  const headers=Object.assign({},opts.body?{"Content-Type":"application/json"}:{});
  const response=await fetch(url,{...opts,headers,cache:"no-store",credentials:"same-origin"});
@@ -175,8 +182,40 @@ const api=async(url,opts={})=>{
  if(!response.ok)throw Error(data.error||words[lang].unexpected);
  return data;
 };
+function opt(value,label){
+ const el=document.createElement("option");el.value=value;el.textContent=label;return el;
+}
+function fillSubcategorySelector(group,selected=""){
+ const dest=$("productSubcategory");dest.replaceChildren();
+ dest.append(opt("",words[lang].selectSubcategory));
+ taxonomy.subcategories.filter(s=>s.group===group).forEach(s=>{
+  dest.append(opt(s.id,lang==="ar"?s.ar:s.en));
+ });
+ if(selected)dest.value=selected;
+}
+function fillCategorySelectors(selectedSubcategory=""){
+ const previousGroup=$("productMainCategory").value;
+ const parent=taxonomy.subcategories.find(s=>s.id===selectedSubcategory)?.group||previousGroup;
+ const target=$("productMainCategory");target.replaceChildren();
+ target.append(opt("",words[lang].selectCategory));
+ taxonomy.groups.forEach(g=>target.append(opt(g.id,lang==="ar"?g.ar:g.en)));
+ if(parent)target.value=parent;
+ fillSubcategorySelector(target.value,selectedSubcategory);
+}
+async function loadTaxonomy(){
+ const r=await fetch("/api/saudi/categories",{cache:"no-store",credentials:"omit"});
+ if(!r.ok)throw Error(words[lang].unexpected);
+ const data=await r.json();
+ if(data.country!=="SA"||!Array.isArray(data.groups)||!Array.isArray(data.subcategories))
+  throw Error(words[lang].unexpected);
+ taxonomy={groups:data.groups,subcategories:data.subcategories};
+ fillCategorySelectors();renderProducts();
+}
+$("productMainCategory").addEventListener("change",()=>{
+ fillSubcategorySelector($("productMainCategory").value);
+});
 const showError=(id,error)=>{$(id).textContent=error?.message||words[lang].unexpected};
-const resetProductForm=()=>{editing=null;$("productForm").reset();$("stock").value="0";$("productFormPanel").classList.add("hidden");$("productError").textContent="";};
+const resetProductForm=()=>{editing=null;$("productForm").reset();fillCategorySelectors();$("stock").value="0";$("productFormPanel").classList.add("hidden");$("productError").textContent="";};
 const view=name=>{
  currentView=name;document.querySelectorAll("[data-view]").forEach(el=>el.classList.toggle("active",el.dataset.view===name));
  document.querySelectorAll(".page").forEach(el=>el.classList.toggle("hidden",el.id!=="page-"+name));
@@ -194,7 +233,10 @@ const renderProducts=()=>{
  products.forEach(p=>{
  const tr=document.createElement("tr");
  const cell=(value,klass)=>{const el=document.createElement("td");if(klass)el.className=klass;el.textContent=String(value);tr.append(el);return el;};
- const name=cell(p.title,"prod");const short=document.createElement("span");short.className="small";short.textContent=p.description||"";name.append(short);
+ const name=cell(p.title,"prod");const short=document.createElement("span");short.className="small";
+ const label=taxonomy.subcategories.find(x=>x.id===p.subcategoryId);
+ short.textContent=(label?(lang==="ar"?label.ar:label.en)+" · ":"")+(p.description||"");
+ name.append(short);
  cell((p.priceHalalas/100).toFixed(2)+" SAR");cell(p.stock);
  const status=cell("");const pill=document.createElement("span");pill.className="drafttag";pill.textContent=w.draft;status.append(pill);
  const actions=cell("");
@@ -230,6 +272,7 @@ const loadProducts=async()=>{
  renderProducts();renderOverview();
 };
 const loadAll=async()=>{
+ await loadTaxonomy();
  const data=await api("/api/saudi/vendor/me");store=data.store;
  await loadProducts();renderOverview();
  $("activation").classList.add("hidden");$("workspace").classList.remove("hidden");$("logout").classList.remove("hidden");
@@ -256,6 +299,7 @@ const openProduct=p=>{
  editing=p?.id||null;$("productFormPanel").classList.remove("hidden");$("formProductTitle").textContent=words[lang][p?"productEdit":"productNew"];
  $("productName").value=p?.title||"";$("priceSar").value=p?(p.priceHalalas/100).toFixed(2):"";$("stock").value=String(p?.stock??0);
  $("productDescription").value=p?.description||"";$("productError").textContent="";
+ fillCategorySelectors(p?.subcategoryId||"");
  $("productFormPanel").scrollIntoView({behavior:"smooth",block:"start"});
 };
 $("newProduct").addEventListener("click",()=>openProduct());
@@ -264,9 +308,13 @@ $("productForm").addEventListener("submit",async e=>{
  e.preventDefault();
  const priceText=$("priceSar").value.trim();
  if(!/^\d{1,7}(\.\d{1,2})?$/.test(priceText)){showError("productError",{message:words[lang].invalidPrice});return;}
+ const selectedSubcategory=$("productSubcategory").value;
+ if(!taxonomy.subcategories.some(s=>s.id===selectedSubcategory)){
+   showError("productError",{message:words[lang].chooseSubcategory});return;
+ }
  const [major,minor=""]=priceText.split(".");
  const halalas=Number(major)*100+Number(minor.padEnd(2,"0"));
- const record={title:$("productName").value.trim(),description:$("productDescription").value.trim(),priceHalalas:halalas,stock:Number($("stock").value)};
+ const record={title:$("productName").value.trim(),description:$("productDescription").value.trim(),priceHalalas:halalas,stock:Number($("stock").value),subcategoryId:selectedSubcategory};
  $("saveProduct").disabled=true;$("productError").textContent="";
  try{
   await api(editing?"/api/saudi/vendor/products/"+encodeURIComponent(editing):"/api/saudi/vendor/products",
