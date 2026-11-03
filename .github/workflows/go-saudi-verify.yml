@@ -38,6 +38,7 @@ jobs:
       - run: npm run test:saudi:mobile
       - run: npm run test:revenue
       - run: npm run test:saudi:integration
+      - run: npm run test:saudi:commerce:e2e
       - name: Saudi migration must reject a mixed-market database
         shell: bash
         run: |
