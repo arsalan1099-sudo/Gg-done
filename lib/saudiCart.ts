@@ -1,6 +1,7 @@
+import {isSaudiSubcategory} from "./saudiCategories";
 export type SaudiProduct={
  id:string;title:string;description:string;priceHalalas:number;stock:number;
- category:string;city:string;businessName:string;
+ category:string;city:string;businessName:string;subcategoryId?:string|null;
 };
 export type CartLine={id:string;quantity:number};
 export function safeSaudiProduct(v:unknown):v is SaudiProduct{
@@ -11,7 +12,8 @@ export function safeSaudiProduct(v:unknown):v is SaudiProduct{
   typeof p.description==="string"&&p.description.length<=1500 &&
   Number.isSafeInteger(p.priceHalalas)&&Number(p.priceHalalas)>0&&Number(p.priceHalalas)<=100000000 &&
   Number.isSafeInteger(p.stock)&&Number(p.stock)>=0&&Number(p.stock)<=1000000 &&
-  typeof p.category==="string"&&typeof p.city==="string"&&typeof p.businessName==="string";
+  typeof p.category==="string"&&typeof p.city==="string"&&typeof p.businessName==="string"&&
+  (p.subcategoryId===undefined||p.subcategoryId===null||isSaudiSubcategory(p.subcategoryId));
 }
 export function changeSaudiCart(cart:CartLine[],p:SaudiProduct,delta:number):CartLine[]{
  if(!Number.isSafeInteger(delta)||Math.abs(delta)!==1)return cart;
