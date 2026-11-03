@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS saudi_orders (
  vendor_id varchar(64) NOT NULL REFERENCES saudi_vendor_accounts(id) ON DELETE RESTRICT,
  idempotency_key varchar(80) NOT NULL,
  status varchar(32) NOT NULL DEFAULT 'PENDING_PAYMENT'
-  CHECK (status IN ('PENDING_PAYMENT','PAID','FAILED','EXPIRED','REFUND_PENDING','REFUNDED','CANCELLED')),
+  CHECK (status IN ('PENDING_PAYMENT','CREATING_INTENT','READY_FOR_PAYMENT','PAID','FAILED','EXPIRED','REFUND_PENDING','REFUNDED','CANCELLED')),
  currency varchar(3) NOT NULL DEFAULT 'SAR' CHECK (currency='SAR'),
  subtotal_halalas integer NOT NULL CHECK (subtotal_halalas BETWEEN 1 AND 100000000),
  payment_intent_id varchar(80) UNIQUE,
