@@ -4,6 +4,11 @@ on:
     branches: [go-saudi]
     paths:
       - '.github/workflows/go-saudi-apk.yml'
+      - 'app/index.tsx'
+      - 'components/saudi/**'
+      - 'lib/saudiCategories.ts'
+      - 'lib/saudiCart.ts'
+      - 'package.json'
   workflow_dispatch:
 permissions:
   contents: read
