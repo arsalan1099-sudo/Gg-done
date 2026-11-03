@@ -4,6 +4,7 @@ import {and,eq,desc,sql} from "drizzle-orm";
 import {db} from "./db";
 import {saudiCatalogSubmissions,saudiVendorDraftProducts,saudiVendorAccounts,sellerEnquiries} from "@shared/schema";
 import {logSaudiError} from "./saudiLog";
+import {saudiMainCategories,saudiSubcategories,isSaudiSubcategory} from "../lib/saudiCategories";
 
 const seller=(res:Response)=>res.locals.saudiVendor as {id:string;enquiryId:string};
 const noStore=(res:Response)=>res.setHeader("Cache-Control","no-store");
@@ -16,6 +17,11 @@ const catalogOpen=()=>process.env.GO_SAUDI_CATALOG_PUBLIC==="true" &&
 // Guard the actual catalog in addition to restricting database rows to
 // approved merchants and individually moderated products.
 export function registerSaudiCatalog(app:Express):void {
+ app.get("/api/saudi/categories",(_req,res)=>{
+  res.setHeader("Cache-Control","public, max-age=3600");
+  return res.json({country:"SA",groups:saudiMainCategories,subcategories:saudiSubcategories,
+   note:"Browse only; no regulated purchases or bookings enabled."});
+ });
  app.get("/api/saudi/catalog",async(req,res)=>{
   noStore(res);
   if(!catalogOpen())return res.json({
@@ -24,16 +30,18 @@ export function registerSaudiCatalog(app:Express):void {
   });
   const city=typeof req.query.city==="string"?req.query.city:"";
   const category=typeof req.query.category==="string"?req.query.category:"";
+  const subcategory=typeof req.query.subcategory==="string"?req.query.subcategory:"";
   const allowedCities=new Set(["Riyadh","Jeddah","Makkah","Madinah","Dammam","Khobar","Taif","Tabuk","Abha","Jazan","Other"]);
   const allowedCategories=new Set(["Grocery","Fashion","Food","Electronics","Home","Beauty","Services","Wholesale"]);
-  if(city&&!allowedCities.has(city)||category&&!allowedCategories.has(category))
+  if(city&&!allowedCities.has(city)||category&&!allowedCategories.has(category)||subcategory&&!isSaudiSubcategory(subcategory))
    return res.status(400).json({error:"Unsupported Saudi catalog filter"});
   try{
    const filters=[eq(saudiCatalogSubmissions.status,"APPROVED"),eq(sellerEnquiries.status,"APPROVED"),eq(sellerEnquiries.source,"SAUDI_LANDING")];
    if(city)filters.push(eq(sellerEnquiries.city,city));
    if(category)filters.push(eq(sellerEnquiries.category,category));
+   if(subcategory)filters.push(eq(saudiCatalogSubmissions.subcategoryId,subcategory));
    const rows=await db.select({
-    id:saudiCatalogSubmissions.id,title:saudiCatalogSubmissions.title,
+    id:saudiCatalogSubmissions.id,subcategoryId:saudiCatalogSubmissions.subcategoryId,title:saudiCatalogSubmissions.title,
     description:saudiCatalogSubmissions.description,
     priceHalalas:saudiCatalogSubmissions.priceHalalas,
     stock:saudiCatalogSubmissions.stock,
@@ -57,6 +65,7 @@ export function registerSaudiCatalog(app:Express):void {
   try{
    const rows=await db.select({
     id:saudiCatalogSubmissions.id,draftId:saudiCatalogSubmissions.draftId,
+    subcategoryId:saudiCatalogSubmissions.subcategoryId,
     title:saudiCatalogSubmissions.title,status:saudiCatalogSubmissions.status,
     reviewNote:saudiCatalogSubmissions.reviewNote,
     requestedAt:saudiCatalogSubmissions.requestedAt
@@ -75,7 +84,7 @@ export function registerSaudiCatalog(app:Express):void {
    const vendorId=seller(res).id;
    const result=await db.transaction(async tx=>{
     const [draft]=await tx.select({
-      id:saudiVendorDraftProducts.id,title:saudiVendorDraftProducts.title,
+      id:saudiVendorDraftProducts.id,subcategoryId:saudiVendorDraftProducts.subcategoryId,title:saudiVendorDraftProducts.title,
       description:saudiVendorDraftProducts.description,priceHalalas:saudiVendorDraftProducts.priceHalalas,
       stock:saudiVendorDraftProducts.stock
     }).from(saudiVendorDraftProducts)
@@ -83,9 +92,10 @@ export function registerSaudiCatalog(app:Express):void {
        eq(saudiVendorDraftProducts.vendorId,vendorId),
        eq(saudiVendorDraftProducts.status,"DRAFT"))).limit(1);
     if(!draft)return null;
+    if(!draft.subcategoryId||!isSaudiSubcategory(draft.subcategoryId))return "missing_subcategory";
     const [created]=await tx.insert(saudiCatalogSubmissions).values({
       id:"SVC_"+crypto.randomBytes(15).toString("hex"),
-      vendorId,draftId,title:draft.title,description:draft.description,
+      vendorId,draftId,subcategoryId:draft.subcategoryId,title:draft.title,description:draft.description,
       priceHalalas:draft.priceHalalas,stock:draft.stock,status:"PENDING"
     }).onConflictDoNothing({target:saudiCatalogSubmissions.draftId}).returning({
       id:saudiCatalogSubmissions.id,status:saudiCatalogSubmissions.status
@@ -93,6 +103,7 @@ export function registerSaudiCatalog(app:Express):void {
     return created||"already_exists";
    });
    if(!result)return res.status(404).json({error:"Your draft product was not found"});
+   if(result==="missing_subcategory")return res.status(400).json({error:"Select a valid product subcategory before submitting for review"});
    if(result==="already_exists")return res.status(409).json({error:"Product already submitted for catalog review"});
    return res.status(201).json({submission:result,public:false,
      note:"Admin review required. Submission does not create a public product."});
