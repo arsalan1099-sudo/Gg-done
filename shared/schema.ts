@@ -693,6 +693,64 @@ export const saudiCatalogSubmissions = pgTable("saudi_catalog_submissions",{
   index("idx_saudi_catalog_vendor").on(table.vendorId)
 ]);
 
+// Saudi customer identities are created ONLY after provider-side SMS OTP.
+// Phone numbers are AES-256-GCM encrypted in application code, never plaintext.
+export const saudiCustomerAccounts = pgTable("saudi_customer_accounts",{
+ id:varchar("id",{length:64}).primaryKey(),
+ phoneHash:varchar("phone_hash",{length:64}).notNull().unique(),
+ phoneEncrypted:text("phone_encrypted").notNull(),
+ createdAt:timestamp("created_at").defaultNow(),
+});
+export const saudiCustomerSessions = pgTable("saudi_customer_sessions",{
+ id:varchar("id",{length:64}).primaryKey(),
+ customerId:varchar("customer_id",{length:64}).notNull(),
+ tokenHash:varchar("token_hash",{length:64}).notNull().unique(),
+ expiresAt:timestamp("expires_at").notNull(),
+ revokedAt:timestamp("revoked_at"),
+ createdAt:timestamp("created_at").defaultNow(),
+},table=>[index("idx_saudi_customer_sessions_owner").on(table.customerId)]);
+export const saudiOrders = pgTable("saudi_orders",{
+ id:varchar("id",{length:64}).primaryKey(),
+ customerId:varchar("customer_id",{length:64}).notNull(),
+ vendorId:varchar("vendor_id",{length:64}).notNull(),
+ idempotencyKey:varchar("idempotency_key",{length:80}).notNull(),
+ status:varchar("status",{length:32}).notNull().default("PENDING_PAYMENT"),
+ currency:varchar("currency",{length:3}).notNull().default("SAR"),
+ subtotalHalalas:integer("subtotal_halalas").notNull(),
+ paymentIntentId:varchar("payment_intent_id",{length:80}),
+ paymentId:varchar("payment_id",{length:80}),
+ fulfillment:varchar("fulfillment",{length:16}).notNull().default("PICKUP"),
+ expiresAt:timestamp("expires_at").notNull(),
+ paidAt:timestamp("paid_at"),
+ createdAt:timestamp("created_at").defaultNow(),
+},table=>[
+ index("idx_saudi_orders_buyer").on(table.customerId,table.createdAt),
+ index("idx_saudi_orders_vendor").on(table.vendorId,table.createdAt),
+ index("idx_saudi_orders_status").on(table.status,table.expiresAt)
+]);
+export const saudiOrderLines = pgTable("saudi_order_lines",{
+ id:varchar("id",{length:64}).primaryKey(),
+ orderId:varchar("order_id",{length:64}).notNull(),
+ productId:varchar("product_id",{length:64}).notNull(),
+ title:varchar("title",{length:120}).notNull(),
+ quantity:integer("quantity").notNull(),
+ unitHalalas:integer("unit_halalas").notNull(),
+ lineHalalas:integer("line_halalas").notNull(),
+},table=>[index("idx_saudi_order_lines_order").on(table.orderId)]);
+export const saudiBookingRequests = pgTable("saudi_booking_requests",{
+ id:varchar("id",{length:64}).primaryKey(),
+ customerId:varchar("customer_id",{length:64}).notNull(),
+ vendorId:varchar("vendor_id",{length:64}).notNull(),
+ productId:varchar("product_id",{length:64}).notNull(),
+ requestedSlot:timestamp("requested_slot").notNull(),
+ status:varchar("status",{length:24}).notNull().default("REQUESTED"),
+ note:varchar("note",{length:500}).notNull().default(""),
+ reviewedAt:timestamp("reviewed_at"),
+ createdAt:timestamp("created_at").defaultNow(),
+},table=>[
+ index("idx_saudi_bookings_buyer").on(table.customerId,table.createdAt),
+ index("idx_saudi_bookings_vendor").on(table.vendorId,table.createdAt),
+]);
 export const coinGrants = pgTable("coin_grants", {
   id: varchar("id", { length: 64 }).primaryKey(),
   phone: varchar("phone", { length: 15 }).notNull(),
