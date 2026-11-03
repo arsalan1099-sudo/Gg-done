@@ -1,4 +1,4 @@
-# Go Saudi — Android & iOS publishing gate (2 November 2026)
+**Customer/mobile live checkout is not integrated.** Refer to [GO_SAUDI_COMMERCE_RELEASE.md](GO_SAUDI_COMMERCE_RELEASE.md) for order, OTP and payment infrastructure status.\n\n# Go Saudi — Android & iOS publishing gate (2 November 2026)
 
 **Current decision: NOT APPROVED FOR STORE SUBMISSION.** Do not upload or release the currently available prelaunch native app to Google Play or Apple App Store. It does not yet implement customer orders, payments, shipping or signed-in seller operations inside the native app. No signed AAB/IPA, live Saudi production backend, device tests or new-store registration have been verified.
 
@@ -17,7 +17,7 @@
 - Added the `All Categories` bottom tab, five main-group cards on the shop home, Go Bharat-inspired sidebar category explorer, 2-column subcategory cards, searchable subcategory names, and exact product filtering.
 - Demo products now carry explicit subcategory IDs. Legacy products without IDs can still appear at main-group level, but are not inaccurately placed in a specific subcategory.
 - New public `GET /api/saudi/categories` serves localized taxonomy. Vendor product forms select main category and subcategory; submissions preserve a reviewed snapshot of the classification. Moderation/public catalog can return and filter by exact subcategory.
-- Dedicated Saudi database migration **004** adds nullable `subcategory_id` columns and upgrades the isolated marker to `schema_version=4`. Live deployment still requires the new migration, real vendor identity, privacy approval, and operational validation.
+- Dedicated Saudi database migration **004** adds nullable `subcategory_id` columns and upgrades the isolated marker to `schema_version=4`. Current Saudi server additionally requires migration 005; live deployment requires all applicable migrations, real vendor identity, privacy approval, and operational validation.
 - Tests cover taxonomy count/uniqueness, product subcategory validation, strict filtering and public catalog endpoint behavior. New Android APK requires fresh native compilation: earlier installed APKs cannot update themselves.
 
 ## 3 November 2026 — working catalog and cart preview
@@ -26,7 +26,7 @@ The original mobile screenshots showed an inert landing page and a disabled sell
 
 With no approved Saudi HTTPS backend, the app shows eight **clearly labeled DEMO products**. These are illustrative, not real merchants or purchasable items. The cart only prepares a local selection; checkout cannot charge customers, place orders, reserve inventory or notify merchants. The previous seller-interest form is available through the Sell action and stays closed without the actual Saudi privacy gate.
 
-Backend schema version **4** adds `saudi_catalog_submissions`: approved vendors can request moderation of private draft product snapshots; admins can review/reject in the Saudi admin dashboard. Even `APPROVED` records are NOT public unless **all** of `GO_SAUDI_PRIVACY_APPROVED=true`, `GO_SAUDI_CATALOG_PUBLIC=true`, and `GO_SAUDI_MARKETPLACE_LAUNCH_APPROVED=true` are set after approvals. Catalog moderation approval itself also requires `GO_SAUDI_MERCHANT_VERIFICATION_APPROVED=true`. All these new flags default to false in Render.
+Migration 003 adds `saudi_catalog_submissions` (current full schema version is **5**): approved vendors can request moderation of private draft product snapshots; admins can review/reject in the Saudi admin dashboard. Even `APPROVED` records are NOT public unless **all** of `GO_SAUDI_PRIVACY_APPROVED=true`, `GO_SAUDI_CATALOG_PUBLIC=true`, and `GO_SAUDI_MARKETPLACE_LAUNCH_APPROVED=true` are set after approvals. Catalog moderation approval itself also requires `GO_SAUDI_MERCHANT_VERIFICATION_APPROVED=true`. All these new flags default to false in Render.
 
 The new GET `/api/saudi/catalog` returns a bounded, PII-free seller-verified product listing only when permitted. It explicitly returns `checkoutEnabled:false` until a separate lawful transaction and payment architecture is built. CI tests cover moderation, catalog visibility/permissions, draft isolation, and cart arithmetic. Real device and signed-store build tests remain outstanding.
 
