@@ -2,6 +2,14 @@
 
 **Current decision: NOT APPROVED FOR STORE SUBMISSION.** Do not upload or release the currently available prelaunch native app to Google Play or Apple App Store. It does not yet implement customer orders, payments, shipping or signed-in seller operations inside the native app. No signed AAB/IPA, live Saudi production backend, device tests or new-store registration have been verified.
 
+## 4 November 2026 — offline test checkout enabled; live commercial transactions OFF
+
+- In `SaudiShop` the demo cart can now create a **local TEST_ONLY receipt** after explicit confirmation. It is saved only in this device's AsyncStorage. The cart is cleared after a successful receipt save; test-order history and clear-history action are available from the cart.
+- The receipts have `paymentCaptured=false`, `serverOrderId=null`, `deliveryScheduled=false`, and are conspicuously marked DEMO. No phone, identity, address or payment details are entered or sent.
+- Real customer orders, vendor notifications, inventory reservations, travel bookings, shipping and live payments remain **disabled**. Even a verified public product catalog alone cannot activate checkout.
+- A new signed standalone APK is required to see this UI. This source edit is not an over-the-air update. Follow the current go-saudi APK GitHub workflow; install only the verified signed artifact from a successful run.
+- Production launch still requires a separately deployed Saudi service/database, verified seller/customer identities, the necessary licences/consent, a Saudi-supporting PSP with server-side order/payment reconciliation, taxes/refunds/delivery handling and audited release signoff.
+
 ## 4 November 2026 — Go Bharat-style Saudi category explorer
 
 - Implemented the same **five primary groups** found in Go Bharat's `lib/data.ts`: B2B, B2C, Services, Manpower and Travel.
