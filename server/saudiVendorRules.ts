@@ -1,3 +1,4 @@
+import {isSaudiSubcategory} from "../lib/saudiCategories";
 import crypto from "node:crypto";
 export const SAUDI_VENDOR_TOKEN_PATTERN = /^[a-f0-9]{64}$/;
 export const SAUDI_DRAFT_LIMIT = 200;
@@ -8,7 +9,7 @@ export function safeVendorToken(raw: unknown): raw is string {
   return typeof raw==="string" && SAUDI_VENDOR_TOKEN_PATTERN.test(raw);
 }
 export function draftProduct(input: unknown): 
-  | {ok:true;value:{title:string;description:string;priceHalalas:number;stock:number}}
+  | {ok:true;value:{title:string;description:string;priceHalalas:number;stock:number;subcategoryId:string|null}}
   | {ok:false;error:string} {
   if (!input || typeof input!=="object" || Array.isArray(input)) return {ok:false,error:"Invalid product"};
   const v=input as Record<string,unknown>;
@@ -21,7 +22,14 @@ export function draftProduct(input: unknown):
     return {ok:false,error:"Price must be 1–100000000 halalas"};
   if(!Number.isSafeInteger(v.stock)||Number(v.stock)<0||Number(v.stock)>1000000)
     return {ok:false,error:"Stock must be 0–1000000"};
-  return {ok:true,value:{title,description,priceHalalas:Number(v.priceHalalas),stock:Number(v.stock)}};
+  const subcategoryId=v.subcategoryId===undefined||v.subcategoryId===null||v.subcategoryId===""?
+    null:v.subcategoryId;
+  if(subcategoryId!==null&&!isSaudiSubcategory(subcategoryId))
+    return {ok:false,error:"Unsupported Saudi product subcategory"};
+  return {ok:true,value:{
+    title,description,priceHalalas:Number(v.priceHalalas),stock:Number(v.stock),
+    subcategoryId
+  }};
 }
 export function safeShopDescription(value: unknown): string|null {
   if(typeof value!=="string")return null;
