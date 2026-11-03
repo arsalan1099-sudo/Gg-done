@@ -86,7 +86,11 @@ test("Saudi vendor onboarding, draft isolation, invitation replay and revocation
  assert.equal(profileA.res.status,200);
  assert.equal(profileA.data.store.status,"DRAFT");
  assert.equal(profileA.data.paymentsEnabled,false);
- const item={title:"Saudi coffee",priceHalalas:1599,stock:4,description:"Premium local coffee"};
+ const categoryList=await json("/api/saudi/categories");
+ assert.equal(categoryList.res.status,200);
+ assert.equal(categoryList.data.groups.length,5);
+ assert.equal(categoryList.data.subcategories.length,109);
+ const item={title:"Saudi coffee",priceHalalas:1599,stock:4,subcategoryId:"sc5",description:"Premium local coffee"};
  const csrf=await json("/api/saudi/vendor/products",{
   method:"POST",headers:{Cookie:cookieA,"Content-Type":"application/json"},body:JSON.stringify(item)
  });
@@ -130,6 +134,13 @@ test("Saudi vendor onboarding, draft isolation, invitation replay and revocation
    assert.equal(visible.data.available,true);
    assert.equal(visible.data.checkoutEnabled,false);
    assert.ok(visible.data.products.some((p:any)=>p.id===submissionId&&p.priceHalalas===1599));
+   assert.ok(visible.data.products.some((p:any)=>p.id===submissionId&&p.subcategoryId==="sc5"));
+   const filtered=await json("/api/saudi/catalog?subcategory=sc5");
+   assert.ok(filtered.data.products.some((p:any)=>p.id===submissionId));
+   const noMatch=await json("/api/saudi/catalog?subcategory=sc6");
+   assert.ok(noMatch.data.products.every((p:any)=>p.id!==submissionId));
+   const invalidSubcategory=await json("/api/saudi/catalog?subcategory=../../etc/passwd");
+   assert.equal(invalidSubcategory.res.status,400);
    assert.ok(visible.data.products.every((p:any)=>!p.phone&&!p.vendorId));
  }finally{
    delete process.env.GO_SAUDI_PRIVACY_APPROVED;
