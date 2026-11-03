@@ -1,4 +1,4 @@
-# Go Saudi — vendor prelaunch production release gate
+**Real commercial checkout is not live.** See [GO_SAUDI_COMMERCE_RELEASE.md](GO_SAUDI_COMMERCE_RELEASE.md) for unfulfilled payment, identity, privacy, tax and fulfilment gates.\n\n# Go Saudi — vendor prelaunch production release gate
 
 **Scope:** Saudi web vendor/admin prelaunch only. NOT a complete Saudi production marketplace, payment processor, native app or general commercial launch.
 
@@ -34,7 +34,7 @@ Never use the existing Go Bharat Render service or GitHub `main` branch for this
 
 ## Vendor personal-data rights and database recovery (schema v003)
 
-- `migrations/saudi/002_data_requests.sql` updates the dedicated Saudi database marker to **schema version 4**. New deployments and upgrades must run `GO_SAUDI_MODE=true npm run db:saudi:migrate` with the **Saudi-only** database. The boot process now refuses older schemas.
+- The current complete Saudi migration chain (`001` through `005`) upgrades its isolated marker to **schema version 5**. New deployments and upgrades must run `GO_SAUDI_MODE=true npm run db:saudi:migrate` with the **Saudi-only** database. The boot process now refuses older schemas.
 - Logged-in sellers can download their own contact, store profile and private product draft data from `GET /api/saudi/vendor/data-export`. This is a sensitive personal-data export; send only over HTTPS and store local downloaded copies securely.
 - Sellers can submit a **pending** deletion request via `POST /api/saudi/vendor/data-requests` with `{"requestType":"DELETE_ACCOUNT","confirm":true}`. Repeated requests are deduplicated. The admin can review pending requests in `/saudi-admin`.
 - **No erasure by default.** `GO_SAUDI_ACCOUNT_ERASURE_ENABLED=false` in Render. Only after an approved retention/legal policy, an independently verified merchant identity, and an explicit operator decision should the setting temporarily be enabled for the authenticated admin request-completion action.
@@ -60,7 +60,7 @@ Never use the existing Go Bharat Render service or GitHub `main` branch for this
 - Provides **109 curated Arabic/English subcategories** (some India-only labels replaced with Saudi equivalents). Main-group browsing uses the original eight verified Saudi vendor categories as a compatibility fallback; subcategory filtering is exact and never invents a product category.
 - The mobile app includes an `All Categories` tab, category sidebar, two-column subcategory cards, search and group/category filters.
 - New `GET /api/saudi/categories` serves the same taxonomy to approved vendors and website controls. The Vendor Panel requires choosing a subcategory before saving a new product. An existing unclassified draft remains editable but **cannot be submitted for catalog review** until classified.
-- `migrations/saudi/004_subcategories.sql` upgrades the **isolated Saudi DB** to `schema_version=4`. The Saudi server now fails closed on earlier versions. Apply `GO_SAUDI_MODE=true npm run db:saudi:migrate` only to its dedicated database; test the upgrade on a copied staging database before deploying.
+- `migrations/saudi/004_subcategories.sql` adds category columns; `005_customer_commerce.sql` upgrades the **isolated Saudi DB** to `schema_version=5`. The Saudi server now fails closed on earlier versions. Apply `GO_SAUDI_MODE=true npm run db:saudi:migrate` only to its dedicated database; test the upgrade on a copied staging database before deploying.
 - Categories for regulated services (pharma, travel, medical, insurance, chemicals, labour) are descriptive only; browsing does **not** authorize trade, booking or regulated operations. Commercial checkout stays disabled.
 - Installing a new debug/test-signed APK may require uninstalling a previous testing APK with a different CI signing certificate. Local demo cart contents will be lost on uninstall.
 
@@ -82,7 +82,7 @@ Integration tests need a newly migrated **disposable test database**, not a prod
 1. Choose and confirm the **Render workspace** for Go Saudi. Create a distinct Saudi web service and a **new isolated database**; never share Go Bharat's `DATABASE_URL`, tables, credentials, payment secrets or Expo project.
 2. Assess Saudi PDPL, relevant Saudi data residency/transfer obligations and the proposed hosting region. Render's offered regions are **not assumed** to be Saudi.
 3. Prepare and approve Arabic/English privacy notice, cookie notice (where relevant), consent, retention/deletion and incident response policy. Consult local Saudi counsel.
-4. Apply dedicated Saudi migrations 001, 002 and 003 (or upgrade the isolated v001 schema) using `GO_SAUDI_MODE=true npm run db:saudi:migrate`; verify the marker (`market='go-saudi'`, `schema_version=4`).
+4. Apply dedicated Saudi migrations 001 through 005 (or upgrade the isolated v001 schema) using `GO_SAUDI_MODE=true npm run db:saudi:migrate`; verify the marker (`market='go-saudi'`, `schema_version=5`).
 5. Generate a new 64-character private admin token on a trusted machine and configure **only its SHA-256 hex digest** in `GO_SAUDI_ADMIN_TOKEN_SHA256`:
    ```sh
    node -e "const c=require('node:crypto');const t=c.randomBytes(32).toString('hex');console.log('PRIVATE_TOKEN='+t);console.log('GO_SAUDI_ADMIN_TOKEN_SHA256='+c.createHash('sha256').update(t).digest('hex'))"
