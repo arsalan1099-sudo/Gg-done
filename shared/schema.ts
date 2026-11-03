@@ -649,6 +649,7 @@ export const saudiVendorSessions = pgTable("saudi_vendor_sessions",{
 export const saudiVendorDraftProducts = pgTable("saudi_vendor_draft_products", {
   id:varchar("id",{length:64}).primaryKey(),
   vendorId:varchar("vendor_id",{length:64}).notNull(),
+  subcategoryId:varchar("subcategory_id",{length:12}),
   title:varchar("title",{length:120}).notNull(),
   description:text("description").notNull().default(""),
   priceHalalas:integer("price_halalas").notNull(),
@@ -678,6 +679,7 @@ export const saudiCatalogSubmissions = pgTable("saudi_catalog_submissions",{
   id:varchar("id",{length:64}).primaryKey(),
   vendorId:varchar("vendor_id",{length:64}).notNull(),
   draftId:varchar("draft_id",{length:64}).notNull().unique(),
+  subcategoryId:varchar("subcategory_id",{length:12}),
   title:varchar("title",{length:120}).notNull(),
   description:text("description").notNull().default(""),
   priceHalalas:integer("price_halalas").notNull(),
