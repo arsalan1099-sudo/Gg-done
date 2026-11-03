@@ -1,25 +1,26 @@
 import React, {useCallback,useEffect,useMemo,useState} from "react";
 import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {saudiMainCategories,saudiSubcategories,subcategoriesFor,matchesSaudiCategory,SaudiGroupId} from "../../lib/saudiCategories";
 import {SaudiProduct,CartLine,safeSaudiProduct,safeSaudiCart,changeSaudiCart,saudiCartTotal,sar} from "../../lib/saudiCart";
 
 type Lang="ar"|"en";
 type Props={lang:Lang;setLang:(l:Lang)=>void;origin:string|null;onSell:()=>void};
-type Tab="home"|"cart"|"wishlist";
+type Tab="home"|"categories"|"cart"|"wishlist";
 type Mode="demo"|"live";
 const categoryIcons:Record<string,string>={Grocery:"🛒",Fashion:"👗",Food:"🍱",Electronics:"📱",Home:"🏠",Beauty:"🌸",Services:"🔧",Wholesale:"📦"};
 const demos:SaudiProduct[]=[
- {id:"demo-food-1",title:"Saudi Arabic Coffee",description:"Illustrative product only · not for purchase",priceHalalas:2899,stock:12,category:"Food",city:"Jeddah",businessName:"Sample Shop · Demo"},
- {id:"demo-fashion-2",title:"Classic Abaya",description:"Illustrative fashion item · not for purchase",priceHalalas:14900,stock:8,category:"Fashion",city:"Riyadh",businessName:"Sample Shop · Demo"},
- {id:"demo-grocery-3",title:"Ajwa Dates",description:"Illustrative grocery item · not for purchase",priceHalalas:4400,stock:20,category:"Grocery",city:"Madinah",businessName:"Sample Shop · Demo"},
- {id:"demo-electronics-4",title:"Wireless Earbuds",description:"Illustrative electronics item · not for purchase",priceHalalas:9900,stock:7,category:"Electronics",city:"Jeddah",businessName:"Sample Shop · Demo"},
- {id:"demo-home-5",title:"Arabic Tea Set",description:"Illustrative home item · not for purchase",priceHalalas:6700,stock:5,category:"Home",city:"Makkah",businessName:"Sample Shop · Demo"},
- {id:"demo-beauty-6",title:"Oud Gift Set",description:"Illustrative gift item · not for purchase",priceHalalas:11900,stock:13,category:"Beauty",city:"Riyadh",businessName:"Sample Shop · Demo"},
- {id:"demo-wholesale-7",title:"Bulk Packaging Boxes",description:"Illustrative wholesale item · not for purchase",priceHalalas:6500,stock:30,category:"Wholesale",city:"Dammam",businessName:"Sample Shop · Demo"},
- {id:"demo-services-8",title:"Home Cleaning Inquiry",description:"Illustrative service listing · not bookable",priceHalalas:3500,stock:4,category:"Services",city:"Khobar",businessName:"Sample Shop · Demo"},
+ {id:"demo-food-1",subcategoryId:"sc5",title:"Saudi Arabic Coffee",description:"Illustrative product only · not for purchase",priceHalalas:2899,stock:12,category:"Food",city:"Jeddah",businessName:"Sample Shop · Demo"},
+ {id:"demo-fashion-2",subcategoryId:"sc65",title:"Classic Abaya",description:"Illustrative fashion item · not for purchase",priceHalalas:14900,stock:8,category:"Fashion",city:"Riyadh",businessName:"Sample Shop · Demo"},
+ {id:"demo-grocery-3",subcategoryId:"sc59",title:"Ajwa Dates",description:"Illustrative grocery item · not for purchase",priceHalalas:4400,stock:20,category:"Grocery",city:"Madinah",businessName:"Sample Shop · Demo"},
+ {id:"demo-electronics-4",subcategoryId:"sc7",title:"Wireless Earbuds",description:"Illustrative electronics item · not for purchase",priceHalalas:9900,stock:7,category:"Electronics",city:"Jeddah",businessName:"Sample Shop · Demo"},
+ {id:"demo-home-5",subcategoryId:"sc10",title:"Arabic Tea Set",description:"Illustrative home item · not for purchase",priceHalalas:6700,stock:5,category:"Home",city:"Makkah",businessName:"Sample Shop · Demo"},
+ {id:"demo-beauty-6",subcategoryId:"sc66",title:"Oud Gift Set",description:"Illustrative gift item · not for purchase",priceHalalas:11900,stock:13,category:"Beauty",city:"Riyadh",businessName:"Sample Shop · Demo"},
+ {id:"demo-wholesale-7",subcategoryId:"sc19",title:"Bulk Packaging Boxes",description:"Illustrative wholesale item · not for purchase",priceHalalas:6500,stock:30,category:"Wholesale",city:"Dammam",businessName:"Sample Shop · Demo"},
+ {id:"demo-services-8",subcategoryId:"sc69",title:"Home Cleaning Inquiry",description:"Illustrative service listing · not bookable",priceHalalas:3500,stock:4,category:"Services",city:"Khobar",businessName:"Sample Shop · Demo"},
 ];
 const cities=["All","Riyadh","Jeddah","Makkah","Madinah","Dammam","Khobar"];
-const categories=["All","Grocery","Fashion","Food","Electronics","Home","Beauty","Services","Wholesale"];
+// Native browsing now uses Go Bharat-style category groups/subcategories.
 const a={
  ar:{
   browse:"التسوق",cart:"السلة",wishlist:"المفضلة",sell:"للتجار",vendor:"لوحة البائع",
@@ -32,6 +33,12 @@ const a={
   remove:"حذف",favEmpty:"لم تضف منتجات للمفضلة",saved:"تمت الإضافة",mode:"المرحلة التجريبية",
   reload:"تحديث",goSell:"سجل متجرك",qty:"الكمية",nonLive:"لا تتم أي عمليات شراء أو حجز من هذه الواجهة.",
   offline:"لم يتوفر كتالوج مباشر، نعرض منتجات توضيحية فقط",city:"المدينة",
+  shopByCategory:"تسوق حسب الفئة",allCategories:"جميع الفئات",subcategories:"الفئات الفرعية",
+  browseCategory:"تصفح الفئة",clearFilter:"إزالة الفلتر",categorySearch:"ابحث عن فئة فرعية",
+  categoryHelp:"اختر فئة فرعية لاستعراض المنتجات",noSubcategories:"لا توجد فئات مطابقة",
+  noCategoryProducts:"لا توجد منتجات حالياً في هذه الفئة. يمكنك تصفح بقية الفئات.",
+  allGroupProducts:"عرض جميع منتجات هذه الفئة",selectedCategory:"الفئة المختارة",
+
  },
  en:{
   browse:"Shop",cart:"Cart",wishlist:"Wishlist",sell:"Sell",vendor:"Vendor panel",
@@ -44,6 +51,12 @@ const a={
   remove:"Remove",favEmpty:"No saved items yet",saved:"Saved",mode:"PRELAUNCH",
   reload:"Refresh",goSell:"Register your store",qty:"Quantity",nonLive:"This screen does not place real orders, reserve inventory or collect payments.",
   offline:"No live catalog. Showing sample products only.",city:"City",
+  shopByCategory:"Shop by category",allCategories:"All categories",subcategories:"Subcategories",
+  browseCategory:"Browse category",clearFilter:"Clear filter",categorySearch:"Search subcategories",
+  categoryHelp:"Choose a subcategory to browse products",noSubcategories:"No matching categories",
+  noCategoryProducts:"No products in this category yet. Try another category.",
+  allGroupProducts:"Browse all products in this group",selectedCategory:"Selected category",
+
  }
 };
 export default function SaudiShop({lang,setLang,origin,onSell}:Props){
@@ -53,7 +66,10 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
  const [items,setItems]=useState<SaudiProduct[]>(demos);
  const [loading,setLoading]=useState(false);
  const [search,setSearch]=useState("");
- const [category,setCategory]=useState("All");
+ const [selectedGroup,setSelectedGroup]=useState<SaudiGroupId>("b2c");
+ const [selectedSubcategory,setSelectedSubcategory]=useState<string|null>(null);
+ const [activeGroupFilter,setActiveGroupFilter]=useState<SaudiGroupId|null>(null);
+ const [categorySearch,setCategorySearch]=useState("");
  const [city,setCity]=useState("All");
  const [cart,setCart]=useState<CartLine[]>([]);
  const [loadedCartKey,setLoadedCartKey]=useState("");
@@ -93,9 +109,9 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
  const favorites=useMemo(()=>items.filter(p=>favs.includes(p.id)),[items,favs]);
  const shown=useMemo(()=>items.filter(p=>{
   const q=search.trim().toLocaleLowerCase("en");
-  return (category==="All"||p.category===category)&&(city==="All"||p.city===city)&&
+  return matchesSaudiCategory(p,activeGroupFilter,selectedSubcategory)&&(city==="All"||p.city===city)&&
    (!q||[p.title,p.businessName,p.description].some(x=>x.toLocaleLowerCase("en").includes(q)));
- }),[items,search,category,city]);
+ }),[items,search,city,activeGroupFilter,selectedSubcategory]);
  const bag=useMemo(()=>cart.map(c=>({product:items.find(p=>p.id===c.id),quantity:c.quantity}))
    .filter((x):x is {product:SaudiProduct,quantity:number}=>!!x.product),[cart,items]);
  const total=saudiCartTotal(cart,items);
