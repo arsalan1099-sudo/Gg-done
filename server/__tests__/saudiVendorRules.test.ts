@@ -14,6 +14,9 @@ test("validate draft pricing in integer Saudi halalas",()=>{
  assert.equal(draftProduct({...v,priceHalalas:0}).ok,false);
  assert.equal(draftProduct({...v,stock:-1}).ok,false);
  assert.equal(draftProduct({...v,title:"  "}).ok,false);
+ assert.equal(draftProduct({...v,subcategoryId:"sc5"}).ok,true);
+ assert.equal(draftProduct({...v,subcategoryId:"sc9999"}).ok,false);
+ assert.equal(draftProduct({...v,subcategoryId:5}).ok,false);
  assert.equal(draftProduct({...v,stock:1000001}).ok,false);
 });
 test("shop description bounded",()=>{
