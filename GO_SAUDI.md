@@ -1,4 +1,4 @@
-# Go Saudi / جو سعودي — prelaunch implementation
+**Real commerce status:** Saudi orders, OTP, bookings and provider API modules are implemented behind disabled safety gates. See [GO_SAUDI_COMMERCE_RELEASE.md](GO_SAUDI_COMMERCE_RELEASE.md); no live charges are enabled.\n\n# Go Saudi / جو سعودي — prelaunch implementation
 
 **Source:** copied at branch level from Go Bharat (Go Bharat `main` has not been changed).
 **Current stage:** bilingual public landing + vendor enquiry and protected review-dashboard source; NOT a production Saudi e-commerce service.
@@ -46,7 +46,7 @@ The Saudi-only vendor panel is available at `/vendor` (`/vendor-panel` redirects
 | `DELETE /api/saudi/vendor/products/:id` | Delete own draft |
 | `POST /api/saudi/vendor/logout` | Revoke current vendor session |
 
-The separate database must be initialized with `GO_SAUDI_MODE=true npm run db:saudi:migrate` (Saudi schema version **4**) to create seller enquiry/review tables, vendor accounts/invitations/sessions, product drafts and data-deletion requests. Do not run this against Go Bharat's original database.
+The separate database must be initialized with `GO_SAUDI_MODE=true npm run db:saudi:migrate` (Saudi schema version **5**) to create seller enquiry/review tables, vendor accounts/invitations/sessions, product drafts and data-deletion requests. Do not run this against Go Bharat's original database.
 
 **CI verified:** authenticated HTTP integration tests on disposable migrated PostgreSQL (vendor invitation, session cookies, tenant isolation, draft CRUD, revoke, origin/CSP restrictions). **Still not verified:** real Saudi OTP, legal review, a separate live Render service, actual merchant activation, orders or payments.
 
@@ -63,13 +63,13 @@ The separate database must be initialized with `GO_SAUDI_MODE=true npm run db:sa
 
 Go Saudi replicates Go Bharat's 5 main groups (B2B, B2C, Services, Manpower, Travel) with 109 curated Arabic/English subcategories, a category browser and strict product classification. Native screenshot categories are interactive; existing app installations require a new APK. Vendors must select group and subcategory for newly created drafts; unchanged historical drafts require category selection before requesting review. The public category API is `GET /api/saudi/categories`; exact approved product filtering uses `GET /api/saudi/catalog?subcategory=sc5`.
 
-Apply **migration 004** in the isolated Saudi Postgres database; schema marker is now **v4**. Commercial orders and regulated category fulfilment are still disabled.
+Apply migrations **001–005** to the isolated Saudi Postgres database; the required server schema marker is now **v5**. Commercial orders and regulated category fulfilment are still disabled.
 
 ## Saudi Shop + moderated public catalog
 
 The Expo native home now opens an Arabic/English shopping preview with search, categories, Saudi city filters, product details, wishlist and a persistent local demo cart. With no verified production Saudi HTTPS backend, eight clearly labeled demo items are shown; no order is placed and no payment is taken. Seller registration remains a separate form subject to the privacy gate.
 
-A vendor can use `POST /api/saudi/vendor/catalog-submissions` with their own `draftId` to submit a snapshot for review. The admin queue can view `GET /api/saudi/admin/catalog-submissions` and moderate through `PATCH /api/saudi/admin/catalog-submissions/:id`. Admin approval is blocked without privacy and merchant verification. A public `GET /api/saudi/catalog` listing requires three distinct Saudi privacy, catalog and marketplace-launch configuration approvals and returns `checkoutEnabled:false`. All commercial gates default to OFF. Apply migrations **001–003** to the isolated Saudi DB (`schema_version=3`) before starting the server.
+A vendor can use `POST /api/saudi/vendor/catalog-submissions` with their own `draftId` to submit a snapshot for review. The admin queue can view `GET /api/saudi/admin/catalog-submissions` and moderate through `PATCH /api/saudi/admin/catalog-submissions/:id`. Admin approval is blocked without privacy and merchant verification. A public `GET /api/saudi/catalog` listing requires three distinct Saudi privacy, catalog and marketplace-launch configuration approvals and returns `checkoutEnabled:false`. All commercial gates default to OFF. Apply migrations **001–005** to the isolated Saudi DB (`schema_version=5`) before starting the server.
 
 The next release must add secure customer identities/addresses, order placement, delivery/returns, compliant payment settlement and ZATCA invoicing; these are NOT implemented by this catalog preview.
 
@@ -81,7 +81,7 @@ The next release must add secure customer identities/addresses, order placement,
 - `GET /api/saudi/admin/data-requests`: private admin request queue.
 - `POST /api/saudi/admin/data-requests/:id/complete`: requires admin authentication **and** explicit production configuration `GO_SAUDI_ACCOUNT_ERASURE_ENABLED=true` plus independently verified identity, retention review and exact deletion phrase. The default in Render is `false`.
 - Vendor panel offers **Download my data** / **Request account deletion**. Admin panel shows review queue and stays locked until approved erasure configuration.
-- Schema migration `002_data_requests.sql` upgrades the dedicated marker to version 3; run `npm run db:saudi:migrate` against a separate Saudi database, never Go Bharat. Server requires schema v4.
+- Schema migration `002_data_requests.sql` adds deletion requests; the full migration chain upgrades the Saudi marker to version 5; run `npm run db:saudi:migrate` against a separate Saudi database, never Go Bharat. Server requires schema v5.
 - CI additionally runs a disposable PostgreSQL backup/restore drill (not a production backup). Set up encrypted production backups and periodic restores before real operation.
 
 **Privacy/compliance warning:** data exports and erasures are technical features, not substitutes for Saudi PDPL legal review, named admin MFA, consent/retention policy or signed legal signoff.
