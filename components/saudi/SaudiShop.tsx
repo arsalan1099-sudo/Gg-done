@@ -5,6 +5,7 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 import SaudiCategoryExplorer,{SaudiCategoryStrip} from "./SaudiCategoryExplorer";
 import {saudiMainCategories,saudiSubcategories,matchesSaudiCategory,SaudiGroupId} from "../../lib/saudiCategories";
 import {SaudiProduct,CartLine,safeSaudiProduct,safeSaudiCart,changeSaudiCart,saudiCartTotal,sar} from "../../lib/saudiCart";
+import {SaudiDemoOrder,makeSaudiDemoOrder,safeSaudiDemoOrderHistory} from "../../lib/saudiDemoOrders";
 
 type Lang="ar"|"en";
 type Props={lang:Lang;setLang:(l:Lang)=>void;origin:string|null;onSell:()=>void};
@@ -35,6 +36,14 @@ const a={
   remove:"حذف",favEmpty:"لم تضف منتجات للمفضلة",saved:"تمت الإضافة",mode:"المرحلة التجريبية",
   reload:"تحديث",goSell:"سجل متجرك",qty:"الكمية",nonLive:"لا تتم أي عمليات شراء أو حجز من هذه الواجهة.",
   offline:"لم يتوفر كتالوج مباشر، نعرض منتجات توضيحية فقط",city:"المدينة",
+  testCheckout:"إنشاء طلب تجريبي",testOrders:"طلباتي التجريبية",
+  testOnly:"طلب تجريبي فقط · لا يوجد دفع أو توصيل أو إشعار للتاجر",
+  testConfirm:"هل تريد إنشاء طلب تجريبي محلي؟ لن يتم إرسال الطلب أو تحصيل أي مبلغ.",
+  testConfirmYes:"إنشاء الطلب",testCancelled:"إلغاء",testOrderCreated:"تم إنشاء طلب تجريبي على هذا الجهاز فقط.",
+  noTestOrders:"لا توجد طلبات تجريبية بعد",
+  testOrderHistory:"سجل الطلبات التجريبية",testFailure:"تعذر حفظ الطلب التجريبي.",
+  testDelete:"مسح السجل التجريبي",testDeleteConfirm:"مسح سجل الطلبات التجريبية من هذا الجهاز؟",
+
   shopByCategory:"تسوق حسب الفئة",allCategories:"جميع الفئات",subcategories:"الفئات الفرعية",
   browseCategory:"تصفح الفئة",clearFilter:"إزالة الفلتر",categorySearch:"ابحث عن فئة فرعية",
   categoryHelp:"اختر فئة فرعية لاستعراض المنتجات",noSubcategories:"لا توجد فئات مطابقة",
@@ -53,6 +62,14 @@ const a={
   remove:"Remove",favEmpty:"No saved items yet",saved:"Saved",mode:"PRELAUNCH",
   reload:"Refresh",goSell:"Register your store",qty:"Quantity",nonLive:"This screen does not place real orders, reserve inventory or collect payments.",
   offline:"No live catalog. Showing sample products only.",city:"City",
+  testCheckout:"Place test order",testOrders:"My test orders",
+  testOnly:"TEST ONLY · No payment, delivery, merchant notification or inventory reservation",
+  testConfirm:"Create an offline test order on this device? No real order will be sent and no payment will be charged.",
+  testConfirmYes:"Create test order",testCancelled:"Cancel",testOrderCreated:"Demo order saved on this device only.",
+  noTestOrders:"No test orders yet",
+  testOrderHistory:"Test-order history",testFailure:"Could not save test order.",
+  testDelete:"Clear test history",testDeleteConfirm:"Delete locally stored test-order history?",
+
   shopByCategory:"Shop by category",allCategories:"All categories",subcategories:"Subcategories",
   browseCategory:"Browse category",clearFilter:"Clear filter",categorySearch:"Search subcategories",
   categoryHelp:"Choose a subcategory to browse products",noSubcategories:"No matching categories",
@@ -77,6 +94,9 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
  const [cart,setCart]=useState<CartLine[]>([]);
  const [loadedCartKey,setLoadedCartKey]=useState("");
  const [favs,setFavs]=useState<string[]>([]);
+ const [demoOrders,setDemoOrders]=useState<SaudiDemoOrder[]>([]);
+ const [demoOrdersLoaded,setDemoOrdersLoaded]=useState(false);
+ const [showDemoOrders,setShowDemoOrders]=useState(false);
  const [selected,setSelected]=useState<SaudiProduct|null>(null);
  const [networkError,setNetworkError]=useState(false);
  const loadCatalog=useCallback(async()=>{
@@ -109,6 +129,50 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
  useEffect(()=>{
   if(loadedCartKey===key)AsyncStorage.setItem(key,JSON.stringify(cart)).catch(()=>{});
  },[key,cart,loadedCartKey]);
+ useEffect(()=>{
+  let active=true;
+  AsyncStorage.getItem("go-saudi-demo-test-orders-v1")
+   .then(raw=>{
+    let parsed:unknown=[];try{parsed=JSON.parse(raw||"[]")}catch{}
+    if(active){setDemoOrders(safeSaudiDemoOrderHistory(parsed));setDemoOrdersLoaded(true);}
+   }).catch(()=>{if(active)setDemoOrdersLoaded(true)});
+  return()=>{active=false;};
+ },[]);
+ useEffect(()=>{
+  if(demoOrdersLoaded)
+   AsyncStorage.setItem("go-saudi-demo-test-orders-v1",JSON.stringify(demoOrders)).catch(()=>{});
+ },[demoOrders,demoOrdersLoaded]);
+ const placeTestOrder=()=>{
+  if(mode!=="demo"||!cart.length||!demoOrdersLoaded||loadedCartKey!==key){
+   Alert.alert("Go Saudi",t.checkoutBlocked);return;
+  }
+  Alert.alert("Go Saudi · DEMO",t.testConfirm,[
+   {text:t.testCancelled,style:"cancel"},
+   {text:t.testConfirmYes,onPress:async()=>{
+    const id="DEMO-SA-"+Date.now().toString(36)+"-"+Math.floor(Math.random()*1e9).toString(36);
+    const order=makeSaudiDemoOrder(cart,items,id,new Date().toISOString());
+    if(!order){Alert.alert("Go Saudi",t.testFailure);return;}
+    const next=[order,...demoOrders].slice(0,30);
+    try{
+     await AsyncStorage.setItem("go-saudi-demo-test-orders-v1",JSON.stringify(next));
+     await AsyncStorage.setItem("go-saudi-demo-cart-v1","[]");
+     setDemoOrders(next);setCart([]);setShowDemoOrders(true);
+     Alert.alert("Go Saudi · DEMO",t.testOrderCreated);
+    }catch{Alert.alert("Go Saudi",t.testFailure);}
+   }}
+  ]);
+ };
+ const clearDemoOrders=()=>{
+  Alert.alert("Go Saudi · DEMO",t.testDeleteConfirm,[
+   {text:t.testCancelled,style:"cancel"},
+   {text:t.testDelete,style:"destructive",onPress:async()=>{
+    try{
+      await AsyncStorage.setItem("go-saudi-demo-test-orders-v1","[]");
+      setDemoOrders([]);
+    }catch{Alert.alert("Go Saudi",t.testFailure);}
+   }}
+  ]);
+ };
  const favorites=useMemo(()=>items.filter(p=>favs.includes(p.id)),[items,favs]);
  const shown=useMemo(()=>items.filter(p=>{
   const q=search.trim().toLocaleLowerCase("en");
@@ -236,8 +300,29 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
        </View>)}
       <View style={styles.cartTotal}><Text style={styles.sectionTitle}>{t.subtotal}</Text>
        <Text style={styles.total}>{sar(total)}</Text></View>
-      <Pressable onPress={msg} style={styles.disabledCheckout}><Text style={styles.checkoutLabel}>{t.checkout} · {t.mode}</Text></Pressable>
-      <Text style={styles.disclaimer}>{t.checkoutBlocked}</Text>
+      <Pressable onPress={mode==="demo"?placeTestOrder:msg}
+        disabled={mode==="demo"&&(!bag.length||!demoOrdersLoaded||loadedCartKey!==key)}
+        style={mode==="demo"&&bag.length?styles.demoCheckout:styles.disabledCheckout}>
+       <Text style={styles.checkoutLabel}>{mode==="demo"?t.testCheckout:t.checkout+" · "+t.mode}</Text>
+      </Pressable>
+      <Text style={styles.disclaimer}>{mode==="demo"?t.testOnly:t.checkoutBlocked}</Text>
+      <Pressable onPress={()=>setShowDemoOrders(v=>!v)} accessibilityRole="button" style={styles.testHistoryButton}>
+       <Text style={styles.testHistoryTitle}>🧾 {t.testOrderHistory} ({demoOrders.length})</Text>
+       <Text style={styles.link}>{showDemoOrders?"−":"+"}</Text>
+      </Pressable>
+      {showDemoOrders&&<View style={styles.testHistory}>
+       {demoOrders.length===0&&<Text style={styles.empty}>{t.noTestOrders}</Text>}
+       {demoOrders.map(order=><View key={order.id} style={styles.testOrder}>
+         <Text style={styles.testOrderId}>{order.id}</Text>
+         <Text style={styles.muted}>{order.createdAt.slice(0,16).replace("T"," ")} UTC</Text>
+         <Text style={styles.price}>{sar(order.totalHalalas)}  ·  DEMO</Text>
+         <Text style={styles.muted}>{order.items.reduce((n,i)=>n+i.quantity,0)} {t.count}</Text>
+         <Text style={styles.disclaimer}>{t.testOnly}</Text>
+       </View>)}
+       {demoOrders.length>0&&<Pressable accessibilityRole="button" onPress={clearDemoOrders} style={styles.clearHistory}>
+        <Text style={styles.clearText}>{t.testDelete}</Text>
+       </Pressable>}
+      </View>}
     </>}
     <View style={styles.sellerCard}>
       <Text style={styles.sellerTitle}>🏬 {t.sell}</Text>
@@ -333,6 +418,15 @@ const styles=StyleSheet.create({
  cartTotal:{marginTop:18,flexDirection:"row",justifyContent:"space-between",alignItems:"center"},
  total:{fontSize:19,fontWeight:"900",color:"#06744c"},
  disabledCheckout:{backgroundColor:"#b7d5c6",padding:16,alignItems:"center",borderRadius:13,marginTop:15},
+ demoCheckout:{backgroundColor:"#087953",padding:16,alignItems:"center",borderRadius:13,marginTop:15},
+ testHistoryButton:{marginTop:18,paddingVertical:14,paddingHorizontal:12,flexDirection:"row",justifyContent:"space-between",alignItems:"center",backgroundColor:"#e8f4ea",borderRadius:12},
+ testHistoryTitle:{fontSize:13,fontWeight:"800",color:"#174b35"},
+ testHistory:{backgroundColor:"#fff",padding:10,borderWidth:1,borderColor:"#d8e8dd",borderRadius:12,marginTop:10},
+ testOrder:{padding:11,borderBottomWidth:1,borderBottomColor:"#e9f1eb"},
+ testOrderId:{fontSize:12,fontWeight:"800",color:"#145036"},
+ clearHistory:{padding:11,alignItems:"center"},
+ clearText:{color:"#b44237",fontWeight:"800",fontSize:12},
+
  checkoutLabel:{color:"#285d46",fontWeight:"900"},
  disclaimer:{color:"#806b4d",fontSize:11,marginTop:10,lineHeight:18},
  sellerCard:{marginTop:27,borderRadius:17,backgroundColor:"#fff",padding:20,borderWidth:1,borderColor:"#e2eee6"},
