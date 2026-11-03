@@ -27,9 +27,49 @@ services:
         value: "false"
       - key: GO_SAUDI_MERCHANT_VERIFICATION_APPROVED
         value: "false"
+      - key: GO_SAUDI_ESTORE_VERIFIED
+        value: "false"
+      - key: GO_SAUDI_CUSTOMER_OTP_ENABLED
+        value: "false"
+      - key: GO_SAUDI_CUSTOMER_DATA_RIGHTS_READY
+        value: "false"
+      - key: GO_SAUDI_ORDER_OPERATIONAL_TESTS_PASSED
+        value: "false"
+      - key: GO_SAUDI_FULFILLMENT_READY
+        value: "false"
+      - key: GO_SAUDI_ZATCA_READY
+        value: "false"
+      - key: GO_SAUDI_REFUNDS_READY
+        value: "false"
+      - key: GO_SAUDI_SETTLEMENT_RECONCILIATION_READY
+        value: "false"
+      - key: GO_SAUDI_LIVE_CHARGES_APPROVED
+        value: "false"
+      - key: GO_SAUDI_ORDERS_ENABLED
+        value: "false"
+      - key: GO_SAUDI_BOOKINGS_ENABLED
+        value: "false"
+      - key: GO_SAUDI_PAYMENTS_ENABLED
+        value: "false"
+      - key: GO_SAUDI_SERVICE_BOOKINGS_LICENSED
+        value: "false"
       - key: GO_SAUDI_ADMIN_TOKEN_SHA256
         sync: false
       - key: DATABASE_URL
         sync: false
       - key: APP_PUBLIC_URL
+        sync: false
+      - key: MOYASAR_SECRET_KEY
+        sync: false
+      - key: MOYASAR_PUBLISHABLE_KEY
+        sync: false
+      - key: TWILIO_VERIFY_SERVICE_SID
+        sync: false
+      - key: TWILIO_API_KEY
+        sync: false
+      - key: TWILIO_API_SECRET
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: GO_SAUDI_CUSTOMER_ENCRYPTION_KEY
         sync: false
