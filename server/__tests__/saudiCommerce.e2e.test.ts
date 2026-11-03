@@ -7,7 +7,7 @@ import {eq} from "drizzle-orm";
 import {db,pool} from "../db";
 import {registerSaudiMarket} from "../saudiMarket";
 import {sellerEnquiries,saudiVendorAccounts,saudiCatalogSubmissions,
- saudiVendorSessions} from "@shared/schema";
+ saudiVendorDraftProducts,saudiVendorSessions} from "@shared/schema";
 
 const random=(p:string)=>p+crypto.randomBytes(15).toString("hex");
 const vendorId=random("SV_"),leadId=random("SL_");
@@ -78,10 +78,17 @@ before(async()=>{
   city:"Jeddah",category:"Food",status:"APPROVED",source:"SAUDI_LANDING",consent:true
  });
  await db.insert(saudiVendorAccounts).values({id:vendorId,enquiryId:leadId,description:"CI-only verified demo seller"});
+ const goodDraft=random("SVP_"),serviceDraft=random("SVP_");
+ await db.insert(saudiVendorDraftProducts).values([
+  {id:goodDraft,vendorId,subcategoryId:"sc5",title:"CI Saudi Coffee",
+   description:"Only a CI test",priceHalalas:2899,stock:3,status:"DRAFT"},
+  {id:serviceDraft,vendorId,subcategoryId:"sc69",title:"CI Cleaning Service",
+   description:"Manual appointment request",priceHalalas:6500,stock:8,status:"DRAFT"}
+ ]);
  await db.insert(saudiCatalogSubmissions).values([
-  {id:goodId,vendorId,draftId:random("SVP_"),subcategoryId:"sc5",
+  {id:goodId,vendorId,draftId:goodDraft,subcategoryId:"sc5",
    title:"CI Saudi Coffee",description:"Only a CI test",priceHalalas:2899,stock:3,status:"APPROVED"},
-  {id:serviceId,vendorId,draftId:random("SVP_"),subcategoryId:"sc69",
+  {id:serviceId,vendorId,draftId:serviceDraft,subcategoryId:"sc69",
    title:"CI Cleaning Service",description:"Manual appointment request",priceHalalas:6500,stock:8,status:"APPROVED"}
  ]);
  // Native customer and merchant sessions are scoped to this disposable CI DB.
