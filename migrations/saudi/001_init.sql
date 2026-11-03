@@ -17,7 +17,7 @@ BEGIN
       RAISE EXCEPTION 'Refusing Saudi initial migration: nonempty unmarked database';
     END IF;
   ELSE
-    SELECT count(*),count(*) FILTER (WHERE market='go-saudi' AND schema_version IN (1,2,3))
+    SELECT count(*),count(*) FILTER (WHERE market='go-saudi' AND schema_version IN (1,2,3,4))
       INTO market_count,market_ok
     FROM saudi_market_metadata;
     IF market_count<>1 OR market_ok<>1 THEN
