@@ -112,12 +112,15 @@ export function registerSaudiOrders(app:Express):void{
       note:"Use the hosted Moyasar card form; never send PAN/CVV to Go Saudi."
     });
    }catch(err){
-    // A provider timeout can leave an orphan intent; do not mark anything paid.
-    await db.update(saudiOrders).set({status:"PENDING_PAYMENT"})
+    // A PSP timeout can mean the intent WAS created remotely. Do not reopen
+    // this order for another charge attempt, or claim that payment did not occur.
+    await db.update(saudiOrders).set({status:"FAILED"})
      .where(and(eq(saudiOrders.id,id),eq(saudiOrders.customerId,owner(res)),
        eq(saudiOrders.status,"CREATING_INTENT")));
     logSaudiError("SAUDI_PAYMENT_INTENT",err);
-    return res.status(503).json({error:"Payment provider unavailable. No order was paid."});
+    return res.status(503).json({
+      error:"Payment initiation outcome uncertain. This order is locked for manual reconciliation; do not retry payment."
+    });
    }
   }catch(err){logSaudiError("SAUDI_PAYMENT_INTENT",err);
    return res.status(503).json({error:"Unable to begin payment"});}
