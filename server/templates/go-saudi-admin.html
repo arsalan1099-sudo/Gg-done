@@ -195,16 +195,19 @@
   async function loadCatalogQueue(){
     const target=$("catalogQueue");$("catalogError").textContent="";
     try {
-      const data=await api("/api/saudi/admin/catalog-submissions?status=PENDING");
+      const [data,taxonomy]=await Promise.all([
+        api("/api/saudi/admin/catalog-submissions?status=PENDING"),
+        api("/api/saudi/categories")
+      ]);
       target.replaceChildren();
       if(!(data.submissions||[]).length){target.append(make("p","hint","No product drafts pending review."));return;}
       const table=make("table","table"),head=make("thead"),tr=make("tr");
-      ["Merchant","Product","Price (SAR)","Stock","Decision"].forEach(v=>tr.append(make("th","",v)));
+      ["Merchant","Product","Subcategory","Price (SAR)","Stock","Decision"].forEach(v=>tr.append(make("th","",v)));
       head.append(tr);table.append(head);
       const body=make("tbody");
       for(const product of data.submissions){
         const row=make("tr");
-        [product.businessName,product.title,(product.priceHalalas/100).toFixed(2),product.stock]
+        [product.businessName,product.title,(taxonomy.subcategories||[]).find(s=>s.id===product.subcategoryId)?.en||"Unclassified",(product.priceHalalas/100).toFixed(2),product.stock]
           .forEach(v=>row.append(make("td","",v)));
         const cell=make("td");
         for(const status of ["APPROVED","REJECTED"]){
