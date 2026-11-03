@@ -1,7 +1,8 @@
 import React, {useCallback,useEffect,useMemo,useState} from "react";
 import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {saudiMainCategories,saudiSubcategories,subcategoriesFor,matchesSaudiCategory,SaudiGroupId} from "../../lib/saudiCategories";
+import SaudiCategoryExplorer,{SaudiCategoryStrip} from "./SaudiCategoryExplorer";
+import {saudiMainCategories,saudiSubcategories,matchesSaudiCategory,SaudiGroupId} from "../../lib/saudiCategories";
 import {SaudiProduct,CartLine,safeSaudiProduct,safeSaudiCart,changeSaudiCart,saudiCartTotal,sar} from "../../lib/saudiCart";
 
 type Lang="ar"|"en";
@@ -124,6 +125,18 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
   <Pressable key={value} onPress={onPress} style={[styles.pill,active&&styles.pillActive]}>
    <Text style={[styles.pillText,active&&styles.pillTextActive]}>{value==="All"?t.all:value}</Text>
   </Pressable>);
+ const openCategoryGroup=(g:SaudiGroupId)=>{
+  setSelectedGroup(g);setCategorySearch("");setTab("categories");
+ };
+ const useCategoryFilter=(g:SaudiGroupId,subcategoryId:string|null)=>{
+  setActiveGroupFilter(g);setSelectedSubcategory(subcategoryId);setTab("home");
+  setSearch("");
+ };
+ const resetCategoryFilter=()=>{setActiveGroupFilter(null);setSelectedSubcategory(null);};
+ const activeCategory=selectedSubcategory
+   ?saudiSubcategories.find(s=>s.id===selectedSubcategory):undefined;
+ const activeGroup=activeGroupFilter
+   ?saudiMainCategories.find(g=>g.id===activeGroupFilter):undefined;
  const renderProduct=(p:SaudiProduct)=>(
   <View key={p.id} style={styles.product}>
    <Pressable onPress={()=>setSelected(p)} accessibilityRole="button" style={styles.productImage}>
@@ -167,10 +180,17 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
     {tab==="home"&&<>
      <TextInput value={search} onChangeText={setSearch} placeholder={"🔎  "+t.search} placeholderTextColor="#718b79"
       style={[styles.search,{textAlign:right}]} />
-     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}
-      contentContainerStyle={{gap:7,paddingBottom:4}}>
-      {categories.map(c=>pill(c,()=>setCategory(c),category===c))}
-     </ScrollView>
+     <SaudiCategoryStrip lang={lang} onOpenAll={()=>setTab("categories")}
+      onOpenGroup={openCategoryGroup}/>
+     {(activeGroupFilter||selectedSubcategory)&&<View style={styles.selectedFilter}>
+       <Text numberOfLines={2} style={styles.selectedFilterText}>
+        {t.selectedCategory}: {activeCategory
+          ?lang==="ar"?activeCategory.ar:activeCategory.en
+          :activeGroup?lang==="ar"?activeGroup.ar:activeGroup.en:""}
+       </Text>
+       <Pressable accessibilityRole="button" onPress={resetCategoryFilter}
+         style={styles.filterClear}><Text style={styles.filterClearText}>{t.clearFilter} ✕</Text></Pressable>
+     </View>}
      <Text style={[styles.filterTitle,{textAlign:right}]}>{t.city}</Text>
      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}
       contentContainerStyle={{gap:7,paddingBottom:4}}>
@@ -182,8 +202,17 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
      </View>
      {loading&&<ActivityIndicator color="#047344"/>}
      <View style={styles.products}>{shown.map(renderProduct)}</View>
-     {shown.length===0&&<Text style={styles.empty}>{t.empty}</Text>}
+     {shown.length===0&&<View style={styles.noProducts}>
+       <Text style={styles.empty}>{activeGroupFilter?t.noCategoryProducts:t.empty}</Text>
+       {activeGroupFilter&&<Pressable accessibilityRole="button" onPress={()=>setTab("categories")}
+        style={styles.showOther}><Text style={styles.link}>{t.allCategories} ›</Text></Pressable>}
+     </View>}
     </>}
+    {tab==="categories"&&<SaudiCategoryExplorer lang={lang} selectedGroup={selectedGroup}
+      onGroupChange={g=>setSelectedGroup(g)}
+      onSubcategory={id=>useCategoryFilter(selectedGroup,id)}
+      onBrowseGroup={g=>useCategoryFilter(g,null)}
+      search={categorySearch} onSearchChange={setCategorySearch}/>}
     {tab==="wishlist"&&<>
       <Text style={styles.sectionTitle}>{t.wishlist} ({favorites.length})</Text>
       <View style={styles.products}>{favorites.map(renderProduct)}</View>
@@ -215,10 +244,19 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
     </View>
    </ScrollView>
    <View style={styles.bottom}>
-    {(["home","wishlist","cart"] as const).map((v,i)=><Pressable key={v} onPress={()=>{setTab(v);setSelected(null)}} style={[styles.bottomTab,tab===v&&styles.tabActive]}>
-      <Text style={styles.tabIcon}>{["⌂","♡","🛒"][i]}</Text>
-      <Text style={[styles.bottomText,tab===v&&styles.bottomActive]}>{v==="home"?t.browse:v==="cart"?t.cart:t.wishlist}{v==="cart"&&count?" ("+count+")":""}</Text>
-    </Pressable>)}
+    {(["home","categories","wishlist","cart"] as const).map(v=>{
+      const icon=v==="home"?"⌂":v==="categories"?"▦":v==="wishlist"?"♡":"🛒";
+      const label=v==="home"?t.browse:v==="categories"?t.allCategories:v==="cart"?t.cart:t.wishlist;
+      return <Pressable key={v} accessibilityRole="button"
+       accessibilityState={{selected:tab===v}}
+       onPress={()=>{setTab(v);setSelected(null)}}
+       style={[styles.bottomTab,tab===v&&styles.tabActive]}>
+        <Text style={styles.tabIcon}>{icon}</Text>
+        <Text numberOfLines={1} style={[styles.bottomText,tab===v&&styles.bottomActive]}>
+          {label}{v==="cart"&&count?" ("+count+")":""}
+        </Text>
+       </Pressable>;
+    })}
    </View>
    {selected&&<View style={styles.modalShade}>
     <View style={styles.modal}>
@@ -252,6 +290,14 @@ const styles=StyleSheet.create({
  bannerText:{color:"#705429",fontWeight:"900",fontSize:13},
  bannerSmall:{color:"#786c57",fontSize:11,marginTop:5},
  error:{color:"#b43f33",fontSize:12,marginBottom:12},
+ selectedFilter:{backgroundColor:"#e7f5ec",borderColor:"#b5dac3",borderWidth:1,
+   borderRadius:11,padding:11,marginBottom:15,flexDirection:"row",alignItems:"center",gap:9},
+ selectedFilterText:{flex:1,color:"#18553a",fontWeight:"800",fontSize:12},
+ filterClear:{paddingVertical:9,paddingHorizontal:10,borderRadius:9,backgroundColor:"#fff"},
+ filterClearText:{color:"#076d46",fontWeight:"800",fontSize:11},
+ noProducts:{backgroundColor:"#fff",borderRadius:13,padding:8,marginVertical:8},
+ showOther:{alignSelf:"center",padding:12},
+
  search:{backgroundColor:"#fff",borderRadius:14,borderColor:"#dce8df",borderWidth:1,padding:14,fontSize:15,color:"#173d2e",marginBottom:15},
  chips:{marginBottom:13},
  pill:{backgroundColor:"#fff",borderWidth:1,borderColor:"#dce8df",borderRadius:99,paddingHorizontal:12,paddingVertical:9},
