@@ -198,7 +198,7 @@ export function registerSaudiVendor(app:Express):void{
     noCache(res);
     try{
       const products=await db.select({
-        id:saudiVendorDraftProducts.id,title:saudiVendorDraftProducts.title,
+        id:saudiVendorDraftProducts.id,subcategoryId:saudiVendorDraftProducts.subcategoryId,title:saudiVendorDraftProducts.title,
         description:saudiVendorDraftProducts.description,
         priceHalalas:saudiVendorDraftProducts.priceHalalas,
         stock:saudiVendorDraftProducts.stock,status:saudiVendorDraftProducts.status,
@@ -227,7 +227,7 @@ export function registerSaudiVendor(app:Express):void{
         if((counter?.n||0)>=SAUDI_DRAFT_LIMIT)return null;
         const [created]=await tx.insert(saudiVendorDraftProducts)
           .values({id:randomId("SVP_"),vendorId,...parsed.value,status:"DRAFT"})
-          .returning({id:saudiVendorDraftProducts.id,title:saudiVendorDraftProducts.title,
+          .returning({id:saudiVendorDraftProducts.id,subcategoryId:saudiVendorDraftProducts.subcategoryId,title:saudiVendorDraftProducts.title,
             description:saudiVendorDraftProducts.description,priceHalalas:saudiVendorDraftProducts.priceHalalas,
             stock:saudiVendorDraftProducts.stock,status:saudiVendorDraftProducts.status});
         return created;
@@ -249,7 +249,7 @@ export function registerSaudiVendor(app:Express):void{
         .where(and(eq(saudiVendorDraftProducts.id,id),
           eq(saudiVendorDraftProducts.vendorId,requestVendor(res).id),
           eq(saudiVendorDraftProducts.status,"DRAFT")))
-        .returning({id:saudiVendorDraftProducts.id,title:saudiVendorDraftProducts.title,
+        .returning({id:saudiVendorDraftProducts.id,subcategoryId:saudiVendorDraftProducts.subcategoryId,title:saudiVendorDraftProducts.title,
           description:saudiVendorDraftProducts.description,priceHalalas:saudiVendorDraftProducts.priceHalalas,
           stock:saudiVendorDraftProducts.stock,status:saudiVendorDraftProducts.status});
       if(!product)return res.status(404).json({error:"Draft not found"});
