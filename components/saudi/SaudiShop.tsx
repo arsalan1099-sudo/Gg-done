@@ -1,6 +1,7 @@
 import React, {useCallback,useEffect,useMemo,useState} from "react";
 import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 import SaudiCategoryExplorer,{SaudiCategoryStrip} from "./SaudiCategoryExplorer";
 import {saudiMainCategories,saudiSubcategories,matchesSaudiCategory,SaudiGroupId} from "../../lib/saudiCategories";
 import {SaudiProduct,CartLine,safeSaudiProduct,safeSaudiCart,changeSaudiCart,saudiCartTotal,sar} from "../../lib/saudiCart";
@@ -61,6 +62,7 @@ const a={
  }
 };
 export default function SaudiShop({lang,setLang,origin,onSell}:Props){
+ const insets=useSafeAreaInsets();
  const t=a[lang],right=lang==="ar"?"right" as const:"left" as const;
  const [tab,setTab]=useState<Tab>("home");
  const [mode,setMode]=useState<Mode>("demo");
@@ -243,7 +245,7 @@ export default function SaudiShop({lang,setLang,origin,onSell}:Props){
       <Pressable onPress={openVendor} style={styles.vendorLink}><Text style={styles.link}>{t.vendor} ↗</Text></Pressable>
     </View>
    </ScrollView>
-   <View style={styles.bottom}>
+   <View style={[styles.bottom,{paddingBottom:Math.max(insets.bottom,8)}]}>
     {(["home","categories","wishlist","cart"] as const).map(v=>{
       const icon=v==="home"?"⌂":v==="categories"?"▦":v==="wishlist"?"♡":"🛒";
       const label=v==="home"?t.browse:v==="categories"?t.allCategories:v==="cart"?t.cart:t.wishlist;
