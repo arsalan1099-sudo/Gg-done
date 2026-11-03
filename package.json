@@ -18,7 +18,7 @@
     "db:saudi:migrate": "tsx server/saudiMigrate.ts",
     "test:saudi:integration": "tsx --test server/__tests__/saudiVendor.integration.test.ts",
     "test:saudi:mobile": "node scripts/verify-saudi-mobile.cjs && tsx --test server/__tests__/saudiCart.test.ts server/__tests__/saudiDemoOrders.test.ts",
-    "test:saudi:commerce:e2e": "tsx --test server/__tests__/saudiCommerce.e2e.test.ts"
+    "test:saudi:commerce:e2e": "tsx --test server/__tests__/saudiCommerce.e2e.fixed.test.ts"
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",
