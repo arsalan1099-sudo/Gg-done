@@ -83,7 +83,7 @@ jobs:
             --no-owner --no-acl /backup/go-saudi-ci.backup
           marker="$(psql postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore -Atqc \
             "SELECT market || ':' || schema_version FROM saudi_market_metadata")"
-          test "$marker" = "go-saudi:3"
+          test "$marker" = "go-saudi:4"
           test "$(psql postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore -Atqc \
             "SELECT count(*) FROM saudi_vendor_data_requests WHERE status='COMPLETED'")" -ge 1
           test "$(psql postgresql://saudi_ci:saudi_ci_only@localhost:5432/go_saudi_restore -Atqc \
