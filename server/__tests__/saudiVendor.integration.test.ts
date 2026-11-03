@@ -231,6 +231,38 @@ test("Saudi vendor onboarding, draft isolation, invitation replay and revocation
    assert.equal(retry.res.status,409);
  }finally{delete process.env.GO_SAUDI_ACCOUNT_ERASURE_ENABLED}
 });
+test("unverified public commerce cannot create orders, bookings, OTPs or payments",async()=>{
+ const readiness=await json("/api/saudi/commerce/readiness");
+ assert.equal(readiness.res.status,200);
+ assert.equal(readiness.data.liveOrders,false);
+ assert.equal(readiness.data.livePayments,false);
+ assert.equal(readiness.data.liveBookings,false);
+ assert.ok(readiness.data.blockedBy.includes("GO_SAUDI_ESTORE_VERIFIED"));
+ const productId="SVC_"+"a".repeat(30);
+ const quote=await post("/api/saudi/checkout/quote",{
+   items:[{productId,quantity:1}]
+ });
+ assert.equal(quote.res.status,423);
+ const sendOtp=await post("/api/saudi/customer/otp/start",{
+   phone:"0551234567",consent:true
+ });
+ assert.equal(sendOtp.res.status,423);
+ const verifyOtp=await post("/api/saudi/customer/otp/verify",{
+   phone:"0551234567",code:"123456"
+ });
+ assert.equal(verifyOtp.res.status,423);
+ const order=await post("/api/saudi/orders",{
+   items:[{productId,quantity:1}],idempotencyKey:"test_order_1234567890",
+   fulfillment:"PICKUP"
+ });
+ assert.equal(order.res.status,401,"Orders require a verified customer cookie");
+ const booking=await post("/api/saudi/bookings",{
+   productId,requestedSlot:"2026-12-12T10:00:00Z"
+ });
+ assert.equal(booking.res.status,401,"Bookings require a verified customer cookie");
+ const intent=await post("/api/saudi/orders/"+"SO_"+"b".repeat(30)+"/payment-intent",{});
+ assert.equal(intent.res.status,401,"Payments require verified customer and order ownership");
+});
 test("concurrent same seller submissions deduplicate transactionally",async()=>{
  const businessName="Saudi Duplicate Race "+Date.now();
  const payload={businessName,city:"Jeddah",category:"Food",phone:"0551234569",consent:true};
