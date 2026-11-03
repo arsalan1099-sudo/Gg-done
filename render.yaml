@@ -53,6 +53,12 @@ services:
         value: "false"
       - key: GO_SAUDI_SERVICE_BOOKINGS_LICENSED
         value: "false"
+      - key: GO_SAUDI_PAYMENT_WEBHOOK_READY
+        value: "false"
+      - key: GO_SAUDI_VENDOR_SETTLEMENT_READY
+        value: "false"
+      - key: GO_SAUDI_REGULATED_CATEGORY_REVIEW_READY
+        value: "false"
       - key: GO_SAUDI_ADMIN_TOKEN_SHA256
         sync: false
       - key: DATABASE_URL
