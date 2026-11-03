@@ -38,6 +38,7 @@ export function registerSaudiDataRights(app:Express):void {
         .where(eq(saudiVendorAccounts.id,v.id)).limit(1);
       if(!profile)return res.status(404).json({error:"Merchant profile unavailable"});
       const drafts=await db.select({
+        subcategoryId:saudiVendorDraftProducts.subcategoryId,
         title:saudiVendorDraftProducts.title,
         description:saudiVendorDraftProducts.description,
         priceHalalas:saudiVendorDraftProducts.priceHalalas,
