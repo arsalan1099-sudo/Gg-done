@@ -17,7 +17,7 @@ BEGIN
       RAISE EXCEPTION 'Refusing Saudi initial migration: nonempty unmarked database';
     END IF;
   ELSE
-    SELECT count(*),count(*) FILTER (WHERE market='go-saudi' AND schema_version IN (1,2,3,4,5))
+    SELECT count(*),count(*) FILTER (WHERE market='go-saudi' AND schema_version IN (1,2,3,4,5,6))
       INTO market_count,market_ok
     FROM saudi_market_metadata;
     IF market_count<>1 OR market_ok<>1 THEN
@@ -30,7 +30,7 @@ BEGIN
       'saudi_vendor_sessions','saudi_vendor_draft_products',
       'saudi_vendor_data_requests','saudi_catalog_submissions',
       'saudi_customer_accounts','saudi_customer_sessions','saudi_orders',
-      'saudi_order_lines','saudi_booking_requests'
+      'saudi_order_lines','saudi_booking_requests','saudi_moyasar_webhook_events'
     );
     IF existing_tables IS NOT NULL THEN
       RAISE EXCEPTION 'Refusing Saudi migration: unexpected public tables detected';
