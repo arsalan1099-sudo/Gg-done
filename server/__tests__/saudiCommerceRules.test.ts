@@ -15,11 +15,13 @@ test("real charges and orders remain blocked without all independent approvals",
  assert.ok(missing.includes("GO_SAUDI_CUSTOMER_DATA_RIGHTS_READY"));
  assert.ok(missing.includes("GO_SAUDI_ZATCA_READY"));
  assert.ok(missing.includes("MOYASAR_SECRET_KEY"));
+ assert.ok(missing.includes("MOYASAR_WEBHOOK_SECRET_TOKEN"));
  assert.ok(missing.includes("TWILIO_VERIFY"));
  const signed:Record<string,string>=Object.fromEntries(SAUDI_COMMERCE_GATES.map(x=>[x,"true"]));
  signed.APP_PUBLIC_URL="https://saudi.example/";
  signed.DATABASE_URL="postgres://saudi:xxx@host/saudi_db";
  signed.MOYASAR_SECRET_KEY="sk_live_123456789012345678";
+ signed.MOYASAR_WEBHOOK_SECRET_TOKEN="ci_webhook_secret_"+"a".repeat(40);
  signed.MOYASAR_PUBLISHABLE_KEY="pk_live_123456789012345678";
  signed.TWILIO_VERIFY_SERVICE_SID="VA"+"a".repeat(32);
  signed.TWILIO_API_KEY="SK"+"b".repeat(32);
