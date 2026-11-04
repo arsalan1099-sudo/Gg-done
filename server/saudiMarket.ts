@@ -15,6 +15,7 @@ import {registerSaudiCustomerAuth} from "./saudiCustomerAuth";
 import {registerSaudiCommerce} from "./saudiCommerce";
 import {registerSaudiOrders} from "./saudiOrders";
 import {registerSaudiBookings} from "./saudiBookings";
+import {registerSaudiMoyasarWebhook} from "./saudiMoyasarWebhook";
 
 // This Saudi launch slice is intentionally fail-closed. It reuses the original
 // Go Bharat codebase without exposing INR checkout, payouts, or Indian write APIs.
@@ -27,6 +28,7 @@ export function registerSaudiMarket(app: Express): void {
   registerSaudiCommerce(app);
   registerSaudiOrders(app);
   registerSaudiBookings(app);
+  registerSaudiMoyasarWebhook(app);
   const sendLanding = (_req: any, res: any) => {
     return sendSaudiPage(res,"go-saudi.html");
   };
