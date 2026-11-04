@@ -8,7 +8,7 @@ BEGIN
    RAISE EXCEPTION 'Saudi DB marker required';
  END IF;
  SELECT schema_version INTO v FROM saudi_market_metadata WHERE market='go-saudi';
- IF v NOT IN (3,4,5) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
+ IF v NOT IN (3,4,5,6) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
    RAISE EXCEPTION 'Saudi category migration requires isolated schema v3 or v4';
  END IF;
  IF to_regclass('public.saudi_vendor_draft_products') IS NULL OR
