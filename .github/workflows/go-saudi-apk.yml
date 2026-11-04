@@ -1,4 +1,4 @@
-name: Go Saudi Standalone Testing APK
+name: Go Saudi Premium Standalone APK
 on:
   push:
     branches: [go-saudi]
@@ -9,6 +9,8 @@ on:
       - 'lib/saudiCategories.ts'
       - 'lib/saudiCart.ts'
       - 'package.json'
+      - 'app.json'
+      - 'scripts/generate-saudi-brand.cjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -36,6 +38,8 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - run: npm ci --no-audit --no-fund
       - run: npm run test:saudi:mobile
+      - name: Generate original Saudi-only app icons and splash
+        run: npm run brand:saudi
       - name: Generate native Android project
         run: npx expo prebuild --platform android --clean --no-install
       - name: Build standalone release-mode testing APK (not Play Store)
@@ -55,7 +59,7 @@ jobs:
           unzip -Z1 apk-output/Go-Saudi-Testing.apk > /tmp/go-saudi-apk-files.txt
           grep -Fxq 'assets/index.android.bundle' /tmp/go-saudi-apk-files.txt
           sha256sum apk-output/Go-Saudi-Testing.apk > apk-output/SHA256SUMS.txt
-          echo "Go Saudi standalone PRELAUNCH APK. Test signing only. Arabic/English catalog demo, local cart and wishlist. No real payments or orders. ARM64 Android only." > apk-output/READ-ME.txt
+          echo "Go Saudi v0.2.0 premium native UI, independent GS icon, Arabic/English, 109 categories. Only real verified merchant listings are shown, commercial checkout is disabled. ARM64 test-signing only; NOT Play Store release." > apk-output/READ-ME.txt
       - uses: actions/upload-artifact@v4
         with:
           name: Go-Saudi-Testing-APK
