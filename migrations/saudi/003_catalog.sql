@@ -8,7 +8,7 @@ BEGIN
    RAISE EXCEPTION 'Saudi market metadata is required';
  END IF;
  SELECT schema_version INTO ver FROM saudi_market_metadata WHERE market='go-saudi';
- IF ver NOT IN (2,3,4,5) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
+ IF ver NOT IN (2,3,4,5,6) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
    RAISE EXCEPTION 'Saudi catalog migration requires isolated schema version 2 or 3';
  END IF;
  IF to_regclass('public.saudi_vendor_draft_products') IS NULL THEN
