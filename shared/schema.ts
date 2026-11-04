@@ -751,6 +751,21 @@ export const saudiBookingRequests = pgTable("saudi_booking_requests",{
  index("idx_saudi_bookings_buyer").on(table.customerId,table.createdAt),
  index("idx_saudi_bookings_vendor").on(table.vendorId,table.createdAt),
 ]);
+// A durable, minimal Moyasar webhook receipt. Never store raw webhook JSON,
+// card data, customer details or the shared secret token.
+export const saudiMoyasarWebhookEvents = pgTable("saudi_moyasar_webhook_events",{
+ id:varchar("id",{length:64}).primaryKey(),
+ eventType:varchar("event_type",{length:32}).notNull(),
+ paymentId:varchar("payment_id",{length:80}).notNull(),
+ orderId:varchar("order_id",{length:64}),
+ isLive:boolean("is_live").notNull(),
+ status:varchar("status",{length:24}).notNull().default("RECEIVED"),
+ receivedAt:timestamp("received_at").defaultNow(),
+},table=>[
+ index("idx_saudi_moyasar_inbox_status").on(table.status,table.receivedAt),
+ index("idx_saudi_moyasar_inbox_payment").on(table.paymentId)
+]);
+
 export const coinGrants = pgTable("coin_grants", {
   id: varchar("id", { length: 64 }).primaryKey(),
   phone: varchar("phone", { length: 15 }).notNull(),
