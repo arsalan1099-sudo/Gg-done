@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import SaudiShop from "@/components/saudi/SaudiShop";
+import SaudiShop from "@/components/saudi/SaudiPremiumShop";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
 
 
