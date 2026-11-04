@@ -2,7 +2,7 @@
   "expo": {
     "name": "Go Saudi",
     "slug": "go-saudi",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gosaudi",
@@ -11,12 +11,12 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#06382E"
+      "backgroundColor": "#063F32"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.aasaa.gosaudi",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -51,9 +51,9 @@
     },
     "android": {
       "package": "com.aasaa.gosaudi",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#063F32",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -93,7 +93,7 @@
       "favicon": "./assets/images/favicon.png",
       "name": "Go Saudi",
       "shortName": "Go Saudi",
-      "description": "Saudi-first marketplace — discover local businesses and register your store.",
+      "description": "Explore Saudi stores, B2B, shopping, services, manpower and travel.",
       "themeColor": "#08543E",
       "backgroundColor": "#06382E",
       "lang": "ar"
