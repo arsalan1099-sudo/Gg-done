@@ -7,7 +7,7 @@ import {eq} from "drizzle-orm";
 import {db,pool} from "../db";
 import {registerSaudiMarket} from "../saudiMarket";
 import {sellerEnquiries,saudiVendorAccounts,saudiCatalogSubmissions,
- saudiVendorDraftProducts,saudiVendorSessions} from "@shared/schema";
+ saudiVendorDraftProducts,saudiVendorSessions,saudiOrders,saudiMoyasarWebhookEvents} from "@shared/schema";
 
 const random=(p:string)=>p+crypto.randomBytes(15).toString("hex");
 const vendorId=random("SV_"),leadId=random("SL_");
@@ -33,7 +33,8 @@ const baseEnv:Record<string,string>={
  TWILIO_VERIFY_SERVICE_SID:"VA"+"c".repeat(32),
  TWILIO_API_KEY:"SK"+"d".repeat(32),TWILIO_API_SECRET:"test-in-ci-only",
  TWILIO_ACCOUNT_SID:"AC"+"e".repeat(32),
- GO_SAUDI_CUSTOMER_ENCRYPTION_KEY:"9".repeat(64)
+ GO_SAUDI_CUSTOMER_ENCRYPTION_KEY:"9".repeat(64),
+ MOYASAR_WEBHOOK_SECRET_TOKEN:"ci_webhook_secret_"+ "f".repeat(40)
 };
 let server:Server,base="",cookie="",vendorCookie="",createdOrder="";
 let originalFetch:typeof fetch,originalEnv:Record<string,string|undefined>={};
@@ -141,6 +142,30 @@ test("Saudi OTP, verified one-vendor order, payment reconciliation, stock and ma
  assert.equal(intent.json.amountHalalas,5798);
  assert.equal(intent.json.currency,"SAR");
  assert.equal(intent.json.publishableKey,baseEnv.MOYASAR_PUBLISHABLE_KEY);
+ // A signed webhook is RECEIVED but can never turn an order into PAID
+ // without a separate authenticated PSP-side reconciliation.
+ const event={
+  id:"e2b9d1fa-1740-4ec6-bd76-819aa8a320a1",type:"payment_paid",
+  secret_token:"ci_webhook_secret_"+ "f".repeat(40),live:true,
+  data:{id:paymentId,status:"paid",amount:5798,currency:"SAR",
+        metadata:{order_id:createdOrder}}
+ };
+ const invalidWebhook=await post("/api/saudi/payments/webhook",{
+  ...event,secret_token:"invalid_secret_string"
+ });
+ assert.equal(invalidWebhook.status,403);
+ const acceptedWebhook=await post("/api/saudi/payments/webhook",event);
+ assert.equal(acceptedWebhook.status,202,JSON.stringify(acceptedWebhook.json));
+ assert.equal(acceptedWebhook.json.paymentConfirmed,false);
+ const replayWebhook=await post("/api/saudi/payments/webhook",event);
+ assert.equal(replayWebhook.status,200);
+ assert.equal(replayWebhook.json.duplicate,true);
+ const [inbox]=await db.select({status:saudiMoyasarWebhookEvents.status})
+  .from(saudiMoyasarWebhookEvents).where(eq(saudiMoyasarWebhookEvents.id,event.id));
+ assert.equal(inbox.status,"RECEIVED");
+ const [preReconcile]=await db.select({status:saudiOrders.status})
+   .from(saudiOrders).where(eq(saudiOrders.id,createdOrder));
+ assert.equal(preReconcile.status,"READY_FOR_PAYMENT");
  const paid=await post("/api/saudi/orders/"+createdOrder+"/reconcile",{paymentId},cookie);
  assert.equal(paid.status,200,JSON.stringify(paid.json));
  assert.equal(paid.json.status,"PAID");
