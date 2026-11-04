@@ -9,7 +9,7 @@ BEGIN
   RAISE EXCEPTION 'Saudi market marker is missing';
  END IF;
  SELECT schema_version INTO version_no FROM saudi_market_metadata WHERE market='go-saudi';
- IF version_no NOT IN (4,5) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
+ IF version_no NOT IN (4,5,6) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
   RAISE EXCEPTION 'Saudi v005 requires isolated v4 or v5 database';
  END IF;
  IF to_regclass('public.saudi_vendor_accounts') IS NULL OR
