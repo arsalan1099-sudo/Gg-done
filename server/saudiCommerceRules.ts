@@ -21,6 +21,8 @@ export function saudiCommerceBlockers(env:SaudiCommerceFlags):string[]{
  if(!env.DATABASE_URL)pending.push("DATABASE_URL");
  if(!/^sk_live_[A-Za-z0-9_-]{12,}$/.test(env.MOYASAR_SECRET_KEY||""))
   pending.push("MOYASAR_SECRET_KEY");
+ if(!env.MOYASAR_WEBHOOK_SECRET_TOKEN||env.MOYASAR_WEBHOOK_SECRET_TOKEN.length<32)
+  pending.push("MOYASAR_WEBHOOK_SECRET_TOKEN");
  if(!/^pk_live_[A-Za-z0-9_-]{12,}$/.test(env.MOYASAR_PUBLISHABLE_KEY||""))
   pending.push("MOYASAR_PUBLISHABLE_KEY");
  if(!/^VA[a-f0-9]{32}$/i.test(env.TWILIO_VERIFY_SERVICE_SID||"")||
