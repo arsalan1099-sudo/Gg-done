@@ -59,7 +59,7 @@ jobs:
           unzip -Z1 apk-output/Go-Saudi-Testing.apk > /tmp/go-saudi-apk-files.txt
           grep -Fxq 'assets/index.android.bundle' /tmp/go-saudi-apk-files.txt
           sha256sum apk-output/Go-Saudi-Testing.apk > apk-output/SHA256SUMS.txt
-          echo "Go Saudi v0.2.0 premium native UI, independent GS icon, Arabic/English, 109 categories. Only real verified merchant listings are shown, commercial checkout is disabled. ARM64 test-signing only; NOT Play Store release." > apk-output/READ-ME.txt
+          echo "Go Saudi premium native UI, independent GS icon, Arabic/English, 109 categories, version as recorded in APK manifest. Only real verified merchant listings are shown, commercial checkout is disabled. ARM64 test-signing only; NOT Play Store release." > apk-output/READ-ME.txt
       - uses: actions/upload-artifact@v4
         with:
           name: Go-Saudi-Testing-APK
