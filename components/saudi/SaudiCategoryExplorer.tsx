@@ -88,15 +88,15 @@ export default function SaudiCategoryExplorer({
        const isSelected=cat.id===selectedGroup;
        return <Pressable accessibilityRole="button" accessibilityState={{selected:isSelected}}
          accessibilityLabel={translated(cat,lang)} key={cat.id}
-         onPress={()=>chosen(cat.id)} style={[styles.mainCard,isSelected&&styles.mainSelected]}>
+         onPress={()=>chosen(cat.id)} style={[styles.mainCard,{flexDirection:arabic?"row-reverse":"row"},isSelected&&styles.mainSelected]}>
         {isSelected&&<LinearGradient colors={["#0C6B50","#034032"]} style={styles.selectedFill}/>}
         <View style={[styles.mainIcon,isSelected&&styles.selectedIcon]}>
          <Text style={styles.mainEmoji}>{cat.emoji}</Text>
         </View>
         <View style={styles.mainInfo}>
-         <Text style={[styles.mainLabel,isSelected&&styles.selectedLabel]}
+         <Text style={[styles.mainLabel,{textAlign:arabic?"right":"left"},isSelected&&styles.selectedLabel]}
            numberOfLines={2}>{translated(cat,lang)}</Text>
-         <Text style={[styles.mainSub,isSelected&&styles.selectedSub]}
+         <Text style={[styles.mainSub,{textAlign:arabic?"right":"left"},isSelected&&styles.selectedSub]}
            numberOfLines={1}>{arabic?cat.en:cat.subtitleEn}</Text>
         </View>
        </Pressable>;
@@ -164,9 +164,9 @@ const styles=StyleSheet.create({
  searchInput:{flex:1,minWidth:0,paddingVertical:9,color:GREEN,fontSize:13},
  mainPanel:{marginHorizontal:10,marginBottom:12,borderWidth:1,borderColor:"#E6D8C1",
   backgroundColor:"#FFF9EE",borderRadius:19,overflow:"hidden"},
- columns:{flexDirection:"row",alignItems:"stretch",minHeight:550},
+ columns:{flexDirection:"row",alignItems:"stretch",height:610},
  left:{width:"51%",paddingHorizontal:7,paddingVertical:10,backgroundColor:"#FCF4E7",
-  borderRightWidth:1,borderRightColor:"#E1CFAB",gap:10,justifyContent:"space-around"},
+  borderRightWidth:1,borderRightColor:"#E1CFAB",gap:9,justifyContent:"space-between"},
  mainCard:{height:96,borderRadius:17,backgroundColor:PAPER,
   borderWidth:1,borderColor:"#E5D8C4",flexDirection:"row",alignItems:"center",
   paddingHorizontal:9,gap:7,overflow:"hidden",shadowColor:"#5D492C",
@@ -193,7 +193,7 @@ const styles=StyleSheet.create({
   paddingVertical:8,borderRadius:13,borderWidth:1,borderColor:"#D9C59E",
   flexDirection:"row",alignItems:"center",justifyContent:"center",backgroundColor:"#FFF8EA"},
  groupButtonText:{fontSize:11,fontWeight:"800",color:GREEN,flexShrink:1,textAlign:"center"},
- subList:{maxHeight:550},subContent:{paddingBottom:10,gap:9},
+ subList:{flex:1,minHeight:0},subContent:{paddingBottom:10,gap:9},
  subCard:{minHeight:84,backgroundColor:PAPER,borderRadius:15,borderWidth:1,
   borderColor:"#E9DDC8",flexDirection:"row",alignItems:"center",gap:8,
   padding:7,shadowColor:"#765535",shadowOpacity:.05,shadowRadius:6,
