@@ -122,6 +122,50 @@ test("Saudi OTP, verified one-vendor order, payment reconciliation, stock and ma
  assert.equal(login.status,200,JSON.stringify(login.json));
  cookie=login.cookie.split(";")[0];
  assert.match(cookie,/^__Host-go_saudi_customer=[a-f0-9]{64}$/);
+ const statusInfo=await originalFetch(base+"/api/saudi/customer/auth/status")
+   .then(async response=>({status:response.status,data:await response.json()}));
+ assert.equal(statusInfo.status,200);
+ assert.equal(statusInfo.data.available,true);
+ const nativeHeaders={
+  "Content-Type":"application/json","X-Go-Saudi-Client":"native",
+  "X-Go-Saudi-Platform":"android"
+ };
+ const nativeStart=await originalFetch(base+"/api/saudi/customer/otp/start",{
+  method:"POST",headers:nativeHeaders,
+  body:JSON.stringify({phone:otpPhone,consent:true})
+ });
+ assert.equal(nativeStart.status,202);
+ const nativeVerify=await originalFetch(base+"/api/saudi/customer/otp/verify",{
+  method:"POST",headers:nativeHeaders,
+  body:JSON.stringify({phone:otpPhone,code:"123456"})
+ });
+ const mobile=await nativeVerify.json() as any;
+ assert.equal(nativeVerify.status,200);
+ assert.equal(mobile.tokenType,"Bearer");
+ assert.match(mobile.sessionToken,/^[a-f0-9]{64}$/);
+ assert.equal(nativeVerify.headers.get("set-cookie"),null,"Native login must not issue browser cookie");
+ const bearerHeader={Authorization:"Bearer "+mobile.sessionToken};
+ const mobileMe=await originalFetch(base+"/api/saudi/customer/me",{headers:bearerHeader});
+ assert.equal(mobileMe.status,200);
+ const profile=await mobileMe.json() as any;
+ assert.equal(profile.authenticated,true);
+ assert.match(profile.customerId,/^SCU_[a-f0-9]{30}$/);
+ const forgedOrigin=await originalFetch(base+"/api/saudi/customer/me",{
+  headers:{...bearerHeader,Origin:"https://attacker.invalid"}
+ });
+ assert.equal(forgedOrigin.status,403);
+ const fakeBearer=await originalFetch(base+"/api/saudi/customer/me",{
+  headers:{Authorization:"Bearer "+"f".repeat(64)}
+ });
+ assert.equal(fakeBearer.status,401);
+ const nativeLogout=await originalFetch(base+"/api/saudi/customer/logout",{
+  method:"POST",headers:{...nativeHeaders,...bearerHeader},body:"{}"
+ });
+ assert.equal(nativeLogout.status,200);
+ assert.equal(nativeLogout.headers.get("set-cookie"),null);
+ const revoked=await originalFetch(base+"/api/saudi/customer/me",{headers:bearerHeader});
+ assert.equal(revoked.status,401,"Logged-out mobile token must be rejected");
+
  const readiness=await originalFetch(base+"/api/saudi/commerce/readiness").then(r=>r.json()) as any;
  assert.equal(readiness.liveOrders,true);
  assert.equal(readiness.livePayments,true);
