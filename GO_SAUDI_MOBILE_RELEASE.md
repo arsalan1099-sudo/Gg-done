@@ -1,3 +1,13 @@
+## 6 November 2026 — v0.2.2 Saudi customer auth (native)
+
+- Go Saudi's premium Android/iOS storefront now offers a dedicated bilingual **Account** tab for Saudi +966 mobile signup/sign-in, SMS code verification, restored sessions and logout. Authentication is actual server/provider-verified Twilio Verify OTP; there is no hard-coded/fake OTP or login success animation when the provider is offline.
+- `server/saudiCustomerAuth.ts` keeps existing same-origin HttpOnly cookie auth for web and adds **native bearer sessions** when a caller without an Origin header identifies as an Android/iOS native client. The native transport header is not authentication: a real provider-approved SMS OTP is still mandatory. Server stores only SHA-256 session hashes with 12-hour expiry; customer mobiles are encrypted.
+- Native app stores only the authenticated bearer token in **expo-secure-store**, not AsyncStorage. On launch it checks `GET /api/saudi/customer/me` and discards an expired token. Logout revokes the session on the server and clears it from SecureStore. Untrusted Origin headers are refused even with valid bearer tokens.
+- New `GET /api/saudi/customer/auth/status` returns whether real Saudi customer login is available, without disclosing any provider secrets. Phone OTP endpoints remain disabled until Saudi privacy, customer data rights, verified e-store and actual SMS provider configuration have been approved.
+- The default testing APK still deliberately leaves `EXPO_PUBLIC_SAUDI_API_URL` blank. The Account tab therefore explains that live login is not configured; it does not pretend an SMS was sent. **For real OTP sign-in, deploy a separate Saudi HTTPS backend/database and Twilio Verify provider first**, then configure the approved HTTPS URL and rebuild the app.
+- Commerce/order/payment gates are unchanged and OFF. Customer authentication does **not** imply payments, orders, licensed services or fulfillment are operational.
+- CI extends a disposable PostgreSQL integration to assert web-cookie login survives, native OTP issues bearer only after verified provider success, native profile access, hostile-origin denial, bad token rejection and server-side logout revocation.
+
 ## 6 November 2026 — v0.2.1 premium category UI refinement
 
 The native `All Categories` screen now follows the selected emerald-and-gold reference:
