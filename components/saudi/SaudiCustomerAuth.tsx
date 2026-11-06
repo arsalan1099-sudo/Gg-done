@@ -3,6 +3,7 @@ import {ActivityIndicator,Platform,Pressable,StyleSheet,Text,TextInput,View} fro
 import {LinearGradient} from "expo-linear-gradient";
 import {Ionicons} from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
+import {normalizeSaudiMobile,validateSaudiOtpInput} from "../../lib/saudiAuth";
 
 type Lang="ar"|"en";
 type Props={lang:Lang;origin:string|null};
@@ -14,14 +15,14 @@ const headers={"Accept":"application/json","Content-Type":"application/json",
 const labels={
  ar:{
   title:"حسابي",subtitle:"حسابك الآمن في جو سعودي",hello:"أهلاً بك",phone:"رقم الجوال السعودي",
-  phoneHint:"05XXXXXXXX",login:"الدخول أو إنشاء حساب",signIn:"أرسل رمز التحقق",
+  phoneHint:"5XXXXXXXX",login:"الدخول أو إنشاء حساب",signIn:"أرسل رمز التحقق",
   otp:"رمز التحقق",otpHint:"أدخل رمز الرسالة النصية",verify:"تأكيد الرمز",
   sendAgain:"إعادة إرسال الرمز",change:"تغيير الرقم",consent:"أوافق على معالجة رقم جوالي لأغراض تسجيل الدخول والتحقق وفق سياسة الخصوصية.",
   awaiting:"تحقق من رسالة SMS وأدخل الرمز المستلم",signedIn:"تم تسجيل الدخول بنجاح",
   secured:"تم التحقق من هويتك عبر رسالة نصية حقيقية",account:"معرّف الحساب",
   logout:"تسجيل الخروج",unavailable:"تسجيل الدخول غير متاح حالياً",
   setup:"سيتم تفعيل تسجيل الدخول بعد إعداد خادم السعودية والتحقق من مزود الرسائل ومراجعة الخصوصية.",
-  missing:"أدخل رقماً سعودياً صحيحاً يبدأ بـ 05 أو +9665.",consentError:"يجب الموافقة على معالجة بيانات التحقق.",
+  missing:"أدخل رقم جوال سعودي صحيحاً (5XXXXXXXX). يمكن أيضاً إدخال 05XXXXXXXX أو +9665XXXXXXXX.",consentError:"يجب الموافقة على معالجة بيانات التحقق.",
   invalidCode:"الرجاء إدخال رمز التحقق المستلم.",notReady:"خدمة تسجيل الدخول لم تُفعّل بعد.",
   otpFailed:"تعذّر إرسال الرمز. تحقّق من الرقم وحاول مجدداً.",verifyFailed:"الرمز غير صحيح أو انتهت صلاحيته.",
   network:"تعذر الاتصال بالخادم الآمن. حاول مرة أخرى.",later:"يرجى المحاولة لاحقاً.",
@@ -31,7 +32,7 @@ const labels={
  },
  en:{
   title:"My account",subtitle:"Your secure Go Saudi account",hello:"Welcome back",
-  phone:"Saudi mobile number",phoneHint:"05XXXXXXXX",login:"Sign in or create an account",
+  phone:"Saudi mobile number",phoneHint:"5XXXXXXXX",login:"Sign in or create an account",
   signIn:"Send verification code",otp:"Verification code",otpHint:"Enter SMS verification code",
   verify:"Verify and sign in",sendAgain:"Resend code",change:"Change number",
   consent:"I agree to the processing of my mobile number for authentication and verification under the privacy policy.",
@@ -39,7 +40,7 @@ const labels={
   secured:"Your identity was verified using a real SMS code",account:"Account ID",
   logout:"Sign out",unavailable:"Sign in is not available yet",
   setup:"Saudi HTTPS service, SMS provider and privacy approvals must be configured before account access opens.",
-  missing:"Enter a valid Saudi mobile number starting 05 or +9665.",
+  missing:"Enter 5XXXXXXXX, 05XXXXXXXX or +9665XXXXXXXX.",
   consentError:"Please agree to phone verification data processing.",
   invalidCode:"Please enter your SMS verification code.",
   notReady:"Verified customer sign-in has not been activated yet.",
@@ -51,7 +52,6 @@ const labels={
  }};
 type ServerStatus={available?:boolean;country?:string;method?:string};
 type VerifyResponse={authenticated?:boolean;sessionToken?:string;tokenType?:string;customerId?:string};
-const validSaudiPhone=(value:string)=>/^(?:05[0-9]{8}|\+9665[0-9]{8})$/.test(value.replace(/[ ()-]/g,""));
 function ErrorBanner({value}:{value:string}){
  return value?<View style={styles.errorBox}><Ionicons name="alert-circle-outline" color="#9A4D32" size={18}/>
    <Text style={styles.errorText}>{value}</Text></View>:null;
@@ -101,12 +101,13 @@ export default function SaudiCustomerAuth({lang,origin}:Props){
  const start=async()=>{
   setError("");setMessage("");
   if(!available){setError(t.notReady);return;}
-  if(!validSaudiPhone(phone)){setError(t.missing);return;}
+  const normalized=normalizeSaudiMobile(phone);
+  if(!normalized){setError(t.missing);return;}
   if(!consent){setError(t.consentError);return;}
   setBusy(true);
   try{
    const r=await request("/api/saudi/customer/otp/start",{
-    method:"POST",body:JSON.stringify({phone:phone.trim(),consent:true})
+    method:"POST",body:JSON.stringify({phone:normalized,consent:true})
    });
    if(r.ok&&r.json.sent===true){setPhase("otp");setCode("");setMessage(t.success);}
    else setError(r.status===423?t.notReady:r.status===429?t.later:t.otpFailed);
@@ -114,11 +115,13 @@ export default function SaudiCustomerAuth({lang,origin}:Props){
  };
  const verify=async()=>{
   setError("");setMessage("");
-  if(!/^[0-9]{4,10}$/.test(code.trim())){setError(t.invalidCode);return;}
+  if(!validateSaudiOtpInput(code)){setError(t.invalidCode);return;}
+  const normalized=normalizeSaudiMobile(phone);
+  if(!normalized){setError(t.missing);setPhase("phone");return;}
   setBusy(true);
   try{
    const r=await request("/api/saudi/customer/otp/verify",{
-    method:"POST",body:JSON.stringify({phone:phone.trim(),code:code.trim()})
+    method:"POST",body:JSON.stringify({phone:normalized,code:code.trim()})
    });
    const result=r.json as VerifyResponse;
    if(r.ok&&result.authenticated===true&&result.tokenType==="Bearer"&&
