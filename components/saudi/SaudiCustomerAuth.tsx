@@ -1,5 +1,5 @@
 import React,{useCallback,useEffect,useState} from "react";
-import {ActivityIndicator,KeyboardAvoidingView,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Platform,Pressable,StyleSheet,Text,TextInput,View} from "react-native";
 import {LinearGradient} from "expo-linear-gradient";
 import {Ionicons} from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
@@ -149,8 +149,8 @@ export default function SaudiCustomerAuth({lang,origin}:Props){
    setSession(null);setCustomerId("");setPhase("phone");setCode("");setMessage("");
   }catch{setError(t.network);}finally{setBusy(false);}
  };
- return <KeyboardAvoidingView behavior={Platform.OS==="ios"?"padding":undefined} style={styles.base}>
-  <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.wrap}>
+ return <View style={styles.base}>
+  <View style={styles.wrap}>
    <LinearGradient colors={["#073D31","#0A6B4D"]} style={styles.hero}>
     <View style={styles.heroSymbol}><Ionicons name="shield-checkmark-outline" color="#E5B96E" size={34}/></View>
     <Text style={styles.heroTitle}>{t.title}</Text>
@@ -225,8 +225,8 @@ export default function SaudiCustomerAuth({lang,origin}:Props){
    </View>
    <View style={styles.footer}><Ionicons name="information-circle-outline" color="#9A7A46" size={19}/>
     <Text style={styles.footerText}>{t.privacy}</Text></View>
-  </ScrollView>
- </KeyboardAvoidingView>;
+  </View>
+ </View>;
 }
 const styles=StyleSheet.create({
  base:{flex:1,backgroundColor:CREAM},wrap:{paddingBottom:28},
