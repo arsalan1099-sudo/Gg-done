@@ -1,3 +1,21 @@
+## 6 November 2026 — v0.2.1 premium category UI refinement
+
+The native `All Categories` screen now follows the selected emerald-and-gold reference:
+a centered bilingual title, compact ornament, full-width subcategory search,
+five legible main-category cards, one selected emerald card, a separate
+scrollable subcategory column, and consistent gold/ivory card treatment.
+Arabic main-category cards use right-to-left icon/text layout. All 109
+subcategories retain exact filters and English/Arabic labels. The two panels
+have a bounded height so bottom navigation is accessible and lists do not
+become an endlessly tall page. Go Saudi branding and launcher icon remain
+independent of Go Bharat.
+
+This is a **UI change**, not a commercial launch or signed Play Store release.
+Live seller verification, orders, bookings and payments remain subject to the
+existing Saudi compliance gates. To install this UI, build and verify Android
+version `0.2.1` (versionCode `3`) from the go-saudi APK workflow; the
+existing v0.2.0 APK will not update itself.
+
 **Customer/mobile live checkout is not integrated.** Refer to [GO_SAUDI_COMMERCE_RELEASE.md](GO_SAUDI_COMMERCE_RELEASE.md) for order, OTP and payment infrastructure status.\n\n# Go Saudi — Android & iOS publishing gate (2 November 2026)
 
 **Current decision: NOT APPROVED FOR STORE SUBMISSION.** Do not upload or release the currently available prelaunch native app to Google Play or Apple App Store. It does not yet implement customer orders, payments, shipping or signed-in seller operations inside the native app. No signed AAB/IPA, live Saudi production backend, device tests or new-store registration have been verified.
