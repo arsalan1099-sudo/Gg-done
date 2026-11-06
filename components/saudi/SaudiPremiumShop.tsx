@@ -6,11 +6,12 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg,{Path,Rect,Circle,Line} from "react-native-svg";
 import SaudiCategoryExplorer from "./SaudiCategoryExplorer";
+import SaudiCustomerAuth from "./SaudiCustomerAuth";
 import {saudiMainCategories,saudiSubcategories,matchesSaudiCategory,SaudiGroupId} from "../../lib/saudiCategories";
 import {SaudiProduct,CartLine,safeSaudiProduct,safeSaudiCart,changeSaudiCart,saudiCartTotal,sar} from "../../lib/saudiCart";
 
 type Lang="ar"|"en";
-type Tab="home"|"categories"|"wishlist"|"cart";
+type Tab="home"|"categories"|"wishlist"|"cart"|"account";
 type Props={lang:Lang;setLang:(lang:Lang)=>void;origin:string|null;onSell:()=>void};
 const GREEN="#063F32",DARK="#042F28",GOLD="#D8AC59",CREAM="#FBF7EE",TEXT="#103D31";
 const CITY=["All","Riyadh","Jeddah","Makkah","Madinah","Dammam","Khobar","Taif","Tabuk","Abha","Jazan"];
@@ -22,7 +23,7 @@ const messages={
   featured:"Featured products",verified:"Verified listings",empty:"New stores are joining Go Saudi",
   emptySub:"Explore our categories while merchants complete their verification.",
   coming:"Explore categories",merchant:"Own a store?",merchantSub:"Join Go Saudi and grow your business.",
-  register:"Register your store",browse:"Shop",allCategories:"Categories",wishlist:"Saved",cart:"Cart",
+  register:"Register your store",browse:"Shop",allCategories:"Categories",wishlist:"Saved",cart:"Cart",account:"Account",
   savedEmpty:"Your wishlist is empty",savedSub:"Tap the heart on a product to save it here.",
   cartEmpty:"Your bag is empty",cartSub:"Discover products from verified Saudi shops.",
   subtotal:"Subtotal",disabled:"Checkout unavailable until verified payment launch",
@@ -37,7 +38,7 @@ const messages={
   featured:"منتجات المتاجر",verified:"منتجات موثقة",empty:"متاجر جديدة تنضم إلى جو سعودي",
   emptySub:"اكتشف الفئات بينما يكمل التجار إجراءات التحقق.",
   coming:"استكشف الفئات",merchant:"هل لديك متجر؟",merchantSub:"انضم إلى جو سعودي ووسّع نشاطك.",
-  register:"سجّل متجرك",browse:"التسوق",allCategories:"الفئات",wishlist:"المفضلة",cart:"السلة",
+  register:"سجّل متجرك",browse:"التسوق",allCategories:"الفئات",wishlist:"المفضلة",cart:"السلة",account:"حسابي",
   savedEmpty:"لا توجد منتجات محفوظة",savedSub:"اضغط على القلب لحفظ المنتج هنا.",
   cartEmpty:"سلتك فارغة",cartSub:"اكتشف منتجات متاجر سعودية موثقة.",
   subtotal:"الإجمالي",disabled:"الشراء والدفع غير متاحين حتى اعتماد التشغيل",
@@ -246,6 +247,7 @@ export default function SaudiPremiumShop({lang,setLang,origin,onSell}:Props){
      onGroupChange={setGroup} onSubcategory={id=>applyGroup(group,id)}
      onBrowseGroup={id=>applyGroup(id,null)}
      search={subcategorySearch} onSearchChange={setSubcategorySearch}/>}
+    {tab==="account"&&<SaudiCustomerAuth lang={lang} origin={origin}/>}
     {tab==="wishlist"&&<><Text style={s.pageTitle}>{t.wishlist}</Text>
      {saved.length?<View style={s.productGrid}>{saved.map(productCard)}</View>:emptyCard("wishlist")}</>}
     {tab==="cart"&&<><Text style={s.pageTitle}>{t.cart}</Text>
@@ -271,6 +273,7 @@ export default function SaudiPremiumShop({lang,setLang,origin,onSell}:Props){
    {nav("categories",t.allCategories,"grid-outline")}
    {nav("wishlist",t.wishlist,"heart-outline")}
    {nav("cart",t.cart,"bag-handle-outline")}
+   {nav("account",t.account,"person-circle-outline")}
   </View>
   {selected&&<View style={s.modalBg}>
     <View style={s.modal}>
