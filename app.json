@@ -2,7 +2,7 @@
   "expo": {
     "name": "Go Saudi",
     "slug": "go-saudi",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "gosaudi",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.aasaa.gosaudi",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -51,7 +51,7 @@
     },
     "android": {
       "package": "com.aasaa.gosaudi",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#063F32",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
