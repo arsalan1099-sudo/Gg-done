@@ -50,16 +50,15 @@ import { registerVendorRevenueRoutes, settleVendorMembershipWebhook, refundVendo
 import { registerSellerEnquiryRoutes } from "./sellerEnquiries";
 import crypto from "crypto";
 import sharp from "sharp";
+import { configuredAdminPhone, canReturnOtpInResponse, generateSecureOtp } from "./securityConfig";
 
 // Resolves a customer/team/vendor role from a verified phone number. Extracted
 // from /api/otp/verify so OTP login and Google login share identical role
 // resolution. VENDOR/SUPER_ADMIN are only ever granted from DB/admin state,
 // never from the request body.
 async function resolveUserRole(cleanPhone: string): Promise<{ role: string; id: string; name: string | null }> {
-  const adminPhone = process.env.ADMIN_PHONE || "+919168134109";
-  const cleanAdminPhone = adminPhone.replace(/\D/g, "").slice(-10);
-
-  if (cleanPhone === cleanAdminPhone) {
+  const adminPhone = configuredAdminPhone(process.env.ADMIN_PHONE);
+  if (adminPhone && cleanPhone === adminPhone) {
     return { role: "SUPER_ADMIN", id: "admin", name: "Super Admin" };
   }
 
@@ -158,7 +157,7 @@ function isOtpRateLimited(phone: string): boolean {
 }
 
 function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return generateSecureOtp();
 }
 
 async function resolveMapLinkToCoords(link: string): Promise<{ lat: number; lng: number } | null> {
@@ -2725,8 +2724,7 @@ RESPONSE FORMAT:
 
   app.get("/api/admin/config", (_req, res) => {
     try {
-      const adminPhone = process.env.ADMIN_PHONE || "+919168134109";
-      res.json({ adminPhone });
+      res.json({ adminConfigured: Boolean(configuredAdminPhone(process.env.ADMIN_PHONE)) });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch admin config" });
     }
@@ -3548,39 +3546,9 @@ Respond ONLY with valid JSON, no explanation.`;
 
       const anyChannelSent = whatsappSent || smsSent || emailSent;
 
-      // On-screen OTP exposure policy:
-      // - Development: always expose so testers aren't blocked.
-      // - Production: ONLY when the SHOW_OTP_ON_SCREEN env flag is "true". This
-      //   is a deliberate, TEMPORARY measure for when SMS/WhatsApp delivery is
-      //   down. Exposure rules by role:
-      //     - SUPER_ADMIN  -> code shown ONLY if the request carries the correct
-      //       ADMIN_OTP_KEY secret. The admin phone is a public default, so
-      //       phone-number-only exposure would allow trivial admin takeover; the
-      //       extra secret prevents that.
-      //     - Everyone else (CUSTOMER, VENDOR, FRANCHISE, MARKETING, DELIVERY,
-      //       ...) -> code shown on screen. Their phone numbers are private (not
-      //       a public default), so the blast radius matches the customer case
-      //       and lets staff log in while delivery is down.
-      //   Unset SHOW_OTP_ON_SCREEN as soon as SMS/WhatsApp delivery is restored.
-      let exposeCode = !IS_PRODUCTION;
-      if (IS_PRODUCTION && process.env.SHOW_OTP_ON_SCREEN === "true") {
-        try {
-          const { role } = await resolveUserRole(cleanPhone);
-          if (role === "SUPER_ADMIN") {
-            const adminKey = process.env.ADMIN_OTP_KEY;
-            exposeCode = !!adminKey && req.body?.adminKey === adminKey;
-            if (exposeCode) {
-              console.warn(
-                `[SECURITY] Admin on-screen OTP exposed for phone ending ${cleanPhone.slice(-4)} at ${new Date().toISOString()}`,
-              );
-            }
-          } else {
-            exposeCode = true;
-          }
-        } catch {
-          exposeCode = false;
-        }
-      }
+      // Development-only diagnostic. Production responses must never expose the OTP,
+      // even if legacy SHOW_OTP_ON_SCREEN or ADMIN_OTP_KEY variables are set.
+      const exposeCode = canReturnOtpInResponse(IS_PRODUCTION);
 
       res.json({
         success: true,
