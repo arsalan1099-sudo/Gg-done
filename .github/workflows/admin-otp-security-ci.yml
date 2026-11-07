@@ -1,0 +1,24 @@
+name: Admin and OTP security checks
+on:
+  pull_request:
+    paths:
+      - "server/**"
+      - "render.yaml"
+      - ".github/workflows/admin-otp-security-ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  server-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npx tsx --test server/__tests__/securityConfig.test.ts
+      - run: npm run test:revenue
+      - run: npm run server:build
