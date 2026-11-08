@@ -31,7 +31,7 @@ test("OTP phone validation disallows arbitrary suffixes and malformed numbers", 
 
 test("linked-email validator refuses untrusted or malformed values", () => {
   assert.equal(trustedLinkedEmail(" verified@example.com "), "verified@example.com");
-  for (const input of ["bad@@example.com", "x\\n@example.com", "", null, "x".repeat(300)]) {
+  for (const input of ["bad@@example.com", "x" + String.fromCharCode(10) + "@example.com", "", null, "x".repeat(300)]) {
     assert.equal(trustedLinkedEmail(input), null);
   }
 });
