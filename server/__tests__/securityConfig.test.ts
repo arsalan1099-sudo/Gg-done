@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { configuredAdminPhone, canReturnOtpInResponse, generateSecureOtp, normalizeOtpPhone, trustedLinkedEmail } from "../securityConfig";
+import { configuredAdminPhone, canReturnOtpInResponse, generateSecureOtp, normalizeOtpPhone, trustedLinkedEmail, createOtpAttemptBudget } from "../securityConfig";
 
 test("missing or malformed admin phone never matches any account", () => {
   assert.equal(configuredAdminPhone(undefined), null);
@@ -36,4 +36,14 @@ test("linked-email validator refuses untrusted or malformed values", () => {
   for (const input of ["bad@@example.com", "x" + String.fromCharCode(10) + "@example.com", "", null, "x".repeat(300)]) {
     assert.equal(trustedLinkedEmail(input), null);
   }
+});
+
+test("verification attempts lock out sixth guess and reset after expiry or success", () => {
+  const limit = createOtpAttemptBudget(5, 60000);
+  for (let i = 0; i < 5; i++) assert.equal(limit.blocked("9876543210", 10000+i), false);
+  assert.equal(limit.blocked("9876543210", 10005), true);
+  assert.equal(limit.blocked("9876543210", 70000), false);
+  limit.clear("9876543210");
+  assert.equal(limit.blocked("9876543210", 70001), false);
+  assert.equal(limit.blocked("", 70001), true);
 });
