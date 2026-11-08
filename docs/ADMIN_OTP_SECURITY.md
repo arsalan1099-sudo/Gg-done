@@ -29,3 +29,20 @@ Changes:
 7. Never merge or deploy until the authenticated admin flow is confirmed.
 
 No payments, migrations, hosting changes, or production deployment have occurred.
+
+## Follow-up security hardening
+- The email address, display name, and role supplied to /api/otp/send are untrusted.
+  Email OTP fallback is now restricted to an email returned from the server's
+  previously verified Google-to-phone link table; arbitrary request emails are ignored.
+- /api/otp/send and /api/otp/verify reject malformed phone numbers.
+- PostgreSQL OTP consumption is now conditional and atomic, reducing concurrent replay.
+- Diagnostic devOtp is OFF by default. It requires NODE_ENV=development and
+  ALLOW_DEV_OTP_ON_SCREEN=true. No production flag can enable diagnostic OTP.
+- This change requires testing the exact production login flow. Phone delivery
+  must work; email-only onboarding for accounts without verified linked email
+  will intentionally NOT work. Do not reintroduce user-supplied email fallback.
+- In-memory OTP request rate limiting is not distributed. Before production,
+  implement durable per-phone verification-attempt limits, audit passwordless
+  session storage, and test replay/concurrency against the live database.
+- Run npm audit and triage high/critical advisories. The current dependency
+  tree had warnings in GitHub Actions; no automated upgrades were applied.
