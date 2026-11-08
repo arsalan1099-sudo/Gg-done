@@ -12,7 +12,9 @@ test("missing or malformed admin phone never matches any account", () => {
 });
 test("production never returns OTP, even when a legacy flag is present", () => {
   assert.equal(canReturnOtpInResponse(true), false);
-  assert.equal(canReturnOtpInResponse(false), true);
+  assert.equal(canReturnOtpInResponse(true, true), false);
+  assert.equal(canReturnOtpInResponse(false), false);
+  assert.equal(canReturnOtpInResponse(false, true), true);
 });
 test("cryptographic OTP generator emits six-digit codes", () => {
   for (let i = 0; i < 100; i++) {
