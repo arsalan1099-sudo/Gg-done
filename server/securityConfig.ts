@@ -18,3 +18,20 @@ export function canReturnOtpInResponse(isProduction: boolean): boolean {
 export function generateSecureOtp(): string {
   return crypto.randomInt(100000, 1000000).toString();
 }
+
+/** Return the canonical Indian mobile number for phone-OTP endpoints. */
+export function normalizeOtpPhone(raw: unknown): string | null {
+  if (typeof raw !== "string" || raw.length > 25) return null;
+  const digits = raw.replace(/[\s()+-]/g, "");
+  if (/^[6-9]\d{9}$/.test(digits)) return digits;
+  if (/^91[6-9]\d{9}$/.test(digits)) return digits.slice(2);
+  return null;
+}
+
+/** Only accept an email independently retrieved from a server-owned,
+ * phone-verified identity record. Never use the email from a phone-OTP request. */
+export function trustedLinkedEmail(raw: unknown): string | null {
+  if (typeof raw !== "string" || raw.length > 254) return null;
+  const email = raw.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
