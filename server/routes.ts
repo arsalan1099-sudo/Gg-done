@@ -50,7 +50,7 @@ import { registerVendorRevenueRoutes, settleVendorMembershipWebhook, refundVendo
 import { registerSellerEnquiryRoutes } from "./sellerEnquiries";
 import crypto from "crypto";
 import sharp from "sharp";
-import { configuredAdminPhone, canReturnOtpInResponse, generateSecureOtp, normalizeOtpPhone, trustedLinkedEmail } from "./securityConfig";
+import { configuredAdminPhone, canReturnOtpInResponse, generateSecureOtp, normalizeOtpPhone, trustedLinkedEmail, createOtpAttemptBudget } from "./securityConfig";
 
 // Resolves a customer/team/vendor role from a verified phone number. Extracted
 // from /api/otp/verify so OTP login and Google login share identical role
@@ -142,6 +142,7 @@ async function compressToBuffer(dataUrl: string, maxWidthPx = 900, quality = 78)
 }
 
 const IS_PRODUCTION = process.env.REPLIT_DEPLOYMENT === "1" || process.env.NODE_ENV === "production";
+const otpVerificationBudget = createOtpAttemptBudget(5, 10 * 60 * 1000);
 const otpRateLimit = new Map<string, number[]>();
 const OTP_RATE_LIMIT_MAX = 5;
 const OTP_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
@@ -3598,12 +3599,16 @@ Respond ONLY with valid JSON, no explanation.`;
       if (!cleanPhone || typeof code !== "string" || !/^\\d{6}$/.test(code)) {
         return res.status(400).json({ error: "Valid phone and six-digit OTP are required" });
       }
+      if (otpVerificationBudget.blocked(cleanPhone)) {
+        return res.status(429).json({ success: false, error: "Too many OTP attempts. Please retry later." });
+      }
       const verified = await storage.verifyOtp(cleanPhone, code);
 
       if (!verified) {
         return res.json({ success: false, error: "Invalid or expired OTP. Please try again." });
       }
 
+      otpVerificationBudget.clear(cleanPhone);
       const { role: resolvedRole, id: resolvedId, name: resolvedName } = await resolveUserRole(cleanPhone);
 
       const token = generateToken(cleanPhone, resolvedRole, resolvedId);
