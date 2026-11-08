@@ -35,3 +35,26 @@ export function trustedLinkedEmail(raw: unknown): string | null {
   const email = raw.trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
 }
+
+/** In-process protection against rapid OTP guessing. Production multi-instance
+ * deployments MUST also enforce a distributed/database-backed attempt budget. */
+export function createOtpAttemptBudget(maxAttempts = 5, windowMs = 10 * 60 * 1000) {
+  if (!Number.isInteger(maxAttempts) || maxAttempts < 1 || !Number.isSafeInteger(windowMs) || windowMs < 1) {
+    throw new TypeError("Invalid attempt budget");
+  }
+  const entries = new Map<string, { attempts: number; expiresAt: number }>();
+  return {
+    blocked(key: string, now = Date.now()): boolean {
+      if (!key) return true;
+      const item = entries.get(key);
+      if (!item || item.expiresAt <= now) {
+        entries.set(key, { attempts: 1, expiresAt: now + windowMs });
+        return false;
+      }
+      if (item.attempts >= maxAttempts) return true;
+      item.attempts += 1;
+      return false;
+    },
+    clear(key: string) { entries.delete(key); }
+  };
+}
