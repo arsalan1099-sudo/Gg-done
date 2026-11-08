@@ -50,16 +50,15 @@ import { registerVendorRevenueRoutes, settleVendorMembershipWebhook, refundVendo
 import { registerSellerEnquiryRoutes } from "./sellerEnquiries";
 import crypto from "crypto";
 import sharp from "sharp";
+import { configuredAdminPhone, canReturnOtpInResponse, generateSecureOtp, normalizeOtpPhone, trustedLinkedEmail, createOtpAttemptBudget } from "./securityConfig";
 
 // Resolves a customer/team/vendor role from a verified phone number. Extracted
 // from /api/otp/verify so OTP login and Google login share identical role
 // resolution. VENDOR/SUPER_ADMIN are only ever granted from DB/admin state,
 // never from the request body.
 async function resolveUserRole(cleanPhone: string): Promise<{ role: string; id: string; name: string | null }> {
-  const adminPhone = process.env.ADMIN_PHONE || "+919168134109";
-  const cleanAdminPhone = adminPhone.replace(/\D/g, "").slice(-10);
-
-  if (cleanPhone === cleanAdminPhone) {
+  const adminPhone = configuredAdminPhone(process.env.ADMIN_PHONE);
+  if (adminPhone && cleanPhone === adminPhone) {
     return { role: "SUPER_ADMIN", id: "admin", name: "Super Admin" };
   }
 
@@ -143,6 +142,7 @@ async function compressToBuffer(dataUrl: string, maxWidthPx = 900, quality = 78)
 }
 
 const IS_PRODUCTION = process.env.REPLIT_DEPLOYMENT === "1" || process.env.NODE_ENV === "production";
+const otpVerificationBudget = createOtpAttemptBudget(5, 10 * 60 * 1000);
 const otpRateLimit = new Map<string, number[]>();
 const OTP_RATE_LIMIT_MAX = 5;
 const OTP_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
@@ -158,7 +158,7 @@ function isOtpRateLimited(phone: string): boolean {
 }
 
 function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return generateSecureOtp();
 }
 
 async function resolveMapLinkToCoords(link: string): Promise<{ lat: number; lng: number } | null> {
@@ -2725,8 +2725,7 @@ RESPONSE FORMAT:
 
   app.get("/api/admin/config", (_req, res) => {
     try {
-      const adminPhone = process.env.ADMIN_PHONE || "+919168134109";
-      res.json({ adminPhone });
+      res.json({ adminConfigured: Boolean(configuredAdminPhone(process.env.ADMIN_PHONE)) });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch admin config" });
     }
@@ -3497,17 +3496,17 @@ Respond ONLY with valid JSON, no explanation.`;
 
   app.post("/api/otp/send", async (req, res) => {
     try {
-      const { phone, email, name, role } = req.body;
-      if (!phone) return res.status(400).json({ error: "Phone number is required" });
-
-      const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+      // Phone OTP can authenticate privileged accounts. Client-supplied email,
+      // name and role must never determine where an OTP is delivered.
+      const cleanPhone = normalizeOtpPhone(req.body?.phone);
+      if (!cleanPhone) return res.status(400).json({ error: "A valid Indian phone number is required" });
 
       if (isOtpRateLimited(cleanPhone)) {
         return res.status(429).json({ error: "Too many OTP requests. Please try again after 10 minutes." });
       }
 
       const code = generateOTP();
-      await storage.storeOtp(cleanPhone, code, email);
+      await storage.storeOtp(cleanPhone, code);
 
       let whatsappSent = false;
       let smsSent = false;
@@ -3534,53 +3533,43 @@ Respond ONLY with valid JSON, no explanation.`;
         }
       }
 
-      // Fallback 2: Email (Resend) — only if neither WhatsApp nor SMS delivered.
-      if (!whatsappSent && !smsSent && email && isEmailConfigured()) {
-        const emailResult = await sendEmailOtp(email, code, { name, role, cleanPhone });
-        emailSent = emailResult.sent;
-        if (!emailResult.sent) {
-          emailError = emailResult.error || "Failed to send email";
-          console.error("Email send failed:", emailError);
+      // Email fallback is allowed only for a verified Google identity already
+      // linked to THIS phone in server-owned records. Ignore req.body.email.
+      let maskedEmail: string | null = null;
+      if (!whatsappSent && !smsSent && isEmailConfigured()) {
+        try {
+          const [linked] = await db.select({ email: googleAccountsTable.email })
+            .from(googleAccountsTable)
+            .where(or(
+              eq(googleAccountsTable.phone, cleanPhone),
+              eq(googleAccountsTable.phone, "+91" + cleanPhone),
+              eq(googleAccountsTable.phone, "91" + cleanPhone)
+            )).limit(1);
+          const linkedEmail = trustedLinkedEmail(linked?.email);
+          if (linkedEmail) {
+            const emailResult = await sendEmailOtp(linkedEmail, code,
+              {name: "User", role: "account", cleanPhone});
+            emailSent = emailResult.sent;
+            if (emailSent) {
+              maskedEmail = linkedEmail.replace(/(.{2})(.*)(@.*)/, "$1***$3");
+            } else {
+              emailError = emailResult.error || "Failed to send email";
+              console.error("Email send failed:", emailError);
+            }
+          }
+        } catch (error) {
+          // Prevent DB lookup failures from granting an insecure client-email
+          // fallback; the client can retry the verified phone channel.
+          console.error("Trusted OTP email lookup failed");
         }
       }
-
-      const maskedEmail = email ? email.replace(/(.{2})(.*)(@.*)/, "$1***$3") : null;
 
       const anyChannelSent = whatsappSent || smsSent || emailSent;
 
-      // On-screen OTP exposure policy:
-      // - Development: always expose so testers aren't blocked.
-      // - Production: ONLY when the SHOW_OTP_ON_SCREEN env flag is "true". This
-      //   is a deliberate, TEMPORARY measure for when SMS/WhatsApp delivery is
-      //   down. Exposure rules by role:
-      //     - SUPER_ADMIN  -> code shown ONLY if the request carries the correct
-      //       ADMIN_OTP_KEY secret. The admin phone is a public default, so
-      //       phone-number-only exposure would allow trivial admin takeover; the
-      //       extra secret prevents that.
-      //     - Everyone else (CUSTOMER, VENDOR, FRANCHISE, MARKETING, DELIVERY,
-      //       ...) -> code shown on screen. Their phone numbers are private (not
-      //       a public default), so the blast radius matches the customer case
-      //       and lets staff log in while delivery is down.
-      //   Unset SHOW_OTP_ON_SCREEN as soon as SMS/WhatsApp delivery is restored.
-      let exposeCode = !IS_PRODUCTION;
-      if (IS_PRODUCTION && process.env.SHOW_OTP_ON_SCREEN === "true") {
-        try {
-          const { role } = await resolveUserRole(cleanPhone);
-          if (role === "SUPER_ADMIN") {
-            const adminKey = process.env.ADMIN_OTP_KEY;
-            exposeCode = !!adminKey && req.body?.adminKey === adminKey;
-            if (exposeCode) {
-              console.warn(
-                `[SECURITY] Admin on-screen OTP exposed for phone ending ${cleanPhone.slice(-4)} at ${new Date().toISOString()}`,
-              );
-            }
-          } else {
-            exposeCode = true;
-          }
-        } catch {
-          exposeCode = false;
-        }
-      }
+      // Development-only diagnostic. Production responses must never expose the OTP,
+      // even if legacy SHOW_OTP_ON_SCREEN or ADMIN_OTP_KEY variables are set.
+      const exposeCode = canReturnOtpInResponse(IS_PRODUCTION,
+        process.env.NODE_ENV === "development" && process.env.ALLOW_DEV_OTP_ON_SCREEN === "true");
 
       res.json({
         success: true,
@@ -3605,16 +3594,21 @@ Respond ONLY with valid JSON, no explanation.`;
 
   app.post("/api/otp/verify", async (req, res) => {
     try {
-      const { phone, code, role } = req.body;
-      if (!phone || !code) return res.status(400).json({ error: "Phone and OTP code are required" });
-
-      const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+      const cleanPhone = normalizeOtpPhone(req.body?.phone);
+      const code = req.body?.code;
+      if (!cleanPhone || typeof code !== "string" || !/^\\d{6}$/.test(code)) {
+        return res.status(400).json({ error: "Valid phone and six-digit OTP are required" });
+      }
+      if (otpVerificationBudget.blocked(cleanPhone)) {
+        return res.status(429).json({ success: false, error: "Too many OTP attempts. Please retry later." });
+      }
       const verified = await storage.verifyOtp(cleanPhone, code);
 
       if (!verified) {
         return res.json({ success: false, error: "Invalid or expired OTP. Please try again." });
       }
 
+      otpVerificationBudget.clear(cleanPhone);
       const { role: resolvedRole, id: resolvedId, name: resolvedName } = await resolveUserRole(cleanPhone);
 
       const token = generateToken(cleanPhone, resolvedRole, resolvedId);

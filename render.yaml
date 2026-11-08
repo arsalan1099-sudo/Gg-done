@@ -9,6 +9,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_PHONE
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: GOOGLE_OAUTH_CLIENT_ID

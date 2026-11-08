@@ -73,8 +73,16 @@ export class DatabaseStorage implements IStorage {
 
     if (!otp) return false;
 
-    await db.update(otpCodes).set({ verified: true }).where(eq(otpCodes.id, otp.id));
-    return true;
+    // Atomically consume the OTP: a concurrent replay cannot both succeed.
+    const [consumed] = await db.update(otpCodes)
+      .set({ verified: true })
+      .where(and(
+        eq(otpCodes.id, otp.id),
+        eq(otpCodes.verified, false),
+        gt(otpCodes.expiresAt, now),
+      ))
+      .returning({ id: otpCodes.id });
+    return Boolean(consumed);
   }
 
   async cleanExpiredOtps(): Promise<void> {
