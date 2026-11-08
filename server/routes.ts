@@ -3567,7 +3567,8 @@ Respond ONLY with valid JSON, no explanation.`;
 
       // Development-only diagnostic. Production responses must never expose the OTP,
       // even if legacy SHOW_OTP_ON_SCREEN or ADMIN_OTP_KEY variables are set.
-      const exposeCode = canReturnOtpInResponse(IS_PRODUCTION,\n        process.env.NODE_ENV === "development" && process.env.ALLOW_DEV_OTP_ON_SCREEN === "true");
+      const exposeCode = canReturnOtpInResponse(IS_PRODUCTION,
+        process.env.NODE_ENV === "development" && process.env.ALLOW_DEV_OTP_ON_SCREEN === "true");
 
       res.json({
         success: true,
