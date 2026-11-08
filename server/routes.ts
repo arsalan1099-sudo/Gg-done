@@ -50,7 +50,7 @@ import { registerVendorRevenueRoutes, settleVendorMembershipWebhook, refundVendo
 import { registerSellerEnquiryRoutes } from "./sellerEnquiries";
 import crypto from "crypto";
 import sharp from "sharp";
-import { configuredAdminPhone, canReturnOtpInResponse, generateSecureOtp } from "./securityConfig";
+import { configuredAdminPhone, canReturnOtpInResponse, generateSecureOtp, normalizeOtpPhone, trustedLinkedEmail } from "./securityConfig";
 
 // Resolves a customer/team/vendor role from a verified phone number. Extracted
 // from /api/otp/verify so OTP login and Google login share identical role
@@ -3495,17 +3495,17 @@ Respond ONLY with valid JSON, no explanation.`;
 
   app.post("/api/otp/send", async (req, res) => {
     try {
-      const { phone, email, name, role } = req.body;
-      if (!phone) return res.status(400).json({ error: "Phone number is required" });
-
-      const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+      // Phone OTP can authenticate privileged accounts. Client-supplied email,
+      // name and role must never determine where an OTP is delivered.
+      const cleanPhone = normalizeOtpPhone(req.body?.phone);
+      if (!cleanPhone) return res.status(400).json({ error: "A valid Indian phone number is required" });
 
       if (isOtpRateLimited(cleanPhone)) {
         return res.status(429).json({ error: "Too many OTP requests. Please try again after 10 minutes." });
       }
 
       const code = generateOTP();
-      await storage.storeOtp(cleanPhone, code, email);
+      await storage.storeOtp(cleanPhone, code);
 
       let whatsappSent = false;
       let smsSent = false;
@@ -3532,17 +3532,36 @@ Respond ONLY with valid JSON, no explanation.`;
         }
       }
 
-      // Fallback 2: Email (Resend) — only if neither WhatsApp nor SMS delivered.
-      if (!whatsappSent && !smsSent && email && isEmailConfigured()) {
-        const emailResult = await sendEmailOtp(email, code, { name, role, cleanPhone });
-        emailSent = emailResult.sent;
-        if (!emailResult.sent) {
-          emailError = emailResult.error || "Failed to send email";
-          console.error("Email send failed:", emailError);
+      // Email fallback is allowed only for a verified Google identity already
+      // linked to THIS phone in server-owned records. Ignore req.body.email.
+      let maskedEmail: string | null = null;
+      if (!whatsappSent && !smsSent && isEmailConfigured()) {
+        try {
+          const [linked] = await db.select({ email: googleAccountsTable.email })
+            .from(googleAccountsTable)
+            .where(or(
+              eq(googleAccountsTable.phone, cleanPhone),
+              eq(googleAccountsTable.phone, "+91" + cleanPhone),
+              eq(googleAccountsTable.phone, "91" + cleanPhone)
+            )).limit(1);
+          const linkedEmail = trustedLinkedEmail(linked?.email);
+          if (linkedEmail) {
+            const emailResult = await sendEmailOtp(linkedEmail, code,
+              {name: "User", role: "account", cleanPhone});
+            emailSent = emailResult.sent;
+            if (emailSent) {
+              maskedEmail = linkedEmail.replace(/(.{2})(.*)(@.*)/, "$1***$3");
+            } else {
+              emailError = emailResult.error || "Failed to send email";
+              console.error("Email send failed:", emailError);
+            }
+          }
+        } catch (error) {
+          // Prevent DB lookup failures from granting an insecure client-email
+          // fallback; the client can retry the verified phone channel.
+          console.error("Trusted OTP email lookup failed");
         }
       }
-
-      const maskedEmail = email ? email.replace(/(.{2})(.*)(@.*)/, "$1***$3") : null;
 
       const anyChannelSent = whatsappSent || smsSent || emailSent;
 
@@ -3573,10 +3592,11 @@ Respond ONLY with valid JSON, no explanation.`;
 
   app.post("/api/otp/verify", async (req, res) => {
     try {
-      const { phone, code, role } = req.body;
-      if (!phone || !code) return res.status(400).json({ error: "Phone and OTP code are required" });
-
-      const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+      const cleanPhone = normalizeOtpPhone(req.body?.phone);
+      const code = req.body?.code;
+      if (!cleanPhone || typeof code !== "string" || !/^\\d{6}$/.test(code)) {
+        return res.status(400).json({ error: "Valid phone and six-digit OTP are required" });
+      }
       const verified = await storage.verifyOtp(cleanPhone, code);
 
       if (!verified) {
