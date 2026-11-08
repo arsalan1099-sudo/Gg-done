@@ -9,10 +9,10 @@ export function configuredAdminPhone(raw: unknown): string | null {
   return value.replace(/\D/g, "").slice(-10);
 }
 
-export function canReturnOtpInResponse(isProduction: boolean): boolean {
-  // Never let a deployment flag or API request turn production OTP into the
-  // equivalent of a publicly known authentication code.
-  return !isProduction;
+export function canReturnOtpInResponse(isProduction: boolean, explicitLocalDevOptIn = false): boolean {
+  // Fail closed by default. Even in development require an explicit local-only
+  // environment opt-in; never accept request flags or public config for OTP.
+  return !isProduction && explicitLocalDevOptIn;
 }
 
 export function generateSecureOtp(): string {
