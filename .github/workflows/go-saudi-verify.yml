@@ -3,6 +3,8 @@ name: Go Saudi - Secure Preview Release Verification
 on:
   push:
     branches: [go-saudi]
+  pull_request:
+    branches: [go-saudi]
   workflow_dispatch:
 
 jobs:
@@ -36,6 +38,7 @@ jobs:
       - run: npm run db:saudi:migrate
       - run: npm run test:saudi
       - run: npm run test:saudi:mobile
+      - run: npm run test:saudi:release
       - run: npm run test:revenue
       - run: npm run test:saudi:integration
       - run: npm run test:saudi:commerce:e2e
