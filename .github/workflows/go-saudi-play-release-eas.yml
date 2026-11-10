@@ -1,0 +1,67 @@
+name: Go Saudi - EAS Play Signed AAB (manual internal-track preparation)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+
+# This workflow never submits to Play. It requires the owner's Expo project,
+# remote permanent upload key and a GitHub EXPO_TOKEN secret.
+jobs:
+  play-signed-aab:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CI: '1'
+      EXPO_PUBLIC_SAUDI_API_URL: ''
+      EXPO_PUBLIC_SAUDI_STAGE: PRELAUNCH
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Confirm owner has set EAS CI credentials
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${EXPO_TOKEN:-}" ]; then
+            echo "::error::EXPO_TOKEN missing. Configure GitHub Actions secret; never commit or paste it."
+            exit 1
+          fi
+          node - <<'NODE'
+          const a=require('./app.json').expo;
+          if(!a.extra?.eas?.projectId||
+             !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(a.extra.eas.projectId)){
+            console.error('::error::Link the owner's Go Saudi EAS project and commit only extra.eas.projectId before signing.');
+            process.exit(1);
+          }
+          const p=require('./eas.json');
+          if(p.build.production.android.buildType!=='app-bundle'||
+             p.build.production.android.credentialsSource!=='remote'||
+             p.submit.production.android.track!=='internal'||
+             p.submit.production.android.releaseStatus!=='draft'||
+             a.android.package!=='com.aasaa.gosaudi'||
+             a.extra.market.paymentEnabled!==false||
+             a.extra.storeSubmissionApproved!==false)
+            throw Error('Unsafe Play internal-release configuration');
+          NODE
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:saudi:mobile
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: 27.5.0
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build signed AAB using owner's permanent Expo remote credentials
+        run: |
+          set -euo pipefail
+          eas build --platform android --profile production --non-interactive --wait
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ### Go Saudi Android signed app bundle
+          EAS cloud build returned success. Find the signed AAB in the owner's
+          Expo dashboard for this project. **No Play Console upload was made.**
+          To upload a draft on internal track, separately authorize the Google
+          Play developer account and connect the Google service account key.
+          The current test APK may need to be uninstalled before installing a
+          Play-signed version: signatures differ and uninstall clears local data.
+          EOF
