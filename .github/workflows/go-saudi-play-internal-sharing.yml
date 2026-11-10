@@ -1,0 +1,114 @@
+name: Go Saudi - Play Internal App Sharing Test AAB
+on:
+  push:
+    branches: [go-saudi]
+    paths:
+      - '.github/workflows/go-saudi-play-internal-sharing.yml'
+      - 'app.json'
+      - 'eas.json'
+      - 'app/index.tsx'
+      - 'app/_layout.tsx'
+      - 'components/saudi/**'
+      - 'lib/saudiCategories.ts'
+      - 'lib/saudiCart.ts'
+      - 'lib/saudiAuth.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/generate-saudi-brand.cjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  internal-sharing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CI: '1'
+      EXPO_PUBLIC_SAUDI_API_URL: ''
+      EXPO_PUBLIC_SAUDI_STAGE: PRELAUNCH
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Verify prelaunch app boundary and install dependencies
+        run: |
+          npm ci --no-audit --no-fund
+          npm run test:saudi:mobile
+          node - <<'NODE'
+          const a=require('./app.json').expo;
+          if(a.android.package!=='com.aasaa.gosaudi'||a.extra.market.country!=='SA'||
+             a.extra.market.paymentEnabled!==false||a.extra.storeSubmissionApproved!==false)
+            throw Error('Refusing unapproved Go Saudi distribution');
+          console.log('Saudi package and commercial safety gates verified');
+          NODE
+      - name: Create independent Go Saudi icons
+        run: npm run brand:saudi
+      - name: Generate standalone Android project
+        run: npx expo prebuild --platform android --clean --no-install
+      - name: Build internal app sharing AAB (test signature only)
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+      - name: Verify app bundle structure, signature, version, checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p play-test-output
+          input="android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$input"
+          cp "$input" play-test-output/Go-Saudi-Internal-Sharing-TEST-ONLY.aab
+          unzip -t play-test-output/Go-Saudi-Internal-Sharing-TEST-ONLY.aab | tail -1
+          unzip -Z1 play-test-output/Go-Saudi-Internal-Sharing-TEST-ONLY.aab > /tmp/go-saudi-aab-files.txt
+          grep -Fxq 'base/manifest/AndroidManifest.xml' /tmp/go-saudi-aab-files.txt
+          grep -Fxq 'base/assets/index.android.bundle' /tmp/go-saudi-aab-files.txt
+          jarsigner -verify -verbose -certs play-test-output/Go-Saudi-Internal-Sharing-TEST-ONLY.aab > play-test-output/signature-report.txt
+          grep -q 'jar verified' play-test-output/signature-report.txt
+          sha256sum play-test-output/Go-Saudi-Internal-Sharing-TEST-ONLY.aab > play-test-output/SHA256SUMS.txt
+          node - <<'NODE' > play-test-output/manifest-metadata.json
+          const a=require('./app.json').expo;
+          console.log(JSON.stringify({
+            name:a.name,package:a.android.package,version:a.version,
+            versionCode:a.android.versionCode,market:a.extra.market,
+            signing:'TEST KEY - NOT Play upload/release signing',
+            target:'Google Play Internal App Sharing ONLY'
+          },null,2));
+          NODE
+          cat > play-test-output/READ-ME.txt <<'EOF'
+          GO SAUDI - INTERNAL APP SHARING TEST BUNDLE (AAB)
+          This AAB is built by the standalone Gradle testing pipeline.
+          Its release variant uses a local TEST/DEBUG keystore produced during
+          native prebuild. It is NOT signed with a verified permanent Google Play
+          upload key. Do NOT upload it to a regular internal/closed/production
+          Play testing track. Do NOT treat it as an approved store release.
+
+          Allowed purpose: Google Play Console > Internal app sharing, where
+          Google re-signs shared test artifacts, subject to account eligibility.
+          The Play Console account owner must upload it and create a sharing link.
+          Do not send arbitrary WhatsApp APK attachments.
+
+          For the regular Play internal testing track instead use the separate
+          EAS Play release workflow with remote persistent credentials.
+          No live orders/payments, no live OTP backend in this test bundle.
+          EOF
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ### Go Saudi internal app sharing artifact
+          Build verifies the Go Saudi bundle and retains it as a GitHub artifact.
+          **TEST signed; upload only to Google Play Console > Internal app sharing.**
+          This is NOT a regular Play internal testing/closed testing upload key.
+          Account owner must upload and share the Play link; none has been created by this job.
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Go-Saudi-Internal-Sharing-TEST-ONLY-AAB
+          path: play-test-output/
+          retention-days: 14
+          if-no-files-found: error
