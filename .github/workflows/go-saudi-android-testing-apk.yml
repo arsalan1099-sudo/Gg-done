@@ -41,8 +41,11 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Verify GitHub runner Android SDK is installed
+        run: |
+          test -n "${ANDROID_HOME:-}"
+          test -d "$ANDROID_HOME/build-tools"
+          test -d "$ANDROID_HOME/platforms"
       - name: Install locked Node dependencies
         run: npm ci --no-audit --no-fund
       - name: Verify Go Saudi native route and identity isolation
