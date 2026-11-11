@@ -48,6 +48,36 @@ jobs:
           test -d "$ANDROID_HOME/platforms"
       - name: Install locked Node dependencies
         run: npm ci --no-audit --no-fund
+      - name: Generate distinct Go Saudi launcher, adaptive and splash artwork
+        run: |
+          sha256sum assets/images/icon.png | cut -d' ' -f1 > /tmp/go-saudi-previous-icon.sha
+          npm run brand:saudi
+          sha256sum assets/images/icon.png | cut -d' ' -f1 > /tmp/go-saudi-new-icon.sha
+          if cmp -s /tmp/go-saudi-previous-icon.sha /tmp/go-saudi-new-icon.sha; then
+            echo "::error::Launcher icon is identical to the inherited Go Bharat icon"
+            exit 1
+          fi
+          node - <<'NODE'
+          const assert = require("node:assert/strict");
+          const fs = require("node:fs");
+          const sharp = require("sharp");
+          (async () => {
+            const files = [
+              "icon.png", "android-icon-foreground.png",
+              "android-icon-background.png", "android-icon-monochrome.png",
+              "splash-icon.png", "favicon.png"
+            ];
+            for(const filename of files) {
+              const path = "assets/images/" + filename;
+              assert.ok(fs.existsSync(path), "Missing Saudi brand image: " + filename);
+              const meta=await sharp(path).metadata();
+              assert.equal(meta.format, "png");
+              assert.equal(meta.width,filename==="favicon.png"?96:1024);
+              assert.equal(meta.height,filename==="favicon.png"?96:1024);
+              console.log("Verified Saudi-only icon asset",filename);
+            }
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
       - name: Verify Go Saudi native route and identity isolation
         run: npm run test:saudi:mobile
       - name: Confirm prelaunch app configuration
