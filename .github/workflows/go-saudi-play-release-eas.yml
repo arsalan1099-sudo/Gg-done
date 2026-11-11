@@ -47,6 +47,8 @@ jobs:
             throw Error('Unsafe Play internal-release configuration');
           NODE
       - run: npm ci --no-audit --no-fund
+      - name: Regenerate Saudi-only app icons and splash before EAS upload
+        run: npm run brand:saudi
       - run: npm run test:saudi:mobile
       - run: npm run test:saudi:release
       - name: Validate production backend and app identity
