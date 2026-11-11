@@ -36,7 +36,11 @@ const background=`<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1
 const list=[
  ["icon.png",square],["android-icon-foreground.png",foreground],
  ["android-icon-background.png",background],["android-icon-monochrome.png",mono],
- ["splash-icon.png",square],["favicon.png",square]
+ ["splash-icon.png",square],["favicon.png",square],
+ // Inherited Go Bharat routes still bundle this legacy asset even when inaccessible.
+ // Replace its PNG contents with Saudi GS artwork at build time so the APK
+ // carries no old Go Bharat emblem. Do NOT change the original Go Bharat branch.
+ ["go-bharat-logo-nobg.png",foreground]
 ];
 (async()=>{
  for(const [name,svg] of list){
