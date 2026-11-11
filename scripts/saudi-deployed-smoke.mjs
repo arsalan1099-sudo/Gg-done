@@ -52,16 +52,16 @@ async function smoke() {
     headers: { Accept: "text/html" }
   });
   assert.equal(homepageResponse.status, 200, "Homepage must return HTTP 200");
-  assert.match(homepageResponse.headers.get("content-type") || "", /text\\/html/i,
+  assert.ok((homepageResponse.headers.get("content-type") || "").toLowerCase().includes("text/html"),
     "Homepage must return HTML rather than JSON or an error document");
   const homepage = await homepageResponse.text();
   assert.ok(homepage.length > 5000, "Homepage HTML unexpectedly short");
-  assert.match(homepage, /<style[\\s>]/i, "Homepage inline stylesheet is missing");
-  assert.match(homepage, /<header[\\s>]/i, "Homepage navigation header is missing");
-  assert.match(homepage, /<main[\\s>]/i, "Homepage main content is missing");
-  assert.match(homepage, /GO SAUDI/, "Go Saudi branding is missing");
-  assert.match(homepage, /id=["']categoryGrid["']/, "Homepage categories are missing");
-  assert.doesNotMatch(homepage, /\\/_next\\/static\\//i,
+  assert.ok(homepage.includes("<style>"), "Homepage inline stylesheet is missing");
+  assert.ok(homepage.includes("<header"), "Homepage navigation header is missing");
+  assert.ok(homepage.includes("<main>"), "Homepage main content is missing");
+  assert.ok(homepage.includes("GO SAUDI"), "Go Saudi branding is missing");
+  assert.ok(homepage.includes('id="categoryGrid"'), "Homepage categories are missing");
+  assert.ok(!homepage.includes("/_next/static/"),
     "Unexpected Next.js assets on Saudi static prelaunch page");
   console.log("PASS: Homepage serves complete branded HTML and inline CSS");
 
