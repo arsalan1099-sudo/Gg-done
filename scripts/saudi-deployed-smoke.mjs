@@ -43,6 +43,28 @@ async function smoke() {
   assert.equal(health.database, "connected", "Dedicated Saudi database is disconnected");
   console.log("PASS: Saudi backend health and DB connection");
 
+  // Homepage regression guard: prevent a live API masking a blank or missing landing page.
+  // Go Saudi uses a checked-in single HTML page with inline CSS, not Next.js assets.
+  const homepageResponse = await fetch(new URL("/", origin), {
+    method: "GET",
+    redirect: "error",
+    signal: AbortSignal.timeout(20_000),
+    headers: { Accept: "text/html" }
+  });
+  assert.equal(homepageResponse.status, 200, "Homepage must return HTTP 200");
+  assert.match(homepageResponse.headers.get("content-type") || "", /text\\/html/i,
+    "Homepage must return HTML rather than JSON or an error document");
+  const homepage = await homepageResponse.text();
+  assert.ok(homepage.length > 5000, "Homepage HTML unexpectedly short");
+  assert.match(homepage, /<style[\\s>]/i, "Homepage inline stylesheet is missing");
+  assert.match(homepage, /<header[\\s>]/i, "Homepage navigation header is missing");
+  assert.match(homepage, /<main[\\s>]/i, "Homepage main content is missing");
+  assert.match(homepage, /GO SAUDI/, "Go Saudi branding is missing");
+  assert.match(homepage, /id=["']categoryGrid["']/, "Homepage categories are missing");
+  assert.doesNotMatch(homepage, /\\/_next\\/static\\//i,
+    "Unexpected Next.js assets on Saudi static prelaunch page");
+  console.log("PASS: Homepage serves complete branded HTML and inline CSS");
+
   const market = await getJson("/api/saudi/market");
   assert.equal(market.brand, "Go Saudi");
   assert.equal(market.country, "SA");
