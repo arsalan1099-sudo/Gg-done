@@ -43,6 +43,8 @@ jobs:
           }
           NODE
       - run: npm ci --no-audit --no-fund
+      - name: Regenerate Saudi-only app icons and splash before EAS upload
+        run: npm run brand:saudi
       - run: npm run test:saudi:mobile
       - run: npm run test:saudi:release
       - name: Validate dedicated Saudi production HTTPS backend
