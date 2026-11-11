@@ -10,7 +10,7 @@ Verified on 11 November 2026. **Do not enable live commerce** until legal, merch
 - Security migration `go_saudi_007_server_only_rls` enabled RLS on all 15 app tables, revoked public / `anon` / `authenticated` table privileges, and granted explicitly scoped backend access to custom database login `go_saudi_app`.
 - Independent verification: 15/15 tables have RLS enabled, zero public/anon/authenticated table read grants, and Supabase security advisors return no findings.
 - `go_saudi_app` exists but **does not have a usable login password yet**. Automatic password-setting was blocked; no database URL has been installed on Render.
-- Render has a random admin SHA-256 digest with no recoverable matching admin token. Admin access is intentionally **locked until owner provisions a new admin token**. Commerce / OTP launch switches remain disabled.
+- Owner admin token was generated separately; the original private token file is **not committed to GitHub**. Its SHA-256 digest matches the configured Render digest, but a live admin login remains **untested while the backend is offline**.\n- OTP, order, booking and payment **feature switches** were set to `true` at the owner's request. This is **not real activation**: privacy, e-store, data rights and other independent gates remain false, and provider credentials and real-world tests are missing.
 - Builds and CI are not evidence of a healthy live service without DB credentials. Earlier Render deploy failed at startup because `DATABASE_URL` was missing.
 
 ## One owner-only secure step to finish connection
@@ -40,7 +40,7 @@ Do **not** paste database passwords or complete database URLs into ChatGPT, a Gi
    Expected shape: `{"status":"healthy","service":"go-saudi","mode":"PRELAUNCH","database":"connected","payments":false,"orders":false}`.
    Also verify `/api/saudi/market` and `/api/saudi/readiness`. The latter must report `commercialLaunchReady:false`.
 
-5. Record that this is an **unpaid prelaunch/staging setup**, not a production SLA. Render Free may sleep and Supabase Free may pause for inactivity. Test backups and restore periodically. Never add live shoppers, PII, payment credentials or settlement activity until compliance is complete.
+5. Run the tracked **read-only deployed smoke test** to verify identity, database, OTP and fail-closed commerce:\n   ```sh\n   node scripts/saudi-deployed-smoke.mjs\n   ```\n   The script fails until the real `DATABASE_URL` is installed and deployment is healthy. It never makes POST requests or processes any payment. A manual GitHub Actions workflow exists at `.github/workflows/go-saudi-deployed-smoke.yml` (manual dispatch requires the workflow to be available on the repository's default branch).\n\n6. Record that this is an **unpaid prelaunch/staging setup**, not a production SLA. Render Free may sleep and Supabase Free may pause for inactivity. Test backups and restore periodically. Never add live shoppers, PII, payment credentials or settlement activity until compliance is complete.
 
 ## Separation and security
 
