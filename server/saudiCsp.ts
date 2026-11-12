@@ -21,6 +21,21 @@ export function saudiHtmlCsp(html: string): string {
     "upgrade-insecure-requests"
   ].join("; ");
 }
+export function saudiStaticHtmlCsp(): string {
+  return [
+    "default-src 'none'", "script-src 'none'", "style-src 'unsafe-inline'",
+    "img-src 'none'", "form-action 'none'", "frame-ancestors 'none'",
+    "base-uri 'none'", "object-src 'none'", "upgrade-insecure-requests"
+  ].join("; ");
+}
+export function sendSaudiStaticPage(res:Response, name:"go-saudi-privacy.html"):void {
+  const html=fs.readFileSync(path.resolve(process.cwd(),"server","templates",name),"utf8");
+  if(/<script\\b/i.test(html))throw Error("Static Saudi notice must not include scripts");
+  res.setHeader("Cache-Control","public, max-age=300");
+  res.setHeader("Referrer-Policy","no-referrer");
+  res.setHeader("Content-Security-Policy",saudiStaticHtmlCsp());
+  res.type("html").send(html);
+}
 export function sendSaudiPage(res:Response, name:"go-saudi.html"|"go-saudi-admin.html"|"go-saudi-vendor.html"):void {
   const safePath=path.resolve(process.cwd(),"server","templates",name);
   const html=fs.readFileSync(safePath,"utf8");
