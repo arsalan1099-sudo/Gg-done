@@ -65,6 +65,17 @@ async function smoke() {
     "Unexpected Next.js assets on Saudi static prelaunch page");
   console.log("PASS: Homepage serves complete branded HTML and inline CSS");
 
+  const privacyResponse=await fetch(new URL("/privacy",origin),{
+    method:"GET",redirect:"error",signal:AbortSignal.timeout(20_000)
+  });
+  assert.equal(privacyResponse.status,200,"Public Saudi privacy notice must be reachable");
+  assert.ok((privacyResponse.headers.get("content-type")||"").includes("text/html"));
+  assert.ok((privacyResponse.headers.get("content-security-policy")||"").includes("script-src 'none'"));
+  const privacyHtml=await privacyResponse.text();
+  assert.ok(privacyHtml.includes("Go Saudi")&&privacyHtml.includes("Prelaunch"));
+  assert.ok(!privacyHtml.includes("Go Bharat"));
+  console.log("PASS: Public Saudi privacy notice is published with scriptless CSP");
+
   const market = await getJson("/api/saudi/market");
   assert.equal(market.brand, "Go Saudi");
   assert.equal(market.country, "SA");
