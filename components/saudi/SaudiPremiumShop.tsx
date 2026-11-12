@@ -1,4 +1,5 @@
 import React,{useCallback,useEffect,useMemo,useState} from "react";
+import {router} from "expo-router";
 import {ActivityIndicator,Alert,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import {LinearGradient} from "expo-linear-gradient";
 import {Ionicons} from "@expo/vector-icons";
@@ -247,7 +248,13 @@ export default function SaudiPremiumShop({lang,setLang,origin,onSell}:Props){
      onGroupChange={setGroup} onSubcategory={id=>applyGroup(group,id)}
      onBrowseGroup={id=>applyGroup(id,null)}
      search={subcategorySearch} onSearchChange={setSubcategorySearch}/>}
-    {tab==="account"&&<SaudiCustomerAuth lang={lang} origin={origin}/>}
+    {tab==="account"&&<>
+      <SaudiCustomerAuth lang={lang} origin={origin}/>
+      <Pressable accessibilityRole="link" onPress={()=>router.push("/privacy")}
+        style={{marginTop:18,padding:16,borderWidth:1,borderColor:"#D8AC59",borderRadius:12,backgroundColor:"#FFFFFF"}}>
+        <Text style={{color:"#063F32",fontWeight:"700",textAlign:"center"}}>{ar?"الخصوصية وبيانات الإصدار التجريبي":"Privacy & prelaunch data notice"}</Text>
+      </Pressable>
+    </>}
     {tab==="wishlist"&&<><Text style={s.pageTitle}>{t.wishlist}</Text>
      {saved.length?<View style={s.productGrid}>{saved.map(productCard)}</View>:emptyCard("wishlist")}</>}
     {tab==="cart"&&<><Text style={s.pageTitle}>{t.cart}</Text>
