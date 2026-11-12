@@ -30,7 +30,7 @@ export function saudiStaticHtmlCsp(): string {
 }
 export function sendSaudiStaticPage(res:Response, name:"go-saudi-privacy.html"):void {
   const html=fs.readFileSync(path.resolve(process.cwd(),"server","templates",name),"utf8");
-  if(/<script\\b/i.test(html))throw Error("Static Saudi notice must not include scripts");
+  if(html.toLowerCase().includes("<script"))throw Error("Static Saudi notice must not include scripts");
   res.setHeader("Cache-Control","public, max-age=300");
   res.setHeader("Referrer-Policy","no-referrer");
   res.setHeader("Content-Security-Policy",saudiStaticHtmlCsp());
