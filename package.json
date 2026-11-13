@@ -20,7 +20,7 @@
     "test:saudi:mobile": "node scripts/verify-saudi-mobile.cjs && tsx --test server/__tests__/saudiCart.test.ts server/__tests__/saudiDemoOrders.test.ts server/__tests__/saudiNativeMobileAuth.test.ts",
     "test:saudi:commerce:e2e": "tsx --test server/__tests__/saudiCommerce.e2e.fixed.test.ts",
     "brand:saudi": "node scripts/generate-saudi-brand.cjs",
-    "test:saudi:release": "node --test scripts/saudi-release-config.test.cjs",
+    "test:saudi:release": "node --test scripts/saudi-release-config.test.cjs scripts/saudi-home-discovery.test.cjs",
     "eas-build-post-install": "node -e \"require('./scripts/saudi-release-config.cjs').validateSaudiReleaseConfig(require('./app.json').expo, process.env)\""
   },
   "dependencies": {
