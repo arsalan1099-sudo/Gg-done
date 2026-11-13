@@ -451,7 +451,7 @@
       pickDaily:"أساسيات كل يوم",pickDailyDesc:"البقالة واحتياجاتك اليومية",pickStyle:"إطلالة على ذوقك",pickStyleDesc:"اكتشف فئة الأزياء القادمة",
       pickHome:"بيت على ذوقك",pickHomeDesc:"أفكار لمستلزمات المنزل",pickTech:"تقنية تناسبك",pickTechDesc:"اكتشف فئة الأجهزة والإلكترونيات",
       pickPreview:"معاينة الفئة · قريباً",discoveryDisclosure:"هذه أفكار للتصفح فقط، وليست منتجات حقيقية أو عروضاً أو خصومات نشطة.",
-      spotlightKicker:"معاينة الفئة",spotlightCity:"استكشف المدن",spotlightSave:"♡ حفظ الاهتمام",spotlightSaved:"♥ محفوظ",favoritesSuffix:"فئات محفوظة",
+      spotlightKicker:"معاينة الفئة",spotlightCity:"استكشف المدن",spotlightSave:"♡ حفظ الاهتمام",spotlightSaved:"♥ محفوظ",favoritesSuffix:"فئات محفوظة",favoritesSingular:"فئة محفوظة",
       spotlightNotice:"قوائم التجار والمنتجات الحقيقية ستكون متاحة فقط بعد الإطلاق الرسمي. لا يوجد شراء أو دفع الآن."
     });
     Object.assign(tr.en,{
@@ -460,7 +460,7 @@
       pickDaily:"Everyday essentials",pickDailyDesc:"Grocery and daily needs",pickStyle:"Your kind of style",pickStyleDesc:"Preview the upcoming fashion category",
       pickHome:"Make home yours",pickHomeDesc:"Explore the home essentials category",pickTech:"Smart tech picks",pickTechDesc:"Preview the electronics category",
       pickPreview:"Preview category · coming soon",discoveryDisclosure:"These are browsing ideas, not live products, offers or discounts.",
-      spotlightKicker:"CATEGORY PREVIEW",spotlightCity:"Explore cities",spotlightSave:"♡ Save interest",spotlightSaved:"♥ Saved",favoritesSuffix:"saved categories",
+      spotlightKicker:"CATEGORY PREVIEW",spotlightCity:"Explore cities",spotlightSave:"♡ Save interest",spotlightSaved:"♥ Saved",favoritesSuffix:"saved categories",favoritesSingular:"saved category",
       spotlightNotice:"Real merchant and product listings will only be available after launch. Purchases and payments are not enabled."
     });
     let lang = localStorage.getItem("goSaudiLang") === "en" ? "en" : "ar";
@@ -485,7 +485,7 @@
     try{const value=JSON.parse(localStorage.getItem(savedKey)||"[]");if(Array.isArray(value))savedCategories=[...new Set(value.filter(x=>previewCategories.includes(x)))].slice(0,8)}catch(_ignore){}
     let activeCategory=null;
     function renderFavoritesHint(){
-      document.getElementById("favoritesHint").textContent="♥ "+savedCategories.length+" "+tr[lang].favoritesSuffix+" · "+(lang==="ar"?"محفوظة على هذا الجهاز فقط":"only on this device");
+      document.getElementById("favoritesHint").textContent="♥ "+savedCategories.length+" "+(savedCategories.length===1?tr[lang].favoritesSingular:tr[lang].favoritesSuffix)+" · "+(lang==="ar"?"محفوظة على هذا الجهاز فقط":"only on this device");
       document.querySelectorAll("#categoryGrid [data-category]").forEach(el=>el.classList.toggle("is-saved",savedCategories.includes(el.dataset.category)));
     }
     function renderSpotlight(){
