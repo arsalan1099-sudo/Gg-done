@@ -2,7 +2,7 @@ import {test} from "node:test";
 import {strict as assert} from "node:assert";
 import fs from "node:fs";
 import {Script} from "node:vm";
-import {saudiHtmlCsp} from "../saudiCsp";
+import {saudiHtmlCsp,saudiStaticHtmlCsp} from "../saudiCsp";
 test("each Saudi HTML document gets an exact inline script hash",()=>{
  for(const file of ["go-saudi.html","go-saudi-admin.html","go-saudi-vendor.html"]){
   const html=fs.readFileSync("server/templates/"+file,"utf8");
@@ -25,4 +25,15 @@ test("Saudi landing, admin and vendor inline JavaScript must parse",()=>{
   assert.ok(opening>=0&&ending>opening,file);
   assert.doesNotThrow(()=>new Script(html.slice(opening+8,ending),{filename:file}),file);
  }
+});
+
+test("public Saudi prelaunch privacy notice has scriptless CSP and no inherited India policy",()=>{
+ const html=fs.readFileSync("server/templates/go-saudi-privacy.html","utf8");
+ const csp=saudiStaticHtmlCsp();
+ assert.match(csp,/script-src 'none'/);
+ assert.ok(!html.toLowerCase().includes("<script"));
+ assert.match(html,/Go Saudi/);
+ assert.match(html,/Prelaunch/);
+ assert.match(html,/Singapore/);
+ assert.ok(!/Go Bharat|Digital Personal Data Protection Act, 2023|Aadhaar/i.test(html));
 });

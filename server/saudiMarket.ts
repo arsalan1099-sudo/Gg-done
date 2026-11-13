@@ -1,7 +1,7 @@
 import {logSaudiError} from "./saudiLog";
 import type { Express } from "express";
 import crypto from "node:crypto";
-import {sendSaudiPage} from "./saudiCsp";
+import {sendSaudiPage,sendSaudiStaticPage} from "./saudiCsp";
 import rateLimit from "express-rate-limit";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "./db";
@@ -32,6 +32,7 @@ export function registerSaudiMarket(app: Express): void {
   const sendLanding = (_req: any, res: any) => {
     return sendSaudiPage(res,"go-saudi.html");
   };
+  app.get("/privacy", (_req,res)=>sendSaudiStaticPage(res,"go-saudi-privacy.html"));
   app.get("/", sendLanding);
   app.get("/sell", sendLanding);
 

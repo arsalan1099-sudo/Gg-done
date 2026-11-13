@@ -1,0 +1,121 @@
+name: Go Saudi - Installable Android Test APK (no Play upload)
+
+on:
+  pull_request:
+    branches: [go-saudi]
+    paths:
+      - .github/workflows/go-saudi-android-testing-apk.yml
+      - app/**
+      - components/saudi/**
+      - assets/**
+      - app.json
+      - package.json
+      - package-lock.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Creates a locally built APK with Android's temporary test signing key.
+# It is for device testing only: no store release, no payment activation,
+# no Expo account / Play developer signing credentials are requested.
+jobs:
+  native-test-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    env:
+      CI: "1"
+      EXPO_PUBLIC_SAUDI_API_URL: https://go-saudi-prelaunch.onrender.com
+      EXPO_PUBLIC_SAUDI_STAGE: PRELAUNCH
+      EXPO_PUBLIC_DEV_MODE: "false"
+    steps:
+      - name: Checkout Go Saudi review branch
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Verify GitHub runner Android SDK is installed
+        run: |
+          test -n "${ANDROID_HOME:-}"
+          test -d "$ANDROID_HOME/build-tools"
+          test -d "$ANDROID_HOME/platforms"
+      - name: Install locked Node dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Generate distinct Go Saudi launcher, adaptive and splash artwork
+        run: |
+          sha256sum assets/images/icon.png | cut -d' ' -f1 > /tmp/go-saudi-previous-icon.sha
+          npm run brand:saudi
+          sha256sum assets/images/icon.png | cut -d' ' -f1 > /tmp/go-saudi-new-icon.sha
+          if cmp -s /tmp/go-saudi-previous-icon.sha /tmp/go-saudi-new-icon.sha; then
+            echo "::error::Launcher icon is identical to the inherited Go Bharat icon"
+            exit 1
+          fi
+          node - <<'NODE'
+          const assert = require("node:assert/strict");
+          const fs = require("node:fs");
+          const sharp = require("sharp");
+          (async () => {
+            const files = [
+              "icon.png", "android-icon-foreground.png",
+              "android-icon-background.png", "android-icon-monochrome.png",
+              "splash-icon.png", "favicon.png"
+            ];
+            for(const filename of files) {
+              const path = "assets/images/" + filename;
+              assert.ok(fs.existsSync(path), "Missing Saudi brand image: " + filename);
+              const meta=await sharp(path).metadata();
+              assert.equal(meta.format, "png");
+              assert.equal(meta.width,filename==="favicon.png"?96:1024);
+              assert.equal(meta.height,filename==="favicon.png"?96:1024);
+              console.log("Verified Saudi-only icon asset",filename);
+            }
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - name: Verify Go Saudi native route and identity isolation
+        run: npm run test:saudi:mobile
+      - name: Confirm prelaunch app configuration
+        run: |
+          node - <<'NODE'
+          const a = require('./app.json').expo;
+          if(a.name!=='Go Saudi'||a.android?.package!=='com.aasaa.gosaudi'
+              ||a.extra?.market?.paymentEnabled!==false
+              ||a.extra?.market?.orderEnabled!==false
+              ||a.extra?.storeSubmissionApproved!==false) {
+            throw Error('Refusing APK build with incorrect branding or live transaction flags');
+          }
+          NODE
+      - name: Generate native Android project
+        run: npx expo prebuild --clean --platform android --non-interactive --no-install
+      - name: Build installable release-mode test APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace
+      - name: Verify installable binary package and signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find android/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
+          test -n "$APK"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/apksigner" verify --verbose "$APK"
+          "$BUILD_TOOLS/aapt" dump badging "$APK" | grep "package: name='com.aasaa.gosaudi'"
+          mkdir -p dist
+          cp "$APK" dist/go-saudi-prelaunch-test.apk
+          sha256sum dist/go-saudi-prelaunch-test.apk | tee dist/go-saudi-prelaunch-test.apk.sha256
+      - name: Upload device-testing APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-saudi-prelaunch-test-apk
+          path: |
+            dist/go-saudi-prelaunch-test.apk
+            dist/go-saudi-prelaunch-test.apk.sha256
+          if-no-files-found: error
+          retention-days: 10

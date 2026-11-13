@@ -1,0 +1,62 @@
+name: Go Saudi - EAS iOS Signed Build (manual, no App Store submission)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+
+# Build-only; never submit to App Store from this workflow.
+# Requires owner's Expo project, Apple Developer signing and EXPO_TOKEN.
+jobs:
+  ios-signed-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CI: '1'
+      EXPO_PUBLIC_SAUDI_API_URL: ${{ vars.GO_SAUDI_API_URL }}
+      EXPO_PUBLIC_SAUDI_STAGE: PRELAUNCH
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Verify owner Expo access and safe iOS identity
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${EXPO_TOKEN:-}" ]; then
+            echo "::error::Configure EXPO_TOKEN as a GitHub Actions secret."
+            exit 1
+          fi
+          node - <<'NODE'
+          const a=require('./app.json').expo;
+          const p=require('./eas.json');
+          if(a.ios?.bundleIdentifier!=='com.aasaa.gosaudi' ||
+             !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(a.extra?.eas?.projectId||'') ||
+             a.extra?.market?.paymentEnabled!==false ||
+             a.extra?.storeSubmissionApproved!==false ||
+             p.build?.production?.credentialsSource!=='remote' ||
+             p.build?.production?.ios?.simulator!==false ||
+             p.build?.production?.environment!=='production') {
+            throw Error('Owner EAS project, iOS identity or prelaunch release policy is not ready');
+          }
+          NODE
+      - run: npm ci --no-audit --no-fund
+      - name: Regenerate Saudi-only app icons and splash before EAS upload
+        run: npm run brand:saudi
+      - run: npm run test:saudi:mobile
+      - run: npm run test:saudi:release
+      - name: Validate dedicated Saudi production HTTPS backend
+        env:
+          EAS_BUILD_PROFILE: production
+        run: npm run eas-build-post-install
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: 27.5.0
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build signed iOS app with owner's Apple credentials
+        run: |
+          set -euo pipefail
+          eas build --platform ios --profile production --non-interactive --wait
+          echo "Signed iOS build completed in owner's Expo account. No App Store submission performed." >> "$GITHUB_STEP_SUMMARY"

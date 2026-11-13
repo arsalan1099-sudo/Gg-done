@@ -3,7 +3,11 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#064c39">
-  <meta name="description" content="Go Saudi — a Saudi-first local marketplace for shops and communities. Seller enquiries open during prelaunch.">
+  <meta name="description" content="Go Saudi — discover planned local shopping categories and Saudi cities. Arabic and English marketplace preview; transactions are not yet available.">
+  <meta property="og:title" content="Go Saudi | Your city. Your marketplace.">
+  <meta property="og:description" content="Saudi-first shopping and seller marketplace preview — Arabic & English. Coming soon.">
+  <meta property="og:type" content="website">
+  <meta name="color-scheme" content="light">
   <title>Go Saudi | جو سعودي — تسوق محلياً</title>
   <style>
     :root{--green:#08543e;--deep:#06382e;--mint:#e6f4ee;--gold:#d5b878;--ink:#132d27;--gray:#63716b;--white:#fff;--radius:22px}
@@ -59,12 +63,142 @@
     footer small{color:#b0c9ba}
     @media(max-width:900px){.hero-inner{grid-template-columns:1fr;padding-top:58px;padding-bottom:48px}.showcase{display:none}.seller-layout{grid-template-columns:1fr}.links{display:none}}
     @media(max-width:640px){.nav{min-height:67px}.nav-actions .btn{padding:10px 13px;font-size:12px}.brand{font-size:19px}.logo{width:37px;height:37px}.lang{padding:9px 10px}.hero-inner{min-height:420px}.hero p{font-size:16px}.cat-grid{grid-template-columns:repeat(2,1fr);gap:10px}.feature-grid{grid-template-columns:1fr}.form-card{padding:21px}section{padding:48px 0}.footer-inner{flex-direction:column;align-items:flex-start}}
+
+    /* Saudi-first marketplace website • self-contained for resilient Android/mobile browsing */
+    :root{--jade:#074e3c;--forest:#053428;--cream:#f8faf6;--sun:#ecc778;--ink2:#18372e}
+    body{background:#f8faf7;-webkit-font-smoothing:antialiased}
+    a,button,input,select{touch-action:manipulation}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #b3923c;outline-offset:3px}
+    .announcement{background:#062e26;color:#e5f5ea;border-bottom:1px solid #ffffff1c;font-size:12px;font-weight:700;letter-spacing:.2px}
+    .announcement .container{min-height:38px;display:flex;align-items:center;justify-content:center;gap:13px;text-align:center}
+    .announcement .pulse{width:7px;height:7px;background:#eac77a;border-radius:50%;box-shadow:0 0 0 5px #eac77a21}
+    .announcement a{color:#eccc7e;text-decoration:underline;text-underline-offset:3px}
+    header{background:#ffffffed;backdrop-filter:blur(16px);box-shadow:0 8px 34px #1f45370a}
+    .nav{min-height:80px}
+    .brand{font-size:21px;font-weight:950;gap:10px;letter-spacing:-.6px}
+    .logo{font-size:15px;letter-spacing:-1.3px;width:44px;height:44px;border:1px solid #d5b878;background:linear-gradient(145deg,#075c48,#06342c);color:#f4d890;box-shadow:0 5px 14px #072d2935}
+    .links{gap:26px}
+    .links a:hover{color:#087b57}
+    .links a{transition:color .2s}
+    .btn-primary{background:#067858;box-shadow:0 8px 19px #0678581a}
+    .btn-primary:hover{background:#046b4c}
+    .lang{min-width:94px}
+    .hero{background:radial-gradient(circle at 16% 2%,#1a7458a8 0,transparent 38%),radial-gradient(circle at 88% 95%,#146b55be 0,transparent 38%),linear-gradient(120deg,#03271f,#074e3b 76%,#043e30)}
+    .hero:after{left:auto;right:-120px;top:-30px;opacity:.45}
+    .hero-inner{min-height:535px;padding-top:70px;padding-bottom:100px;grid-template-columns:1.13fr .87fr}
+    .hero .eyebrow{font-size:11px;letter-spacing:1.3px;background:#ffffff0f;color:#e8d09a}
+    .hero h1{font-size:clamp(42px,5.2vw,73px);letter-spacing:-1.4px;max-width:730px;line-height:1.13}
+    .hero-ctas .btn-primary{background:#ecd192;color:#082f26;box-shadow:0 12px 28px #0000001a}
+    .hero-ctas .btn-primary:hover{background:#f5dc9d}
+    .hero-subline{display:flex;gap:13px;align-items:center;flex-wrap:wrap;margin-top:29px;color:#d4eadd;font-size:12px;font-weight:700}
+    .hero-subline span{display:inline-flex;gap:7px;align-items:center}
+    .hero-subline i{font-style:normal;color:#e9c779}
+    .showcase{padding:12px}
+    .phone{max-width:329px;transform:rotate(-5deg);border:9px solid #214b3e;box-shadow:0 30px 95px #001d1780}
+    .phone-top{background:linear-gradient(135deg,#086b4f,#074433)}
+    .tile{box-shadow:0 5px 12px #073b2610}
+    .floating-tag{position:absolute;top:58px;right:-2px;background:#fff;color:#154938;padding:12px 19px;border-radius:16px;box-shadow:0 13px 40px #001d1754;font-size:12px;font-weight:850;transform:rotate(5deg);z-index:3}
+    .floating-tag span{display:block;color:#6c8979;font-size:10px;margin-top:4px}
+    .floating-tag2{position:absolute;bottom:35px;left:-22px;background:#e9d092;color:#193c2f;padding:11px 17px;border-radius:13px;box-shadow:0 12px 40px #001d1742;font-size:12px;font-weight:850;transform:rotate(-3deg);z-index:3}
+    .market-search-wrap{position:relative;margin-top:-54px;z-index:4}
+    .market-search{display:grid;grid-template-columns:1.35fr .7fr auto;gap:13px;align-items:end;background:#fff;border:1px solid #e2e9e1;border-radius:24px;padding:23px;box-shadow:0 23px 70px #102e251b}
+    .market-search label{display:block;color:#24473b;font-size:12px;font-weight:850;margin-bottom:9px}
+    .market-search input,.market-search select{background:#f8fbf8}
+    .market-search .btn{min-height:47px;padding:12px 23px}
+    .search-status{min-height:22px;margin-top:12px;font-size:12px;color:#64796e;font-weight:600}
+    .trust-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;align-items:center;text-align:center;padding-top:36px;padding-bottom:2px}
+    .trust-stat{border-left:1px solid #dce9df}
+    .trust-stat:last-child{border-left:none}
+    .trust-stat strong{display:block;color:#075840;font-size:23px;font-weight:950}
+    .trust-stat small{display:block;color:#71867b;font-size:12px;margin-top:5px}
+    .notice{margin-top:33px}
+    section{scroll-margin-top:100px}
+    .cat-grid{gap:15px}
+    .category{min-height:150px;text-align:start;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;border-radius:23px;padding:22px;background:linear-gradient(150deg,#fff,#fafcf9);transition:transform .2s,box-shadow .2s}
+    .category:hover{transform:translateY(-5px);box-shadow:0 15px 39px #092e2114}
+    .category .emoji{display:grid;place-items:center;border-radius:15px;background:#f2f7f0;width:53px;height:53px;margin-bottom:12px;font-size:28px}
+    .category strong{font-size:16px}
+    .category::after{content:"↗";font-size:20px;color:#b4c4b7;position:absolute;top:22px;right:23px}
+    .category{position:relative}
+    html[dir="rtl"] .category::after{right:auto;left:23px}
+    .category[hidden]{display:none}
+    .cities-section{background:#f2f7f2}
+    .city-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+    .city-card{border:1px solid #e4ede5;min-height:163px;background:#fff;border-radius:21px;display:flex;flex-direction:column;text-align:start;align-items:flex-start;justify-content:space-between;padding:23px;transition:transform .2s,box-shadow .2s}
+    .city-card:hover{transform:translateY(-3px);box-shadow:0 12px 25px #103c2214}
+    .city-card .city-symbol{display:grid;place-items:center;background:#eaf5ec;color:#075943;width:45px;height:45px;border-radius:13px;font-size:24px}
+    .city-card strong{font-size:17px;color:#143c30}
+    .city-card small{font-size:12px;color:#758c7a}
+    .cities-note{color:#6b806f;font-size:12px;margin-top:16px}
+    .feature{border-radius:22px;padding:29px}
+    .feature i{background:#e7f4ed;width:55px;height:55px;border-radius:16px;display:grid;place-items:center}
+    .site-flow{background:#07382d;color:#fff;overflow:hidden}
+    .site-flow .section-title{color:#fff}
+    .site-flow .subtitle{color:#d6e7dd}
+    .flow-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .flow-card{padding:30px;border-radius:22px;background:#ffffff0d;border:1px solid #ffffff26}
+    .flow-card .flow-num{font-size:33px;color:#e7c77d;font-weight:900}
+    .flow-card h3{font-size:19px;margin:15px 0 7px}
+    .flow-card p{font-size:14px;line-height:1.8;color:#d3e5dd;margin:0}
+    .faq-section{background:#fff}
+    .faq-grid{max-width:870px;margin:auto}
+    .faq-grid details{padding:20px 23px;border:1px solid #e1eae2;border-radius:16px;margin-bottom:12px;background:#fbfdfb}
+    .faq-grid summary{font-weight:850;font-size:16px;color:#184736;cursor:pointer}
+    .faq-grid p{color:#657c6e;line-height:1.9;font-size:14px;margin-bottom:0}
+    .seller-layout .form-card{border-radius:26px}
+    .pricing{background:linear-gradient(125deg,#054b3b,#053025)}
+    .saas-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:23px auto 18px;max-width:1010px;text-align:start}
+    .saas-plan{padding:18px 15px;border-radius:16px;background:#fff;color:#103d30;border:1px solid #d8e9de}
+    .saas-plan h3{font-size:17px;margin:0 0 9px;color:#0c4432}
+    .saas-plan strong{display:block;font-size:27px;letter-spacing:-.6px}
+    .saas-plan small{display:block;color:#466354;margin:6px 0 11px;font-size:12px}
+    .pricing .saas-plan p{font-size:12px;color:#365548;margin:0;line-height:1.55}
+    @media(max-width:760px){.saas-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:420px){.saas-grid{grid-template-columns:1fr}}
+    footer{padding:43px 0}
+    .footer-inner{flex-wrap:wrap}
+    .footer-mini-nav{display:flex;gap:17px;font-weight:700;flex-wrap:wrap}
+    .footer-mini-nav a{color:#e1e9d9}
+    .footer-mini-nav a:hover{text-decoration:underline}
+    .mobile-dock{display:none}
+    @media(max-width:1020px){.city-grid{grid-template-columns:repeat(3,1fr)}.floating-tag{right:0}.floating-tag2{left:0}}
+    @media(max-width:900px){.hero-inner{min-height:440px;padding-top:65px;padding-bottom:105px;grid-template-columns:1fr}.showcase{display:none}.market-search{grid-template-columns:1fr 1fr}.market-search button{grid-column:1/-1}.trust-row{gap:10px}.flow-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:640px){body{padding-bottom:65px}.announcement .container{font-size:10px;min-height:35px}.nav{min-height:69px}.brand{font-size:18px}.logo{width:39px;height:39px}.hero-inner{min-height:480px;padding-top:52px;padding-bottom:87px}.hero h1{font-size:clamp(35px,10vw,47px);max-width:420px}.hero p{font-size:15px;line-height:1.8}.hero-subline{font-size:11px;gap:10px}.market-search-wrap{margin-top:-44px}.market-search{border-radius:20px;padding:16px;grid-template-columns:1fr}.market-search button{grid-column:auto}.trust-row{grid-template-columns:repeat(2,1fr);gap:23px;padding-top:29px}.trust-stat:nth-child(2){border:none}.cat-grid{grid-template-columns:repeat(2,1fr);gap:10px}.category{min-height:138px;border-radius:18px;padding:17px}.category .emoji{width:45px;height:45px;font-size:24px}.category strong{font-size:14px}.city-grid{grid-template-columns:repeat(2,1fr);gap:10px}.city-card{min-height:145px;padding:17px}.flow-grid{grid-template-columns:1fr}.mobile-dock{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;align-items:center;z-index:40;background:#ffffffed;backdrop-filter:blur(18px);height:65px;border-top:1px solid #dbe8dc}.mobile-dock a{font-size:10px;text-align:center;font-weight:750;color:#346451;display:flex;flex-direction:column;gap:3px;align-items:center}.mobile-dock b{font-size:21px;font-weight:400}.nav-actions .btn{font-size:11px}.footer-inner{gap:18px}.footer-mini-nav{width:100%}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+    /* Shopper-first discovery preview; no fabricated inventory or urgency */
+    .discovery-zone{padding:68px 0 45px;background:linear-gradient(180deg,#f3faf5,#fff)}
+    .discovery-picks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-top:23px}
+    .discovery-pick{min-height:222px;padding:23px;border:1px solid #ffffff75;border-radius:24px;color:#fff;text-align:start;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;box-shadow:0 10px 30px #13362b17;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+    .discovery-pick:hover{transform:translateY(-4px);box-shadow:0 17px 35px #13362b27}
+    .discovery-pick:after{content:"";position:absolute;inset:auto -42px -75px auto;width:160px;height:160px;border:1px solid #ffffff55;box-shadow:0 0 0 30px #ffffff12,0 0 0 60px #ffffff0a;border-radius:50%;pointer-events:none}
+    .discovery-pick .pick-emoji{font-size:33px;border-radius:16px;background:#ffffff25;padding:10px}
+    .discovery-pick h3{margin:12px 0 6px;font-size:clamp(19px,2vw,25px);line-height:1.2}
+    .discovery-pick p{font-size:13px;color:#f0f8f3;line-height:1.6;margin:0}
+    .discovery-pick small{margin-top:8px;background:#ffffff24;border-radius:30px;padding:6px 12px;font-size:11px;font-weight:800}
+    .pick-daily{background:linear-gradient(140deg,#0b805d,#054936)}.pick-style{background:linear-gradient(140deg,#b65e72,#723247)}
+    .pick-home{background:linear-gradient(140deg,#bc8551,#78482c)}.pick-tech{background:linear-gradient(140deg,#476eaa,#293d77)}
+    .discovery-note{font-size:12px;color:#677d6c;line-height:1.7;margin:16px 0 0}
+    .favorites-hint{display:inline-block;margin:0 0 18px;background:#eaf6ec;border-radius:40px;padding:9px 14px;color:#0a714f;font-size:12px;font-weight:800}
+    .category[aria-pressed="true"]{border-color:#0c8762;box-shadow:0 0 0 2px #08805c35}
+    .category.is-saved:before{content:"♥";position:absolute;right:24px;bottom:22px;color:#bf476b}
+    html[dir="rtl"] .category.is-saved:before{right:auto;left:24px}
+    .category-spotlight{margin-top:22px;border:1px solid #cde7d8;background:linear-gradient(110deg,#f0f9f2,#fff);border-radius:24px;padding:26px;display:flex;align-items:flex-start;gap:20px}
+    .category-spotlight[hidden]{display:none}.spotlight-emoji{min-width:66px;height:66px;display:grid;place-items:center;background:#dcefe3;border-radius:18px;font-size:34px}
+    .spotlight-content{flex:1;min-width:0}.spotlight-content h3{font-size:24px;color:#0a5339;margin:6px 0 8px}
+    .spotlight-content p{font-size:13px;line-height:1.75;color:#536c5c;margin:0}.spotlight-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+    .spotlight-actions .btn{padding:11px 15px;font-size:13px}
+    .saved-btn[aria-pressed="true"]{background:#fff5f8;color:#af3e64;border-color:#dc9bae}
+    @media(max-width:850px){.discovery-picks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:640px){.discovery-zone{padding:44px 0 27px}.discovery-picks{gap:10px}.discovery-pick{padding:17px;min-height:198px;border-radius:18px}.discovery-pick h3{font-size:19px}.discovery-pick .pick-emoji{font-size:27px}.category-spotlight{padding:16px;gap:12px}.spotlight-emoji{min-width:48px;height:48px;font-size:26px}.spotlight-content h3{font-size:20px}}
+    @media(max-width:380px){.discovery-picks{grid-template-columns:1fr}.discovery-pick{min-height:155px}}
+    @media(prefers-reduced-motion:reduce){.discovery-pick{transition:none}}
   </style>
 </head>
 <body>
+  <div class="announcement"><div class="container"><span class="pulse" aria-hidden="true"></span><span data-i18n="announcement">🇸🇦 جو سعودي — تجربة أولية لأسواق المملكة · الطلبات والمدفوعات لم تُفعّل بعد</span><a href="#sell" data-i18n="announcementLink">للتجار</a></div></div>
   <header><div class="container nav">
-    <a class="brand" href="/" aria-label="Go Saudi home"><span class="logo">✦</span> GO SAUDI</a>
-    <nav class="links" aria-label="Main navigation"><a href="#categories" data-i18n="navShop">التسوق</a><a href="#benefits" data-i18n="navFeatures">المميزات</a><a href="#sell" data-i18n="navSell">للتجار</a><a href="/vendor" data-i18n="vendorPanel">لوحة التاجر</a></nav>
+    <a class="brand" href="/" aria-label="Go Saudi home"><span class="logo" aria-hidden="true">GS</span> GO SAUDI</a>
+    <nav class="links" aria-label="Main navigation"><a href="#categories" data-i18n="navShop">التسوق</a><a href="#cities" data-i18n="navCities">المدن</a><a href="#benefits" data-i18n="navFeatures">المميزات</a><a href="#sell" data-i18n="navSell">للتجار</a><a href="/vendor" data-i18n="vendorPanel">لوحة التاجر</a></nav>
     <div class="nav-actions"><button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button><a class="btn btn-primary" href="#sell" data-i18n="join">سجّل متجرك</a></div>
   </div></header>
   <main>
@@ -72,18 +206,47 @@
     <div><span class="eyebrow" data-i18n="prelaunch">🇸🇦 منصة سعودية · التسجيل الأولي</span>
       <h1 data-i18n="headline">مدينتك، متاجرك،<br> في مكان واحد</h1>
       <p data-i18n="heroDesc">جو سعودي يجمع المتاجر المحلية مع مجتمعها. اكتشف ما يقدمه التجار في مدينتك، وسجّل اهتمامك بفتح متجرك الإلكتروني.</p>
-      <div class="hero-ctas"><a class="btn btn-primary" href="#sell" data-i18n="startSelling">انضم كتاجر</a><a class="btn btn-light" href="#categories" data-i18n="browse">تصفح الفئات</a></div>
+      <div class="hero-ctas"><a class="btn btn-primary" href="#shop-ideas" data-i18n="browse">تصفح الفئات</a><a class="btn btn-light" href="#sell" data-i18n="startSelling">انضم كتاجر</a></div><div class="hero-subline"><span><i>◆</i><span data-i18n="heroChip1">صُمّم للسوق السعودي</span></span><span><i>◆</i><span data-i18n="heroChip2">عربي + English</span></span><span><i>◆</i><span data-i18n="heroChip3">الأسعار بالريال السعودي</span></span></div>
     </div>
-    <div class="showcase"><div class="phone">
+    <div class="showcase"><div class="floating-tag" data-i18n="floatTag">🇸🇦 سعودي أولاً</div><div class="floating-tag2" data-i18n="floatTag2">✦ الأسواق المحلية</div><div class="phone">
       <div class="phone-top"><div class="phone-bar"><b>GO SAUDI</b><span>🇸🇦 SAR</span></div><h2 data-i18n="phoneTitle">تسوق من مدينتك</h2><div class="phone-search" data-i18n="phoneSearch">🔎 ابحث عن المنتجات والمتاجر</div></div>
       <div class="tiles"><div class="tile"><span>🛍️</span><span data-i18n="fashion">الأزياء</span></div><div class="tile"><span>🥘</span><span data-i18n="food">الطعام</span></div><div class="tile"><span>🛒</span><span data-i18n="grocery">البقالة</span></div><div class="tile"><span>📱</span><span data-i18n="electronics">الإلكترونيات</span></div></div>
       <div class="phone-bottom" data-i18n="prototype">تصور أولي · الخدمات قيد الإطلاق</div>
     </div></div>
   </div></div>
+
+  <div class="container market-search-wrap" id="explore">
+    <form class="market-search" id="siteSearch" role="search">
+      <div><label for="searchInput" data-i18n="searchLabel">اكتشف الفئات</label><input type="search" id="searchInput" maxlength="80" autocomplete="off" data-i18n-placeholder="searchPlaceholder" placeholder="ابحث عن فئة مثل الأزياء، البقالة..." aria-describedby="searchStatus"></div>
+      <div><label for="searchCity" data-i18n="searchCityLabel">المدينة</label><select id="searchCity"><option value="all" data-i18n="allCities">جميع المدن (قريباً)</option><option value="Riyadh">Riyadh · الرياض</option><option value="Jeddah">Jeddah · جدة</option><option value="Makkah">Makkah · مكة</option><option value="Madinah">Madinah · المدينة</option><option value="Dammam">Dammam · الدمام</option></select></div>
+      <button class="btn btn-primary" type="submit" data-i18n="searchButton">استكشف الفئات ↗</button>
+    </form>
+    <div class="search-status" id="searchStatus" aria-live="polite" data-i18n="searchNote">معاينة للفئات المخطط لها فقط — البحث عن متاجر حقيقية متاح بعد الإطلاق.</div>
+    <div class="trust-row" aria-label="Go Saudi marketplace preview">
+      <div class="trust-stat"><strong>🇸🇦</strong><small data-i18n="trust1">تركيز سعودي</small></div>
+      <div class="trust-stat"><strong>8</strong><small data-i18n="trust2">فئات مخططة</small></div>
+      <div class="trust-stat"><strong>SAR</strong><small data-i18n="trust3">العملة السعودية</small></div>
+      <div class="trust-stat"><strong>AR / EN</strong><small data-i18n="trust4">لغتان</small></div>
+    </div>
+  </div>
   <div class="container"><div class="notice" role="note" data-i18n="notice">مرحلة ما قبل الإطلاق: لا نقبل أي مدفوعات أو طلبات شراء حالياً. التسجيل لإبداء الاهتمام فقط.</div></div>
+
+  <section class="discovery-zone" id="shop-ideas"><div class="container">
+    <div class="section-kicker" data-i18n="discoveryKicker">اكتشف ما يناسبك</div>
+    <h2 class="section-title" data-i18n="discoveryTitle">أفكار تسوق على ذوقك</h2>
+    <p class="subtitle" data-i18n="discoverySubtitle">اختر اهتمامك لتصفح الفئات المخطط لها. لا توجد متاجر أو منتجات حية بعد.</p>
+    <div class="discovery-picks">
+      <button class="discovery-pick pick-daily" type="button" data-discover="Grocery"><span class="pick-emoji" aria-hidden="true">🛒</span><span><h3 data-i18n="pickDaily">أساسيات كل يوم</h3><p data-i18n="pickDailyDesc">البقالة واحتياجاتك اليومية</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
+      <button class="discovery-pick pick-style" type="button" data-discover="Fashion"><span class="pick-emoji" aria-hidden="true">✨</span><span><h3 data-i18n="pickStyle">إطلالة على ذوقك</h3><p data-i18n="pickStyleDesc">اكتشف فئة الأزياء القادمة</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
+      <button class="discovery-pick pick-home" type="button" data-discover="Home"><span class="pick-emoji" aria-hidden="true">🏡</span><span><h3 data-i18n="pickHome">بيت على ذوقك</h3><p data-i18n="pickHomeDesc">أفكار لمستلزمات المنزل</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
+      <button class="discovery-pick pick-tech" type="button" data-discover="Electronics"><span class="pick-emoji" aria-hidden="true">📱</span><span><h3 data-i18n="pickTech">تقنية تناسبك</h3><p data-i18n="pickTechDesc">اكتشف فئة الأجهزة والإلكترونيات</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
+    </div>
+    <p class="discovery-note" data-i18n="discoveryDisclosure">هذه أفكار للتصفح فقط، وليست منتجات حقيقية أو عروضاً أو خصومات نشطة.</p>
+  </div></section>
   <section id="categories"><div class="container">
     <div class="section-kicker" data-i18n="discover">اكتشف المزيد</div><h2 class="section-title" data-i18n="categoriesTitle">فئات التسوق</h2>
-    <p class="subtitle" data-i18n="categoriesDesc">الفئات المخطط لها في سوق جو سعودي. اضغط على فئة لتقديم طلب تاجر.</p>
+    <p class="subtitle" data-i18n="categoriesDesc">اختر فئة لمعاينة التسوق وحفظ اهتماماتك على هذا الجهاز. لا توجد منتجات حية بعد.</p>
+    <div class="favorites-hint" id="favoritesHint" role="status" aria-live="polite">♡ 0 فئات محفوظة</div>
     <div class="cat-grid" id="categoryGrid">
       <button class="category" type="button" data-category="Grocery"><span class="emoji">🛒</span><strong data-i18n="grocery">البقالة</strong></button>
       <button class="category" type="button" data-category="Fashion"><span class="emoji">👗</span><strong data-i18n="fashion">الأزياء</strong></button>
@@ -94,6 +257,26 @@
       <button class="category" type="button" data-category="Services"><span class="emoji">🧰</span><strong data-i18n="services">الخدمات</strong></button>
       <button class="category" type="button" data-category="Wholesale"><span class="emoji">📦</span><strong data-i18n="wholesale">الجملة</strong></button>
     </div>
+    <div class="category-spotlight" id="categorySpotlight" hidden role="region" aria-label="Category preview">
+      <span class="spotlight-emoji" id="spotlightEmoji" aria-hidden="true">🛍️</span>
+      <div class="spotlight-content"><div class="section-kicker" data-i18n="spotlightKicker">معاينة الفئة</div>
+        <h3 id="spotlightTitle">فئة التسوق</h3><p id="spotlightDescription">ستظهر المنتجات بعد الإطلاق الرسمي.</p>
+        <div class="spotlight-actions"><button type="button" id="saveCategory" class="btn btn-outline saved-btn" aria-pressed="false">♡ حفظ الاهتمام</button><a href="#cities" class="btn btn-outline" data-i18n="spotlightCity">استكشف المدن</a></div>
+      </div>
+    </div>
+  </div></section>
+
+  <section id="cities" class="cities-section"><div class="container">
+    <div class="section-kicker" data-i18n="citiesKicker">مدننا</div><h2 class="section-title" data-i18n="citiesTitle">سوق محلي لمدينتك</h2>
+    <p class="subtitle" data-i18n="citiesIntro">نخطط لإتاحة اكتشاف المتاجر حسب المدينة، بدءاً من هذه المدن. لا توجد قوائم متاجر حية بعد.</p>
+    <div class="city-grid">
+      <button type="button" class="city-card" data-city="Riyadh"><span class="city-symbol">🏙️</span><strong>الرياض · Riyadh</strong><small data-i18n="citySoon">قريباً</small></button>
+      <button type="button" class="city-card" data-city="Jeddah"><span class="city-symbol">🌊</span><strong>جدة · Jeddah</strong><small data-i18n="citySoon">قريباً</small></button>
+      <button type="button" class="city-card" data-city="Makkah"><span class="city-symbol">☀️</span><strong>مكة · Makkah</strong><small data-i18n="citySoon">قريباً</small></button>
+      <button type="button" class="city-card" data-city="Madinah"><span class="city-symbol">🌿</span><strong>المدينة · Madinah</strong><small data-i18n="citySoon">قريباً</small></button>
+      <button type="button" class="city-card" data-city="Dammam"><span class="city-symbol">⚓</span><strong>الدمام · Dammam</strong><small data-i18n="citySoon">قريباً</small></button>
+    </div>
+    <p class="cities-note" data-i18n="citiesFootnote">المدن المذكورة خطة للتوسع وليست دليلاً على وجود تجار موثقين حالياً.</p>
   </div></section>
   <section class="features" id="benefits"><div class="container">
     <div class="section-kicker" data-i18n="why">لماذا جو سعودي؟</div><h2 class="section-title" data-i18n="benefitsTitle">بُني للأعمال المحلية</h2>
@@ -101,6 +284,17 @@
       <div class="feature"><i>🏬</i><h3 data-i18n="feature1Title">متجرك الرقمي</h3><p data-i18n="feature1Desc">أنشئ حضوراً رقمياً لنشاطك وعرض المنتجات بعد اعتماد المتجر وإطلاق الخدمة.</p></div>
       <div class="feature"><i>📍</i><h3 data-i18n="feature2Title">متاجر قريبة منك</h3><p data-i18n="feature2Desc">اكتشاف المتاجر حسب المدينة والمنطقة، بدءاً من الأسواق السعودية.</p></div>
       <div class="feature"><i>🛡️</i><h3 data-i18n="feature3Title">التحقق أولاً</h3><p data-i18n="feature3Desc">لن تبدأ عمليات الدفع قبل التحقق التجاري وتفعيل بوابة دفع مناسبة.</p></div>
+    </div>
+  </div></section>
+
+  <section class="site-flow" id="how"><div class="container">
+    <div class="section-kicker" style="color:#dfc589" data-i18n="howKicker">كيف تعمل المنصة؟</div>
+    <h2 class="section-title" data-i18n="howTitle">مكان واحد للتسوق المحلي</h2>
+    <p class="subtitle" data-i18n="howIntro">تجربة مصممة لتكون بسيطة وواضحة — وظائف البيع والطلب ستُفعّل بعد التحقق الرسمي.</p>
+    <div class="flow-grid">
+      <div class="flow-card"><span class="flow-num">01</span><h3 data-i18n="flow1Title">استكشف</h3><p data-i18n="flow1Desc">تصفح الفئات والمدن المخطط لها واكتشف ما سيأتي.</p></div>
+      <div class="flow-card"><span class="flow-num">02</span><h3 data-i18n="flow2Title">انضم كتاجر</h3><p data-i18n="flow2Desc">ستفتح طلبات التجار بعد اكتمال متطلبات الخصوصية والتحقق.</p></div>
+      <div class="flow-card"><span class="flow-num">03</span><h3 data-i18n="flow3Title">انطلق بأمان</h3><p data-i18n="flow3Desc">الطلبات والمدفوعات ستُتاح بعد تفعيل بوابات الدفع والعمليات الموثوقة.</p></div>
     </div>
   </div></section>
   <section id="sell"><div class="container seller-layout">
@@ -111,7 +305,7 @@
         <div class="step"><span class="num">2</span><span data-i18n="step2">يراجع الفريق طلبك ويتواصل معك بعد توفر الخدمة.</span></div>
         <div class="step"><span class="num">3</span><span data-i18n="step3">يتم التحقق من المستندات والشروط قبل البيع.</span></div>
       </div>
-      <div class="notice" data-i18n="sellerNotice">التقديم مجاني، وليس اشتراكاً مدفوعاً. الأسعار والعمولات النهائية لم تُعتمد.</div>
+      <div class="notice" data-i18n="sellerNotice">عمولة مبيعات التجار 0%. تسجيل التجار والمدفوعات غير متاحين حالياً.</div>
     </div>
     <div class="form-card">
       <h3 data-i18n="formTitle">إبداء اهتمام تاجر</h3><p data-i18n="formDesc">يرجى إدخال بيانات صحيحة. لا ترسل كلمات المرور أو بيانات البطاقة.</p>
@@ -127,12 +321,30 @@
     </div>
   </div></section>
   <section style="padding-top:0"><div class="container"><div class="pricing">
-    <div class="section-kicker" style="color:#d8bc83" data-i18n="planKicker">للتجار</div><h2 data-i18n="planTitle">الأسعار ستُعلن لاحقاً</h2>
-    <p data-i18n="planDesc">العضوية السنوية، العمولات وأي مدفوعات ستُحدَّد بعد مراجعة الشروط والامتثال. التسجيل الحالي مجاني.</p>
-    <a href="#sell" class="btn btn-light" data-i18n="joinWaitlist">سجّل اهتمامك</a>
+    <div class="section-kicker" style="color:#d8bc83" data-i18n="planKicker">للتجار · أدوات الذكاء الاصطناعي قريباً</div><h2 data-i18n="planTitle">عمولة مبيعات 0% · أدوات أعمال اختيارية</h2>
+    <p data-i18n="planDesc">عمولة المنصة على مبيعات التجار 0%. باقات أدوات الذكاء الاصطناعي أدناه أسعار مقترحة فقط، وليست متاحة للاشتراك أو الدفع حالياً.</p>
+    <div class="saas-grid" aria-label="Proposed AI SaaS plans, not available for purchase">
+      <div class="saas-plan"><h3 data-i18n="aiFree">مجاني</h3><strong>0 SAR</strong><small data-i18n="monthlyUnit">/ شهرياً · خطة مقترحة</small><p data-i18n="aiFreeDesc">واجهة متجر أساسية عند تفعيل التسجيل</p></div>
+      <div class="saas-plan"><h3 data-i18n="aiStarter">البداية</h3><strong>49 SAR</strong><small data-i18n="monthlyUnit">/ شهرياً · خطة مقترحة</small><p data-i18n="aiStarterDesc">صياغة وصف المنتجات بالعربية والإنجليزية عند الإطلاق</p></div>
+      <div class="saas-plan"><h3 data-i18n="aiGrowth">النمو</h3><strong>149 SAR</strong><small data-i18n="monthlyUnit">/ شهرياً · خطة مقترحة</small><p data-i18n="aiGrowthDesc">محتوى تسويقي وأفكار للحملات عند الإطلاق</p></div>
+      <div class="saas-plan"><h3 data-i18n="aiBusiness">الأعمال</h3><strong>299 SAR</strong><small data-i18n="monthlyUnit">/ شهرياً · خطة مقترحة</small><p data-i18n="aiBusinessDesc">أدوات إدارة الأعمال والتحليلات عند الإطلاق</p></div>
+    </div>
+    <p style="font-size:12px;margin-bottom:0" role="note" data-i18n="planAvailability">هذه معاينة عامة فقط. الاشتراكات المدفوعة وتسجيل التجار مغلقة حتى إتمام متطلبات التشغيل والامتثال.</p>
   </div></div></section>
+
+  <section class="faq-section" id="faq"><div class="container">
+    <div class="section-kicker" data-i18n="faqKicker" style="text-align:center">أسئلة شائعة</div>
+    <h2 class="section-title" style="text-align:center;margin-bottom:34px" data-i18n="faqTitle">كل ما تحتاج معرفته</h2>
+    <div class="faq-grid">
+      <details><summary data-i18n="faq1Q">هل يمكنني الطلب الآن؟</summary><p data-i18n="faq1A">ليس بعد. هذه معاينة للموقع، والشراء والدفع مغلقان حتى استكمال التحقق والتشغيل.</p></details>
+      <details><summary data-i18n="faq2Q">كيف أنضم كتاجر؟</summary><p data-i18n="faq2A">سيتم فتح التسجيل بعد اكتمال متطلبات الخصوصية والهوية التجارية. لا ترسل بيانات حساسة قبل ذلك.</p></details>
+      <details><summary data-i18n="faq3Q">هل يوجد تطبيق للجوال؟</summary><p data-i18n="faq3A">يوجد تطبيق Android تجريبي للاختبار، وليس إصداراً تجارياً في المتاجر الرسمية بعد.</p></details>
+      <details><summary data-i18n="faq4Q">هل الأسعار بالريال السعودي؟</summary><p data-i18n="faq4A">الريال السعودي هو العملة المستهدفة، لكن أسعار المنتجات الحقيقية لم تُنشر بعد.</p></details>
+    </div>
+  </div></section>
   </main>
-  <footer><div class="container footer-inner"><div class="brand" style="color:#fff"><span class="logo" style="background:#167657">✦</span> GO SAUDI</div><small data-i18n="footer">Go Saudi · مفهوم ما قبل الإطلاق · لا توجد مدفوعات مفعّلة</small><small>© 2026 AASAA · Go Saudi</small></div></footer>
+  <footer><div class="container footer-inner"><div class="brand" style="color:#fff"><span class="logo" style="background:#167657">GS</span> GO SAUDI</div><small data-i18n="footer">Go Saudi · مفهوم ما قبل الإطلاق · لا توجد مدفوعات مفعّلة</small><div class="footer-mini-nav"><a href="#categories" data-i18n="footerBrowse">الفئات</a><a href="#cities" data-i18n="footerCities">المدن</a><a href="#sell" data-i18n="footerSell">التجار</a><a href="/vendor" data-i18n="vendorPanel">لوحة التاجر</a><a href="/privacy">الخصوصية / Privacy</a></div><small>© 2026 AASAA · Go Saudi</small></div></footer>
+  <nav class="mobile-dock" aria-label="Mobile navigation"><a href="#explore"><b>⌕</b><span data-i18n="mobileDiscover">استكشف</span></a><a href="#categories"><b>▦</b><span data-i18n="mobileCategories">الفئات</span></a><a href="#cities"><b>⌖</b><span data-i18n="mobileCities">المدن</span></a><a href="#sell"><b>▤</b><span data-i18n="mobileSeller">التجار</span></a></nav>
   <script>
     const tr = {
       ar:{
@@ -142,19 +354,23 @@
         startSelling:"انضم كتاجر",browse:"تصفح الفئات",phoneTitle:"تسوق من مدينتك",phoneSearch:"🔎 ابحث عن المنتجات والمتاجر",
         grocery:"البقالة",fashion:"الأزياء",food:"الطعام",electronics:"الإلكترونيات",home:"المنزل",beauty:"الجمال",services:"الخدمات",wholesale:"الجملة",
         prototype:"تصور أولي · الخدمات قيد الإطلاق",notice:"مرحلة ما قبل الإطلاق: لا نقبل أي مدفوعات أو طلبات شراء حالياً. التسجيل لإبداء الاهتمام فقط.",
-        discover:"اكتشف المزيد",categoriesTitle:"فئات التسوق",categoriesDesc:"الفئات المخطط لها في سوق جو سعودي. اضغط على فئة لتقديم طلب تاجر.",
+        discover:"اكتشف المزيد",categoriesTitle:"فئات التسوق",categoriesDesc:"اختر فئة لمعاينة التسوق وحفظ اهتماماتك على هذا الجهاز. لا توجد منتجات حية بعد.",
         why:"لماذا جو سعودي؟",benefitsTitle:"بُني للأعمال المحلية",feature1Title:"متجرك الرقمي",feature1Desc:"أنشئ حضوراً رقمياً لنشاطك وعرض المنتجات بعد اعتماد المتجر وإطلاق الخدمة.",
         feature2Title:"متاجر قريبة منك",feature2Desc:"اكتشاف المتاجر حسب المدينة والمنطقة، بدءاً من الأسواق السعودية.",
         feature3Title:"التحقق أولاً",feature3Desc:"لن تبدأ عمليات الدفع قبل التحقق التجاري وتفعيل بوابة دفع مناسبة.",
         merchantKicker:"أصحاب المتاجر",sellerTitle:"خذ متجرك إلى الإنترنت",sellerDesc:"أرسل اهتمامك مجاناً لتكون من أوائل المتاجر التي نتواصل معها عند فتح التسجيل الرسمي.",
         step1:"املأ بيانات متجرك ورقم الجوال السعودي.",step2:"يراجع الفريق طلبك ويتواصل معك بعد توفر الخدمة.",step3:"يتم التحقق من المستندات والشروط قبل البيع.",
-        sellerNotice:"التقديم مجاني، وليس اشتراكاً مدفوعاً. الأسعار والعمولات النهائية لم تُعتمد.",
+        sellerNotice:"لن تُفرض عمولة على مبيعات التجار. تسجيل التجار والمدفوعات غير متاحين حالياً.",
         formTitle:"إبداء اهتمام تاجر",formDesc:"يرجى إدخال بيانات صحيحة. لا ترسل كلمات المرور أو بيانات البطاقة.",
         business:"اسم المتجر",city:"المدينة",category:"نوع النشاط",phone:"رقم الجوال السعودي",chooseCity:"اختر المدينة",chooseCategory:"اختر الفئة",
         consent:"أوافق على حفظ بيانات الطلب والتواصل معي بشأن انضمام المتجر. هذا ليس شراءً أو اشتراكاً.",
         submit:"إرسال الطلب مجاناً",sending:"جار الإرسال...", success:"تم استلام طلبك بنجاح. سنتواصل معك إذا توفرت الخدمة.",fail:"تعذر إرسال الطلب. يرجى المحاولة لاحقاً.",
-        invalid:"تأكد من بيانات المتجر والرقم السعودي والموافقة.",planKicker:"للتجار",planTitle:"الأسعار ستُعلن لاحقاً",
-        planDesc:"العضوية السنوية، العمولات وأي مدفوعات ستُحدَّد بعد مراجعة الشروط والامتثال. التسجيل الحالي مجاني.",
+        invalid:"تأكد من بيانات المتجر والرقم السعودي والموافقة.",planKicker:"للتجار · أدوات الذكاء الاصطناعي قريباً",planTitle:"عمولة مبيعات 0% · أدوات أعمال اختيارية",
+        planDesc:"عمولة المنصة على مبيعات التجار 0%. باقات أدوات الذكاء الاصطناعي أدناه أسعار مقترحة فقط، وليست متاحة للاشتراك أو الدفع حالياً.",
+        monthlyUnit:"/ شهرياً · خطة مقترحة",aiFree:"مجاني",aiStarter:"البداية",aiGrowth:"النمو",aiBusiness:"الأعمال",
+        aiFreeDesc:"واجهة متجر أساسية عند تفعيل التسجيل",aiStarterDesc:"صياغة وصف المنتجات بالعربية والإنجليزية عند الإطلاق",
+        aiGrowthDesc:"محتوى تسويقي وأفكار للحملات عند الإطلاق",aiBusinessDesc:"أدوات إدارة الأعمال والتحليلات عند الإطلاق",
+        planAvailability:"هذه معاينة عامة فقط. الاشتراكات المدفوعة وتسجيل التجار مغلقة حتى إتمام متطلبات التشغيل والامتثال.",
         joinWaitlist:"سجّل اهتمامك",footer:"Go Saudi · مفهوم ما قبل الإطلاق · لا توجد مدفوعات مفعّلة"
       },
       en:{
@@ -164,37 +380,148 @@
         startSelling:"Become a seller",browse:"Explore categories",phoneTitle:"Shop your city",phoneSearch:"🔎 Search products and stores",
         grocery:"Grocery",fashion:"Fashion",food:"Food",electronics:"Electronics",home:"Home",beauty:"Beauty",services:"Services",wholesale:"Wholesale",
         prototype:"Concept preview · services not live",notice:"Prelaunch: no purchases, checkout or payments are accepted. Registration is an interest enquiry only.",
-        discover:"Discover more",categoriesTitle:"Shopping categories",categoriesDesc:"Planned categories for the Go Saudi marketplace. Select one to register seller interest.",
+        discover:"Discover more",categoriesTitle:"Shopping categories",categoriesDesc:"Choose a category to preview shopping and save interests on this device. No products are live yet.",
         why:"Why Go Saudi?",benefitsTitle:"Designed for local business",feature1Title:"Your digital storefront",feature1Desc:"Build a digital presence and list products once approved and launched.",
         feature2Title:"Nearby shopping",feature2Desc:"Discover neighbourhood stores by Saudi city and region.",
         feature3Title:"Verification first",feature3Desc:"Payments stay off until business verification and local gateway setup.",
         merchantKicker:"For shop owners",sellerTitle:"Bring your store online",sellerDesc:"Send a free enquiry to be among the first contacted when official seller registration opens.",
         step1:"Tell us your shop details and Saudi mobile number.",step2:"Our team will review the enquiry and follow up when the service is available.",step3:"Business documents and terms must be checked before selling.",
-        sellerNotice:"Enquiries are free, not paid subscriptions. Final pricing and commissions are not yet approved.",
+        sellerNotice:"Go Saudi's marketplace model charges 0% sales commission. Merchant registration and payments are currently unavailable.",
         formTitle:"Seller interest form",formDesc:"Use accurate information. Never share passwords or bank-card details.",
         business:"Business name",city:"City",category:"Business category",phone:"Saudi mobile",chooseCity:"Select a city",chooseCategory:"Select a category",
         consent:"I consent to storing my enquiry details and being contacted about seller onboarding. This is not a purchase or subscription.",
         submit:"Send free enquiry",sending:"Submitting...",success:"Your enquiry has been submitted. We will contact you if the service becomes available.",
         fail:"Could not submit the enquiry. Please try later.",invalid:"Please check the business details, Saudi mobile and consent.",
-        planKicker:"For sellers",planTitle:"Membership pricing coming later",
-        planDesc:"Annual membership, commissions and payments will be determined after terms and compliance review. Enquiries are free.",
+        planKicker:"For sellers · AI tools coming soon",planTitle:"0% sales commission · Optional AI business tools",
+        planDesc:"Go Saudi plans to charge 0% commission on seller orders. AI tool tiers below are proposed prices, not active subscriptions or available purchases.",
+        monthlyUnit:"/ month · proposed",aiFree:"Free",aiStarter:"Starter",aiGrowth:"Growth",aiBusiness:"Business",
+        aiFreeDesc:"Basic storefront when onboarding opens",aiStarterDesc:"Arabic and English product content at launch",
+        aiGrowthDesc:"Marketing drafts and campaign ideas at launch",aiBusinessDesc:"Business tools and analytics at launch",
+        planAvailability:"Public preview only. Paid subscriptions and merchant registration remain closed until operational and compliance requirements are met.",
         joinWaitlist:"Register interest",footer:"Go Saudi · Prelaunch concept · No live payments"
       }
     };
+
+    Object.assign(tr.ar,{
+      announcement:"🇸🇦 جو سعودي · معاينة للسوق السعودي · الطلبات والمدفوعات غير متاحة بعد",announcementLink:"للتجار",navCities:"المدن",
+      heroChip1:"صُمّم للسوق السعودي",heroChip2:"عربي + English",heroChip3:"العملة: ريال سعودي",
+      floatTag:"🇸🇦 سعودي أولاً",floatTag2:"✦ أسواق مدينتك",
+      searchLabel:"ابحث في الفئات",searchCityLabel:"اختر المدينة",searchPlaceholder:"مثال: بقالة، أزياء، طعام...",allCities:"جميع المدن · قريباً",searchButton:"استكشف الفئات ↗",
+      searchNote:"استكشاف الفئات المخطط لها فقط — لا توجد منتجات أو متاجر حية حالياً.",
+      searchResult:"فئة مطابقة للبحث",searchNoResult:"لا توجد فئة مطابقة. جرب كلمة أخرى.",searchCityNote:"المدينة المختارة للمعاينة فقط، ولا توجد قوائم تجار حقيقية بعد.",
+      trust1:"مخصص للسعودية",trust2:"فئات مخططة",trust3:"بالريال السعودي",trust4:"العربية والإنجليزية",
+      citiesKicker:"المدن",citiesTitle:"سوق محلي لكل مدينة",citiesIntro:"نخطط لإتاحة استكشاف المتاجر حسب المدينة. جميع المدن في هذه المعاينة مخططة للمستقبل فقط.",citySoon:"قريباً",
+      citiesFootnote:"المدن المذكورة للتخطيط، وليست دليلاً على متاجر موثقة أو خدمات متاحة حالياً.",
+      howKicker:"كيف يعمل جو سعودي",howTitle:"مدينتك، كل ما تحتاجه",howIntro:"رحلة بسيطة لاستكشاف السوق المحلي؛ لن تتاح عمليات الشراء قبل التحقق.",
+      flow1Title:"استكشف الفئات",flow1Desc:"تصفح أنواع المتاجر والخدمات المخطط لها حسب المدينة.",
+      flow2Title:"انضم للتجار",flow2Desc:"ستتاح طلبات الانضمام بعد اعتماد شروط الخصوصية والتحقق التجاري.",
+      flow3Title:"انطلق بثقة",flow3Desc:"سيتم تفعيل الطلبات والمدفوعات بعد تجهيز بوابات الدفع والتشغيل.",
+      faqKicker:"أسئلة شائعة",faqTitle:"أسئلة قبل الإطلاق",
+      faq1Q:"هل يمكنني الشراء الآن؟",faq1A:"لا. الموقع في مرحلة المعاينة ولا يقبل الطلبات أو المدفوعات حالياً.",
+      faq2Q:"كيف أنضم كتاجر؟",faq2A:"سيُفتح التسجيل بعد إكمال التحقق والخصوصية. لا تشارك وثائق شخصية حساسة قبل ذلك.",
+      faq3Q:"هل يوجد تطبيق للهاتف؟",faq3A:"يوجد تطبيق Android تجريبي للاختبار، ولكنه ليس إصداراً تجارياً منشوراً في المتاجر.",
+      faq4Q:"هل العملة هي الريال السعودي؟",faq4A:"نعم، الريال السعودي هو العملة المستهدفة، ولا توجد أسعار منتجات حقيقية معروضة حالياً.",
+      footerBrowse:"الفئات",footerCities:"المدن",footerSell:"للتجار",mobileDiscover:"استكشف",mobileCategories:"الفئات",mobileCities:"المدن",mobileSeller:"تاجر"
+    });
+    Object.assign(tr.en,{
+      announcement:"🇸🇦 GO SAUDI · Saudi marketplace preview · Orders and payments are not live",announcementLink:"For sellers",navCities:"Cities",
+      heroChip1:"Saudi-first design",heroChip2:"Arabic + English",heroChip3:"Currency: SAR",
+      floatTag:"🇸🇦 Saudi first",floatTag2:"✦ Local marketplaces",
+      searchLabel:"Explore categories",searchCityLabel:"Choose a city",searchPlaceholder:"Try grocery, fashion, food...",allCities:"All cities · coming soon",searchButton:"Explore categories ↗",
+      searchNote:"Preview of planned categories only — no live products or stores are available yet.",
+      searchResult:"matching category",searchNoResult:"No matching category. Try another keyword.",searchCityNote:"The selected city is a preview only; real merchant listings are not live yet.",
+      trust1:"Saudi-focused",trust2:"Planned categories",trust3:"Saudi Riyal currency",trust4:"Arabic and English",
+      citiesKicker:"OUR CITIES",citiesTitle:"Built for your local city",citiesIntro:"Explore cities planned for the marketplace. These are future launch areas, not currently active merchants.",citySoon:"Coming soon",
+      citiesFootnote:"The named cities are expansion plans, not evidence of verified merchants or live services.",
+      howKicker:"HOW IT WORKS",howTitle:"Your city, your next marketplace",howIntro:"A simple journey to local discovery — purchases require launch approval and verification.",
+      flow1Title:"Explore categories",flow1Desc:"Browse the planned shop and service categories for Saudi cities.",
+      flow2Title:"Join as a seller",flow2Desc:"Merchant applications will open once privacy and business checks are completed.",
+      flow3Title:"Launch with confidence",flow3Desc:"Orders and payments will activate only after payment and operations are verified.",
+      faqKicker:"FAQs",faqTitle:"Questions before we launch",
+      faq1Q:"Can I order now?",faq1A:"Not yet. This website is a preview; orders and payments are currently disabled.",
+      faq2Q:"How do I register as a merchant?",faq2A:"Registration opens after privacy and business verification. Do not share sensitive documents yet.",
+      faq3Q:"Is there a mobile app?",faq3A:"An Android test build exists for evaluation, but it is not a public store release.",
+      faq4Q:"Is the currency Saudi Riyal?",faq4A:"SAR is the planned currency. No real product prices are currently published.",
+      footerBrowse:"Categories",footerCities:"Cities",footerSell:"For sellers",mobileDiscover:"Explore",mobileCategories:"Categories",mobileCities:"Cities",mobileSeller:"Seller"
+    });
+
+    Object.assign(tr.ar,{
+      discoveryKicker:"اختيارات تستحق الاكتشاف",discoveryTitle:"أفكار تسوق على ذوقك",
+      discoverySubtitle:"اختر اهتمامك لتصفح الفئات المخطط لها. لا توجد متاجر أو منتجات حية بعد.",
+      pickDaily:"أساسيات كل يوم",pickDailyDesc:"البقالة واحتياجاتك اليومية",pickStyle:"إطلالة على ذوقك",pickStyleDesc:"اكتشف فئة الأزياء القادمة",
+      pickHome:"بيت على ذوقك",pickHomeDesc:"أفكار لمستلزمات المنزل",pickTech:"تقنية تناسبك",pickTechDesc:"اكتشف فئة الأجهزة والإلكترونيات",
+      pickPreview:"معاينة الفئة · قريباً",discoveryDisclosure:"هذه أفكار للتصفح فقط، وليست منتجات حقيقية أو عروضاً أو خصومات نشطة.",
+      spotlightKicker:"معاينة الفئة",spotlightCity:"استكشف المدن",spotlightSave:"♡ حفظ الاهتمام",spotlightSaved:"♥ محفوظ",favoritesSuffix:"فئات محفوظة",favoritesSingular:"فئة محفوظة",
+      spotlightNotice:"قوائم التجار والمنتجات الحقيقية ستكون متاحة فقط بعد الإطلاق الرسمي. لا يوجد شراء أو دفع الآن."
+    });
+    Object.assign(tr.en,{
+      discoveryKicker:"MADE FOR YOUR DISCOVERY",discoveryTitle:"Explore what you love",
+      discoverySubtitle:"Choose an interest to explore planned categories. No real shops or products are live yet.",
+      pickDaily:"Everyday essentials",pickDailyDesc:"Grocery and daily needs",pickStyle:"Your kind of style",pickStyleDesc:"Preview the upcoming fashion category",
+      pickHome:"Make home yours",pickHomeDesc:"Explore the home essentials category",pickTech:"Smart tech picks",pickTechDesc:"Preview the electronics category",
+      pickPreview:"Preview category · coming soon",discoveryDisclosure:"These are browsing ideas, not live products, offers or discounts.",
+      spotlightKicker:"CATEGORY PREVIEW",spotlightCity:"Explore cities",spotlightSave:"♡ Save interest",spotlightSaved:"♥ Saved",favoritesSuffix:"saved categories",favoritesSingular:"saved category",
+      spotlightNotice:"Real merchant and product listings will only be available after launch. Purchases and payments are not enabled."
+    });
     let lang = localStorage.getItem("goSaudiLang") === "en" ? "en" : "ar";
     function renderLanguage(){
       document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
       document.getElementById("langBtn").textContent=lang==="ar"?"English":"العربية";
       document.querySelectorAll("[data-i18n]").forEach(el=>{const key=el.dataset.i18n;if(tr[lang][key])el.textContent=tr[lang][key]});
       document.getElementById("business").placeholder=lang==="ar"?"مثال: متجر الندى":"e.g. Al Nada Store";
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{const key=el.dataset.i18nPlaceholder;if(tr[lang][key])el.placeholder=tr[lang][key]});
+      renderSpotlight();renderFavoritesHint();
     }
+
+    // Preview-only shopper discovery. Saved categories stay on this device and are not sent to the server.
+    const previewCategories=["Grocery","Fashion","Food","Electronics","Home","Beauty","Services","Wholesale"];
+    const previewSymbols={Grocery:"🛒",Fashion:"👗",Food:"🥘",Electronics:"📱",Home:"🏡",Beauty:"🌷",Services:"🧰",Wholesale:"📦"};
+    const previewDetails={
+      ar:{Grocery:"استكشف فئة البقالة واحتياجاتك اليومية.",Fashion:"اكتشف فئة الأزياء والملابس.",Food:"استكشف فئة الطعام والمأكولات.",Electronics:"تصفح فئة الأجهزة والإلكترونيات.",Home:"استكشف مستلزمات البيت.",Beauty:"اكتشف فئة العناية والجمال.",Services:"استكشف الخدمات المحلية المخطط لها.",Wholesale:"استكشف فئة الجملة للأعمال."},
+      en:{Grocery:"Explore the grocery and everyday essentials category.",Fashion:"Discover the upcoming fashion and clothing category.",Food:"Explore food and dining categories.",Electronics:"Preview electronics and devices.",Home:"Explore home essentials.",Beauty:"Discover beauty and personal care categories.",Services:"Explore planned local service categories.",Wholesale:"Explore the wholesale category for businesses."}
+    };
+    const savedKey="goSaudiSavedInterestsV1";
+    let savedCategories=[];
+    try{const value=JSON.parse(localStorage.getItem(savedKey)||"[]");if(Array.isArray(value))savedCategories=[...new Set(value.filter(x=>previewCategories.includes(x)))].slice(0,8)}catch(_ignore){}
+    let activeCategory=null;
+    function renderFavoritesHint(){
+      document.getElementById("favoritesHint").textContent="♥ "+savedCategories.length+" "+(savedCategories.length===1?tr[lang].favoritesSingular:tr[lang].favoritesSuffix)+" · "+(lang==="ar"?"محفوظة على هذا الجهاز فقط":"only on this device");
+      document.querySelectorAll("#categoryGrid [data-category]").forEach(el=>el.classList.toggle("is-saved",savedCategories.includes(el.dataset.category)));
+    }
+    function renderSpotlight(){
+      const panel=document.getElementById("categorySpotlight");
+      panel.hidden=!activeCategory;
+      document.querySelectorAll("#categoryGrid [data-category]").forEach(el=>el.setAttribute("aria-pressed",String(el.dataset.category===activeCategory)));
+      if(!activeCategory)return;
+      document.getElementById("spotlightEmoji").textContent=previewSymbols[activeCategory];
+      document.getElementById("spotlightTitle").textContent=tr[lang][activeCategory.toLowerCase()]||activeCategory;
+      document.getElementById("spotlightDescription").textContent=previewDetails[lang][activeCategory]+" "+tr[lang].spotlightNotice;
+      const button=document.getElementById("saveCategory");
+      const saved=savedCategories.includes(activeCategory);
+      button.setAttribute("aria-pressed",String(saved));
+      button.textContent=saved?tr[lang].spotlightSaved:tr[lang].spotlightSave;
+    }
+    function openCategoryPreview(category){
+      if(!previewCategories.includes(category))return;
+      activeCategory=category;
+      document.getElementById("searchInput").value="";
+      document.querySelectorAll("#categoryGrid [data-category]").forEach(el=>el.hidden=false);
+      document.getElementById("searchStatus").textContent=tr[lang].searchNote;
+      renderSpotlight();
+      document.getElementById("categorySpotlight").scrollIntoView({behavior:"smooth",block:"center"});
+    }
+    document.getElementById("saveCategory").addEventListener("click",()=>{
+      if(!activeCategory)return;
+      if(savedCategories.includes(activeCategory))savedCategories=savedCategories.filter(x=>x!==activeCategory);
+      else savedCategories.push(activeCategory);
+      try{localStorage.setItem(savedKey,JSON.stringify(savedCategories))}catch(_ignore){}
+      renderSpotlight();renderFavoritesHint();
+    });
+    document.querySelectorAll("[data-discover]").forEach(el=>el.addEventListener("click",()=>openCategoryPreview(el.dataset.discover)));
     document.getElementById("langBtn").addEventListener("click",()=>{
       lang=lang==="ar"?"en":"ar";localStorage.setItem("goSaudiLang",lang);renderLanguage();
     });
-    document.querySelectorAll("[data-category]").forEach(el=>el.addEventListener("click",()=>{
-      document.getElementById("category").value=el.dataset.category;
-      document.getElementById("sell").scrollIntoView({behavior:"smooth"});
-    }));
+    document.querySelectorAll("#categoryGrid [data-category]").forEach(el=>el.addEventListener("click",()=>openCategoryPreview(el.dataset.category)));
     document.getElementById("sellerForm").addEventListener("submit",async e=>{
       e.preventDefault();
       const form=e.currentTarget;const fd=new FormData(form);
@@ -212,6 +539,31 @@
       }catch(_err){msg.textContent=tr[lang].fail}
       finally{btn.disabled=false;btn.textContent=tr[lang].submit}
     });
+
+    // Search operates only on the eight planned categories; never invent live listings.
+    const searchForm=document.getElementById("siteSearch");
+    const searchInput=document.getElementById("searchInput");
+    const searchStatus=document.getElementById("searchStatus");
+    searchForm.addEventListener("submit",event=>{
+      event.preventDefault();
+      const query=searchInput.value.trim().toLocaleLowerCase();
+      let count=0;
+      document.querySelectorAll("#categoryGrid [data-category]").forEach(el=>{
+        const terms=[el.dataset.category,el.textContent,tr.ar[el.dataset.category?.toLocaleLowerCase()],tr.en[el.dataset.category?.toLocaleLowerCase()]]
+          .filter(Boolean).join(" ").toLocaleLowerCase();
+        const match=!query||terms.includes(query);
+        el.hidden=!match;if(match)count++;
+      });
+      searchStatus.textContent=count===0?tr[lang].searchNoResult:
+        String(count)+" "+tr[lang].searchResult+" · "+tr[lang].searchCityNote;
+      if(activeCategory&&!Array.from(document.querySelectorAll("#categoryGrid [data-category]")).some(el=>!el.hidden&&el.dataset.category===activeCategory)){activeCategory=null;renderSpotlight()}
+      document.getElementById("categories").scrollIntoView({behavior:"smooth"});
+    });
+    document.querySelectorAll("[data-city]").forEach(el=>el.addEventListener("click",()=>{
+      document.getElementById("searchCity").value=el.dataset.city;
+      searchStatus.textContent=tr[lang].searchCityNote;
+      document.getElementById("explore").scrollIntoView({behavior:"smooth"});
+    }));
     renderLanguage();
     // Seller PII collection stays disabled in production until the Saudi
     // privacy notice, retention controls and transfer assessment are signed off.
