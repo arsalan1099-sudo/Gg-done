@@ -146,6 +146,14 @@
     .faq-grid p{color:#657c6e;line-height:1.9;font-size:14px;margin-bottom:0}
     .seller-layout .form-card{border-radius:26px}
     .pricing{background:linear-gradient(125deg,#054b3b,#053025)}
+    .saas-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:23px auto 18px;max-width:1010px;text-align:start}
+    .saas-plan{padding:18px 15px;border-radius:16px;background:#fff;color:#103d30;border:1px solid #d8e9de}
+    .saas-plan h3{font-size:17px;margin:0 0 9px;color:#0c4432}
+    .saas-plan strong{display:block;font-size:27px;letter-spacing:-.6px}
+    .saas-plan small{display:block;color:#466354;margin:6px 0 11px;font-size:12px}
+    .pricing .saas-plan p{font-size:12px;color:#365548;margin:0;line-height:1.55}
+    @media(max-width:760px){.saas-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:420px){.saas-grid{grid-template-columns:1fr}}
     footer{padding:43px 0}
     .footer-inner{flex-wrap:wrap}
     .footer-mini-nav{display:flex;gap:17px;font-weight:700;flex-wrap:wrap}
@@ -264,9 +272,15 @@
     </div>
   </div></section>
   <section style="padding-top:0"><div class="container"><div class="pricing">
-    <div class="section-kicker" style="color:#d8bc83" data-i18n="planKicker">للتجار</div><h2 data-i18n="planTitle">الأسعار ستُعلن لاحقاً</h2>
-    <p data-i18n="planDesc">العضوية السنوية، العمولات وأي مدفوعات ستُحدَّد بعد مراجعة الشروط والامتثال. التسجيل الحالي مجاني.</p>
-    <a href="#sell" class="btn btn-light" data-i18n="joinWaitlist">سجّل اهتمامك</a>
+    <div class="section-kicker" style="color:#d8bc83" data-i18n="planKicker">للتجار · أدوات الذكاء الاصطناعي قريباً</div><h2 data-i18n="planTitle">عمولة مبيعات 0% · أدوات أعمال اختيارية</h2>
+    <p data-i18n="planDesc">عمولة المنصة على مبيعات التجار 0%. باقات أدوات الذكاء الاصطناعي أدناه أسعار مقترحة فقط، وليست متاحة للاشتراك أو الدفع حالياً.</p>
+    <div class="saas-grid" aria-label="Proposed AI SaaS plans, not available for purchase">
+      <div class="saas-plan"><h3 data-i18n="aiFree">مجاني</h3><strong>0 SAR</strong><small data-i18n="monthlyUnit">/ شهرياً · خطة مقترحة</small><p data-i18n="aiFreeDesc">واجهة متجر أساسية عند تفعيل التسجيل</p></div>
+      <div class="saas-plan"><h3 data-i18n="aiStarter">البداية</h3><strong>49 SAR</strong><small data-i18n="monthlyUnit">/ شهرياً · خطة مقترحة</small><p data-i18n="aiStarterDesc">صياغة وصف المنتجات بالعربية والإنجليزية عند الإطلاق</p></div>
+      <div class="saas-plan"><h3 data-i18n="aiGrowth">النمو</h3><strong>149 SAR</strong><small data-i18n="monthlyUnit">/ شهرياً · خطة مقترحة</small><p data-i18n="aiGrowthDesc">محتوى تسويقي وأفكار للحملات عند الإطلاق</p></div>
+      <div class="saas-plan"><h3 data-i18n="aiBusiness">الأعمال</h3><strong>299 SAR</strong><small data-i18n="monthlyUnit">/ شهرياً · خطة مقترحة</small><p data-i18n="aiBusinessDesc">أدوات إدارة الأعمال والتحليلات عند الإطلاق</p></div>
+    </div>
+    <p style="font-size:12px;margin-bottom:0" role="note" data-i18n="planAvailability">هذه معاينة عامة فقط. الاشتراكات المدفوعة وتسجيل التجار مغلقة حتى إتمام متطلبات التشغيل والامتثال.</p>
   </div></div></section>
 
   <section class="faq-section" id="faq"><div class="container">
@@ -297,13 +311,17 @@
         feature3Title:"التحقق أولاً",feature3Desc:"لن تبدأ عمليات الدفع قبل التحقق التجاري وتفعيل بوابة دفع مناسبة.",
         merchantKicker:"أصحاب المتاجر",sellerTitle:"خذ متجرك إلى الإنترنت",sellerDesc:"أرسل اهتمامك مجاناً لتكون من أوائل المتاجر التي نتواصل معها عند فتح التسجيل الرسمي.",
         step1:"املأ بيانات متجرك ورقم الجوال السعودي.",step2:"يراجع الفريق طلبك ويتواصل معك بعد توفر الخدمة.",step3:"يتم التحقق من المستندات والشروط قبل البيع.",
-        sellerNotice:"التقديم مجاني، وليس اشتراكاً مدفوعاً. الأسعار والعمولات النهائية لم تُعتمد.",
+        sellerNotice:"لن تُفرض عمولة على مبيعات التجار. تسجيل التجار والمدفوعات غير متاحين حالياً.",
         formTitle:"إبداء اهتمام تاجر",formDesc:"يرجى إدخال بيانات صحيحة. لا ترسل كلمات المرور أو بيانات البطاقة.",
         business:"اسم المتجر",city:"المدينة",category:"نوع النشاط",phone:"رقم الجوال السعودي",chooseCity:"اختر المدينة",chooseCategory:"اختر الفئة",
         consent:"أوافق على حفظ بيانات الطلب والتواصل معي بشأن انضمام المتجر. هذا ليس شراءً أو اشتراكاً.",
         submit:"إرسال الطلب مجاناً",sending:"جار الإرسال...", success:"تم استلام طلبك بنجاح. سنتواصل معك إذا توفرت الخدمة.",fail:"تعذر إرسال الطلب. يرجى المحاولة لاحقاً.",
-        invalid:"تأكد من بيانات المتجر والرقم السعودي والموافقة.",planKicker:"للتجار",planTitle:"الأسعار ستُعلن لاحقاً",
-        planDesc:"العضوية السنوية، العمولات وأي مدفوعات ستُحدَّد بعد مراجعة الشروط والامتثال. التسجيل الحالي مجاني.",
+        invalid:"تأكد من بيانات المتجر والرقم السعودي والموافقة.",planKicker:"للتجار · أدوات الذكاء الاصطناعي قريباً",planTitle:"عمولة مبيعات 0% · أدوات أعمال اختيارية",
+        planDesc:"عمولة المنصة على مبيعات التجار 0%. باقات أدوات الذكاء الاصطناعي أدناه أسعار مقترحة فقط، وليست متاحة للاشتراك أو الدفع حالياً.",
+        monthlyUnit:"/ شهرياً · خطة مقترحة",aiFree:"مجاني",aiStarter:"البداية",aiGrowth:"النمو",aiBusiness:"الأعمال",
+        aiFreeDesc:"واجهة متجر أساسية عند تفعيل التسجيل",aiStarterDesc:"صياغة وصف المنتجات بالعربية والإنجليزية عند الإطلاق",
+        aiGrowthDesc:"محتوى تسويقي وأفكار للحملات عند الإطلاق",aiBusinessDesc:"أدوات إدارة الأعمال والتحليلات عند الإطلاق",
+        planAvailability:"هذه معاينة عامة فقط. الاشتراكات المدفوعة وتسجيل التجار مغلقة حتى إتمام متطلبات التشغيل والامتثال.",
         joinWaitlist:"سجّل اهتمامك",footer:"Go Saudi · مفهوم ما قبل الإطلاق · لا توجد مدفوعات مفعّلة"
       },
       en:{
@@ -319,14 +337,18 @@
         feature3Title:"Verification first",feature3Desc:"Payments stay off until business verification and local gateway setup.",
         merchantKicker:"For shop owners",sellerTitle:"Bring your store online",sellerDesc:"Send a free enquiry to be among the first contacted when official seller registration opens.",
         step1:"Tell us your shop details and Saudi mobile number.",step2:"Our team will review the enquiry and follow up when the service is available.",step3:"Business documents and terms must be checked before selling.",
-        sellerNotice:"Enquiries are free, not paid subscriptions. Final pricing and commissions are not yet approved.",
+        sellerNotice:"Go Saudi's marketplace model charges 0% sales commission. Merchant registration and payments are currently unavailable.",
         formTitle:"Seller interest form",formDesc:"Use accurate information. Never share passwords or bank-card details.",
         business:"Business name",city:"City",category:"Business category",phone:"Saudi mobile",chooseCity:"Select a city",chooseCategory:"Select a category",
         consent:"I consent to storing my enquiry details and being contacted about seller onboarding. This is not a purchase or subscription.",
         submit:"Send free enquiry",sending:"Submitting...",success:"Your enquiry has been submitted. We will contact you if the service becomes available.",
         fail:"Could not submit the enquiry. Please try later.",invalid:"Please check the business details, Saudi mobile and consent.",
-        planKicker:"For sellers",planTitle:"Membership pricing coming later",
-        planDesc:"Annual membership, commissions and payments will be determined after terms and compliance review. Enquiries are free.",
+        planKicker:"For sellers · AI tools coming soon",planTitle:"0% sales commission · Optional AI business tools",
+        planDesc:"Go Saudi plans to charge 0% commission on seller orders. AI tool tiers below are proposed prices, not active subscriptions or available purchases.",
+        monthlyUnit:"/ month · proposed",aiFree:"Free",aiStarter:"Starter",aiGrowth:"Growth",aiBusiness:"Business",
+        aiFreeDesc:"Basic storefront when onboarding opens",aiStarterDesc:"Arabic and English product content at launch",
+        aiGrowthDesc:"Marketing drafts and campaign ideas at launch",aiBusinessDesc:"Business tools and analytics at launch",
+        planAvailability:"Public preview only. Paid subscriptions and merchant registration remain closed until operational and compliance requirements are met.",
         joinWaitlist:"Register interest",footer:"Go Saudi · Prelaunch concept · No live payments"
       }
     };
