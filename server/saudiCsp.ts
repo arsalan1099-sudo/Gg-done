@@ -14,6 +14,8 @@ export function saudiHtmlCsp(html: string): string {
     "style-src 'unsafe-inline'",
     "img-src 'self' data:",
     "connect-src 'self'",
+    "manifest-src 'self'",
+    "worker-src 'self'",
     "form-action 'none'",
     "frame-ancestors 'none'",
     "base-uri 'none'",

@@ -21,7 +21,8 @@
     "test:saudi:commerce:e2e": "tsx --test server/__tests__/saudiCommerce.e2e.fixed.test.ts",
     "brand:saudi": "node scripts/generate-saudi-brand.cjs",
     "test:saudi:release": "node --test scripts/saudi-release-config.test.cjs scripts/saudi-home-discovery.test.cjs",
-    "eas-build-post-install": "node -e \"require('./scripts/saudi-release-config.cjs').validateSaudiReleaseConfig(require('./app.json').expo, process.env)\""
+    "eas-build-post-install": "node -e \"require('./scripts/saudi-release-config.cjs').validateSaudiReleaseConfig(require('./app.json').expo, process.env)\"",
+    "test:saudi:pwa": "node --import tsx --test server/__tests__/saudiPwa.test.ts"
   },
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",

@@ -1,7 +1,13 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/pwa/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Go Saudi">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#064c39">
   <meta name="description" content="Go Saudi — discover planned local shopping categories and Saudi cities. Arabic and English marketplace preview; transactions are not yet available.">
   <meta property="og:title" content="Go Saudi | Your city. Your marketplace.">
@@ -192,6 +198,79 @@
     @media(max-width:640px){.discovery-zone{padding:44px 0 27px}.discovery-picks{gap:10px}.discovery-pick{padding:17px;min-height:198px;border-radius:18px}.discovery-pick h3{font-size:19px}.discovery-pick .pick-emoji{font-size:27px}.category-spotlight{padding:16px;gap:12px}.spotlight-emoji{min-width:48px;height:48px;font-size:26px}.spotlight-content h3{font-size:20px}}
     @media(max-width:380px){.discovery-picks{grid-template-columns:1fr}.discovery-pick{min-height:155px}}
     @media(prefers-reduced-motion:reduce){.discovery-pick{transition:none}}
+    /* Safe-area support for iPhone/iPad, landscape and standalone windows. */
+    body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+    header{padding-top:env(safe-area-inset-top)}
+    button,a,input,select{touch-action:manipulation}
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #c49b49;outline-offset:4px}
+    input,select,textarea{font-size:16px!important;max-width:100%}
+    .app-install{padding:34px 0;background:#eaf4ee;border-block:1px solid #d6e5dc}
+    .app-install-inner{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+    .app-install-copy{flex:1;min-width:220px}.app-install h2{margin:0 0 8px;font-size:24px}
+    .app-install p{margin:8px 0;color:#426252;line-height:1.7}
+    .app-install details{width:100%;line-height:1.8}.app-install summary{cursor:pointer;font-weight:750;padding:12px 0}
+    .app-install li{margin-block:8px}.app-install button{min-height:48px}
+    .network-notice{padding:12px 20px;text-align:center;background:#fff2ce;color:#604c1d;font-size:14px}
+    [hidden]{display:none!important}
+    section[id],div[id]{scroll-margin-top:110px}
+    @media(max-width:640px){body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}.mobile-dock{height:calc(65px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}.mobile-dock a{min-height:44px;min-width:48px;justify-content:center}.nav{gap:8px}.nav-actions{gap:6px}.nav-actions .btn{padding:10px;font-size:11px}.lang{padding:10px;min-height:44px}.container{padding-inline:16px}.app-install-inner{gap:12px}}
+    @media(max-width:360px){.brand{font-size:15px;gap:5px}.logo{width:32px;height:32px}.nav-actions .btn{max-width:86px;text-align:center}.announcement .container{flex-wrap:wrap;gap:6px;padding-block:8px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}}
+
+    /* Editorial marketplace refresh: photography, warm materials and clear hierarchy. */
+    :root{--green:#164f42;--deep:#092e27;--mint:#e9eee7;--gold:#d5b878;--ink:#20372f;--gray:#647269}
+    body{background:#f8f7f2;color:var(--ink)}
+    .container{max-width:1280px;padding-inline:36px}
+    .announcement{background:#123e32;color:#f4efe3;font-weight:500;font-size:11px;letter-spacing:.4px}
+    .announcement .container{min-height:32px}.announcement .pulse{width:5px;height:5px;box-shadow:none}
+    header{background:#faf9f4f5;border-bottom:1px solid #dfe4db;box-shadow:none}
+    .nav{min-height:88px}.brand{letter-spacing:1.2px;font-size:20px;font-weight:800}
+    .logo{border-radius:50%;width:42px;height:42px;box-shadow:none;font-size:14px;border:1px solid #a98e58}
+    .links{gap:24px;font-size:13px;font-weight:550}.lang{border-radius:30px;background:transparent;min-width:83px;font-size:12px}
+    .nav-actions .btn{border-radius:30px;padding:12px 20px;font-size:12px;background:#164f42}
+    .hero{background:#103f33;isolation:isolate;overflow:hidden}
+    .hero:after{width:670px;height:670px;top:-310px;right:-240px;border-color:#c0b88e18;box-shadow:0 0 0 75px #c0b88e06,0 0 0 150px #c0b88e04;opacity:1}
+    .hero-inner{position:relative;z-index:1;min-height:640px;padding-top:62px;padding-bottom:105px;grid-template-columns:1fr 1fr;gap:64px}
+    .hero .eyebrow{border:none;background:transparent;padding:0;color:#ddc791;font-size:10px;letter-spacing:2px;max-width:100%;line-height:1.8}
+    .hero h1{font-size:clamp(42px,4.6vw,68px);font-weight:520;line-height:1.12;letter-spacing:-2.6px;margin:24px 0;max-width:580px;color:#fffdf3}
+    html[lang="en"] .hero h1{font-family:Georgia,"Times New Roman",serif;font-weight:400}
+    html[lang="ar"] .hero h1{letter-spacing:-1.4px;font-size:clamp(40px,4.5vw,65px);line-height:1.35;font-weight:650}
+    .hero p{color:#d4e2d7;font-size:15px;line-height:1.9;max-width:460px}
+    .hero-ctas{gap:12px;margin-top:30px}.hero-ctas .btn{font-size:13px;min-height:49px;border-radius:30px;padding:14px 24px;font-weight:650}
+    .hero-ctas .btn-primary{background:#ead8a7;color:#173e31;box-shadow:none}.hero-ctas .btn-light{background:transparent;color:#f5efe2;border:1px solid #78998a}
+    .hero-subline{font-size:10px;font-weight:450;gap:14px;margin-top:28px;color:#c3d5c7}
+    .editorial-stage{position:relative;min-width:0;height:447px;direction:ltr}
+    .editorial-main{position:absolute;inset:0 0 40px 25px;border-radius:150px 20px 20px 20px;overflow:hidden;background:#b8b5a4;box-shadow:0 25px 65px #001c2440}
+    .editorial-main:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#092d27c9,transparent 65%)}
+    .editorial-main img{width:100%;height:100%;object-fit:cover;object-position:60% center}
+    .image-label{position:absolute;bottom:30px;left:28px;right:20px;z-index:1;color:#fff8e9;text-align:left}
+    .image-label span{font-size:9px;letter-spacing:2px;display:block;margin-bottom:10px}.image-label strong{font-family:Georgia,serif;font-size:27px;font-weight:400}
+    .editorial-mini{position:absolute;top:24px;left:-30px;width:137px;height:160px;background:#fbf9f0;padding:7px;border-radius:13px;box-shadow:0 14px 40px #002c2859;transform:rotate(-8deg);overflow:hidden}
+    .editorial-mini img{height:114px;width:100%;object-fit:cover;border-radius:8px}.editorial-mini span{display:block;color:#234b3a;font-size:11px;text-align:center;padding-top:8px;font-weight:600}
+    .commission-card{position:absolute;right:-18px;bottom:81px;width:166px;background:#f2e2b6;color:#183f31;padding:19px;border-radius:13px;box-shadow:0 15px 38px #001f2840;transform:rotate(6deg)}
+    .commission-mark{font-size:49px;font-weight:600;line-height:1;letter-spacing:-3px;display:block}.commission-mark span{font-size:25px;letter-spacing:-1px}.commission-card>span:nth-child(2){font-size:10px;display:block;margin-top:8px}.commission-card i{position:absolute;top:17px;right:16px;font-style:normal;font-size:22px}
+    .editorial-caption{position:absolute;bottom:7px;left:25px;right:0;display:flex;align-items:center;gap:9px;color:#c8d9ca;font-size:9px;letter-spacing:.3px}.editorial-caption>span:last-child{margin-left:auto;white-space:nowrap}.caption-line{width:26px;height:1px;background:#ceb879}
+    .market-search-wrap{margin-top:-47px}.market-search{padding:22px 26px;border-radius:18px;box-shadow:0 14px 45px #173b2612;grid-template-columns:1.4fr .8fr auto;gap:24px;background:#fffef9;border:1px solid #e6e6db}
+    .market-search label{font-size:10px;letter-spacing:.6px;color:#68776b}.market-search input,.market-search select{background:#f8f8f1;border:1px solid #e0e4d9;border-radius:9px;min-height:46px;color:#1f4736}.market-search .btn{border-radius:10px;background:#184f3e;box-shadow:none;font-size:12px}
+    .search-status{font-weight:400;font-size:10px;margin-top:13px}.trust-row{padding:28px 0 3px}.trust-stat strong{font-size:21px;font-weight:600}.trust-stat small{font-size:10px}
+    .notice{background:#eeeee3;color:#636c56;border:1px solid #e2e5d6;border-radius:10px;font-size:11px;line-height:1.8;margin-top:22px}
+    section{padding:64px 0}.section-kicker{font-size:10px;font-weight:650;letter-spacing:2.1px;color:#6e8064;margin-bottom:12px}.section-title{font-size:clamp(28px,3.1vw,42px);font-weight:550;letter-spacing:-1px;line-height:1.2}
+    html[lang="en"] .section-title{font-family:Georgia,serif;font-weight:400}.subtitle{font-size:13px;line-height:1.8;color:#748071;margin-top:12px}
+    .discovery-zone{background:#f8f7f2;padding-top:64px}.discovery-picks{gap:18px;margin-top:28px}.discovery-pick{min-height:340px;padding:22px;border-radius:16px;border:none;box-shadow:0 8px 18px #233e2910;justify-content:flex-end;isolation:isolate;background:#173d31}
+    .pick-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform .6s}
+    .discovery-pick:after{inset:0;width:auto;height:auto;border:none;border-radius:0;box-shadow:none;background:linear-gradient(180deg,#0a272000 10%,#0a272030 35%,#071d18ed 100%);z-index:-1}
+    .discovery-pick:hover .pick-photo{transform:scale(1.055)}.discovery-pick .pick-emoji{display:none}.discovery-pick h3{font-size:24px;font-weight:500;letter-spacing:-.6px;margin:0 0 8px}.discovery-pick p{font-size:11px;color:#f1f4e8;line-height:1.6}.discovery-pick small{background:transparent;padding:12px 0 0;border-top:1px solid #ffffff4a;margin-top:18px;width:100%;font-size:9px;font-weight:400;color:#e4edda}
+    .pick-style .pick-photo{object-position:52% center}.pick-tech .pick-photo{object-position:54% center}.discovery-note{font-size:10px;color:#778170;line-height:1.8}
+    #categories{background:#fffefa;border-top:1px solid #e7e9de;border-bottom:1px solid #e7e9de}.cat-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:12px}.category{padding:20px 10px;min-height:135px;align-items:center;justify-content:center;text-align:center;border-radius:14px;box-shadow:none;background:#f6f7f0;border:1px solid #e9ecdf}.category .emoji{width:48px;height:48px;border-radius:50%;background:#e8eddf;color:#37654a;margin-bottom:13px}.emoji svg{width:25px;height:25px}.category strong{font-size:11px;font-weight:600}.category::after{display:none}.category.is-saved:before{bottom:7px;right:8px;font-size:10px}.favorites-hint{background:transparent;padding:0;font-weight:450;font-size:11px;color:#6e7f67}
+    .cities-section{background:#f0f1e7}.city-card{border-radius:14px;background:#fafbf4;border-color:#dfe5d6;min-height:155px;padding:20px}.city-card .city-symbol{background:#e8eddf;border-radius:50%}.city-card strong{font-size:14px;font-weight:550}.city-card small{font-size:10px}.cities-note{font-size:10px;line-height:1.7}
+    .feature{background:#fffefa;border:1px solid #e3e7db;box-shadow:none;border-radius:15px}.feature h3{font-weight:550}.feature p{font-size:13px}.site-flow,.pricing{background:#133f32}.flow-card{background:#ffffff08;border:1px solid #ffffff24;border-radius:15px}.flow-num{color:#ddc58b}.saas-plan{border-radius:13px;background:#faf8ee}.form-card{background:#fffefa;box-shadow:0 18px 50px #153b2810}.faq-section{background:#f8f7f2}.faq-grid details{border-radius:12px;background:#fffefa}.faq-grid summary{font-weight:550;font-size:14px}
+    .app-install{background:#e8ecdf;border-color:#d7dfcd;padding:45px 0}.app-install h2{font-weight:550;font-size:28px}.app-install p,.app-install li{font-size:12px}.app-install .btn{border-radius:30px;font-size:12px;background:#174d3a}.app-install summary{font-size:12px;font-weight:550}
+    footer{background:#092e26}.mobile-dock{border-radius:20px 20px 0 0;box-shadow:0 -6px 26px #0b322415}.mobile-dock a{color:#335841;font-weight:500}
+    @media(max-width:1050px){.container{padding-inline:25px}.hero-inner{gap:38px}.links{gap:13px}.hero h1{font-size:53px}.editorial-stage{height:400px}.commission-card{right:-8px;width:145px}.editorial-mini{left:-15px;width:115px;height:141px}.editorial-mini img{height:95px}.cat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    @media(max-width:900px){.hero-inner{grid-template-columns:1fr 1fr;min-height:570px;padding-top:48px;padding-bottom:90px;gap:25px}.hero h1{font-size:44px}.hero p{font-size:13px}.editorial-stage{height:350px}.editorial-main{border-top-left-radius:100px;left:10px}.editorial-mini{width:96px;height:120px;left:-10px}.editorial-mini img{height:77px}.commission-card{width:125px;bottom:65px;padding:15px}.commission-mark{font-size:39px}.image-label{left:20px;bottom:30px}.image-label strong{font-size:22px}.editorial-caption{left:10px;font-size:8px}.market-search{grid-template-columns:1fr 1fr}.market-search button{grid-column:1/-1}.discovery-picks{grid-template-columns:repeat(2,minmax(0,1fr))}.discovery-pick{min-height:330px}}
+    @media(max-width:640px){.container{padding-inline:20px}.announcement .container{min-height:33px;font-size:9px;line-height:1.6;gap:7px}.announcement a{display:none}.nav{min-height:71px;gap:8px}.brand{font-size:16px;letter-spacing:.4px;gap:7px}.logo{width:34px;height:34px;font-size:11px}.nav-actions .btn{font-size:10px;padding:10px 12px}.lang{font-size:11px;min-width:65px;padding:9px;min-height:42px}.hero-inner{grid-template-columns:1fr;gap:24px;padding-top:34px;padding-bottom:72px;min-height:0}.hero .eyebrow{font-size:8px;letter-spacing:1.4px}.hero h1{font-size:46px;letter-spacing:-1.6px;max-width:370px;margin:18px 0}.hero p{font-size:13px;line-height:1.85;max-width:360px;margin-bottom:0}html[lang="ar"] .hero h1{font-size:43px;line-height:1.3}.hero-ctas{margin-top:23px;gap:9px}.hero-ctas .btn{font-size:11px;padding:12px 19px;min-height:46px}.hero-subline{font-size:9px;margin-top:20px;gap:10px}.editorial-stage{height:290px;margin-top:12px;margin-inline:12px}.editorial-main{inset:0 0 25px 10px;border-radius:80px 15px 15px 15px}.editorial-mini{width:93px;height:112px;left:-13px;top:10px;padding:5px}.editorial-mini img{height:75px}.editorial-mini span{font-size:9px;padding-top:6px}.commission-card{right:-12px;width:113px;bottom:51px;padding:13px}.commission-mark{font-size:35px}.commission-mark span{font-size:19px}.commission-card>span:nth-child(2){font-size:8px}.commission-card i{font-size:17px;right:12px;top:12px}.image-label{bottom:22px;left:19px}.image-label strong{font-size:22px;max-width:200px;display:block}.image-label span{font-size:8px}.editorial-caption{font-size:7px;bottom:0}.market-search-wrap{margin-top:-40px}.market-search{padding:17px;gap:14px;border-radius:14px;grid-template-columns:1fr}.market-search label{margin-bottom:7px}.market-search .btn{min-height:45px}.search-status{font-size:9px;line-height:1.7}.trust-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding-top:22px}.trust-stat strong{font-size:17px}.trust-stat small{font-size:8px;line-height:1.7}.trust-stat:nth-child(2){border-left:1px solid #dce9df}.notice{font-size:10px;line-height:1.8;margin-top:20px}.discovery-zone,section{padding:43px 0}.section-title{font-size:29px;line-height:1.3;letter-spacing:-.7px}.section-kicker{font-size:8px;letter-spacing:1.7px}.subtitle{font-size:11px;line-height:1.8}.discovery-picks{gap:11px;margin-top:23px}.discovery-pick{min-height:257px;border-radius:12px;padding:15px}.discovery-pick h3{font-size:20px;line-height:1.2}.discovery-pick p{font-size:10px;line-height:1.6}.discovery-pick small{font-size:8px;margin-top:13px;padding-top:9px;line-height:1.5}.cat-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.category{min-height:105px;padding:13px 4px;border-radius:11px}.category .emoji{width:37px;height:37px;margin-bottom:10px}.emoji svg{width:21px;height:21px}.category strong{font-size:9px}.city-card{padding:16px;min-height:143px}.city-card strong{font-size:13px}.city-grid{gap:10px}.app-install h2{font-size:25px}}
+    @media(max-width:360px){.container{padding-inline:15px}.brand{font-size:14px;gap:5px}.logo{width:30px;height:30px}.nav-actions{gap:5px}.nav-actions .btn{padding:10px 9px;font-size:9px}.lang{min-width:57px}.hero h1{font-size:41px}html[lang="ar"] .hero h1{font-size:38px}.hero-ctas .btn{padding:12px 14px;font-size:10px}.discovery-pick{min-height:238px;padding:12px}.discovery-pick h3{font-size:18px}.discovery-picks{grid-template-columns:repeat(2,minmax(0,1fr))}.editorial-stage{height:260px}.category strong{font-size:8px}}
+    @media(prefers-reduced-motion:reduce){.pick-photo{transition:none}.discovery-pick:hover .pick-photo{transform:none}}
   </style>
 </head>
 <body>
@@ -201,6 +280,7 @@
     <nav class="links" aria-label="Main navigation"><a href="#categories" data-i18n="navShop">التسوق</a><a href="#cities" data-i18n="navCities">المدن</a><a href="#benefits" data-i18n="navFeatures">المميزات</a><a href="#sell" data-i18n="navSell">للتجار</a><a href="/vendor" data-i18n="vendorPanel">لوحة التاجر</a></nav>
     <div class="nav-actions"><button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button><a class="btn btn-primary" href="#sell" data-i18n="join">سجّل متجرك</a></div>
   </div></header>
+  <div id="networkNotice" class="network-notice" role="status" hidden></div>
   <main>
   <div class="hero"><div class="container hero-inner">
     <div><span class="eyebrow" data-i18n="prelaunch">🇸🇦 منصة سعودية · التسجيل الأولي</span>
@@ -208,11 +288,13 @@
       <p data-i18n="heroDesc">جو سعودي يجمع المتاجر المحلية مع مجتمعها. اكتشف ما يقدمه التجار في مدينتك، وسجّل اهتمامك بفتح متجرك الإلكتروني.</p>
       <div class="hero-ctas"><a class="btn btn-primary" href="#shop-ideas" data-i18n="browse">تصفح الفئات</a><a class="btn btn-light" href="#sell" data-i18n="startSelling">انضم كتاجر</a></div><div class="hero-subline"><span><i>◆</i><span data-i18n="heroChip1">صُمّم للسوق السعودي</span></span><span><i>◆</i><span data-i18n="heroChip2">عربي + English</span></span><span><i>◆</i><span data-i18n="heroChip3">الأسعار بالريال السعودي</span></span></div>
     </div>
-    <div class="showcase"><div class="floating-tag" data-i18n="floatTag">🇸🇦 سعودي أولاً</div><div class="floating-tag2" data-i18n="floatTag2">✦ الأسواق المحلية</div><div class="phone">
-      <div class="phone-top"><div class="phone-bar"><b>GO SAUDI</b><span>🇸🇦 SAR</span></div><h2 data-i18n="phoneTitle">تسوق من مدينتك</h2><div class="phone-search" data-i18n="phoneSearch">🔎 ابحث عن المنتجات والمتاجر</div></div>
-      <div class="tiles"><div class="tile"><span>🛍️</span><span data-i18n="fashion">الأزياء</span></div><div class="tile"><span>🥘</span><span data-i18n="food">الطعام</span></div><div class="tile"><span>🛒</span><span data-i18n="grocery">البقالة</span></div><div class="tile"><span>📱</span><span data-i18n="electronics">الإلكترونيات</span></div></div>
-      <div class="phone-bottom" data-i18n="prototype">تصور أولي · الخدمات قيد الإطلاق</div>
-    </div></div>
+    <div class="editorial-stage" aria-label="Lifestyle category inspiration">
+      <div class="editorial-main"><img src="/editorial/home.jpg" alt="Sunlit living room with warm natural finishes" width="1400" height="933" fetchpriority="high"><div class="image-label"><span data-i18n="editorialTag">مساحات تلهمك</span><strong data-i18n="editorialTitle">كل التفاصيل، على ذوقك.</strong></div></div>
+      <div class="editorial-mini"><img src="/editorial/grocery.jpg" alt="Fresh vegetables and everyday groceries" width="640" height="480"><span data-i18n="grocery">البقالة</span></div>
+      <div class="commission-card"><span class="commission-mark">0<span>%</span></span><span data-i18n="zeroCommission">عمولة على المبيعات</span><i aria-hidden="true">↗</i></div>
+      <div class="editorial-caption"><span class="caption-line"></span><span data-i18n="editorialCaption">إلهام للحياة اليومية · صور توضيحية</span><span>01 / 04</span></div>
+    </div>
+  </div></div>
   </div></div>
 
   <div class="container market-search-wrap" id="explore">
@@ -225,7 +307,7 @@
     <div class="trust-row" aria-label="Go Saudi marketplace preview">
       <div class="trust-stat"><strong>🇸🇦</strong><small data-i18n="trust1">تركيز سعودي</small></div>
       <div class="trust-stat"><strong>8</strong><small data-i18n="trust2">فئات مخططة</small></div>
-      <div class="trust-stat"><strong>SAR</strong><small data-i18n="trust3">العملة السعودية</small></div>
+      <div class="trust-stat"><strong>0%</strong><small data-i18n="trust3">العملة السعودية</small></div>
       <div class="trust-stat"><strong>AR / EN</strong><small data-i18n="trust4">لغتان</small></div>
     </div>
   </div>
@@ -236,10 +318,10 @@
     <h2 class="section-title" data-i18n="discoveryTitle">أفكار تسوق على ذوقك</h2>
     <p class="subtitle" data-i18n="discoverySubtitle">اختر اهتمامك لتصفح الفئات المخطط لها. لا توجد متاجر أو منتجات حية بعد.</p>
     <div class="discovery-picks">
-      <button class="discovery-pick pick-daily" type="button" data-discover="Grocery"><span class="pick-emoji" aria-hidden="true">🛒</span><span><h3 data-i18n="pickDaily">أساسيات كل يوم</h3><p data-i18n="pickDailyDesc">البقالة واحتياجاتك اليومية</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
-      <button class="discovery-pick pick-style" type="button" data-discover="Fashion"><span class="pick-emoji" aria-hidden="true">✨</span><span><h3 data-i18n="pickStyle">إطلالة على ذوقك</h3><p data-i18n="pickStyleDesc">اكتشف فئة الأزياء القادمة</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
-      <button class="discovery-pick pick-home" type="button" data-discover="Home"><span class="pick-emoji" aria-hidden="true">🏡</span><span><h3 data-i18n="pickHome">بيت على ذوقك</h3><p data-i18n="pickHomeDesc">أفكار لمستلزمات المنزل</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
-      <button class="discovery-pick pick-tech" type="button" data-discover="Electronics"><span class="pick-emoji" aria-hidden="true">📱</span><span><h3 data-i18n="pickTech">تقنية تناسبك</h3><p data-i18n="pickTechDesc">اكتشف فئة الأجهزة والإلكترونيات</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
+      <button class="discovery-pick pick-daily" type="button" data-discover="Grocery"><img class="pick-photo" src="/editorial/grocery.jpg" alt="" loading="lazy" width="640" height="800"><span class="pick-emoji" aria-hidden="true">🛒</span><span><h3 data-i18n="pickDaily">أساسيات كل يوم</h3><p data-i18n="pickDailyDesc">البقالة واحتياجاتك اليومية</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
+      <button class="discovery-pick pick-style" type="button" data-discover="Fashion"><img class="pick-photo" src="/editorial/fashion.jpg" alt="" loading="lazy" width="640" height="800"><span class="pick-emoji" aria-hidden="true">✨</span><span><h3 data-i18n="pickStyle">إطلالة على ذوقك</h3><p data-i18n="pickStyleDesc">اكتشف فئة الأزياء القادمة</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
+      <button class="discovery-pick pick-home" type="button" data-discover="Home"><img class="pick-photo" src="/editorial/home.jpg" alt="" loading="lazy" width="640" height="800"><span class="pick-emoji" aria-hidden="true">🏡</span><span><h3 data-i18n="pickHome">بيت على ذوقك</h3><p data-i18n="pickHomeDesc">أفكار لمستلزمات المنزل</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
+      <button class="discovery-pick pick-tech" type="button" data-discover="Electronics"><img class="pick-photo" src="/editorial/tech.jpg" alt="" loading="lazy" width="640" height="800"><span class="pick-emoji" aria-hidden="true">📱</span><span><h3 data-i18n="pickTech">تقنية تناسبك</h3><p data-i18n="pickTechDesc">اكتشف فئة الأجهزة والإلكترونيات</p></span><small data-i18n="pickPreview">معاينة الفئة · قريباً</small></button>
     </div>
     <p class="discovery-note" data-i18n="discoveryDisclosure">هذه أفكار للتصفح فقط، وليست منتجات حقيقية أو عروضاً أو خصومات نشطة.</p>
   </div></section>
@@ -248,14 +330,14 @@
     <p class="subtitle" data-i18n="categoriesDesc">اختر فئة لمعاينة التسوق وحفظ اهتماماتك على هذا الجهاز. لا توجد منتجات حية بعد.</p>
     <div class="favorites-hint" id="favoritesHint" role="status" aria-live="polite">♡ 0 فئات محفوظة</div>
     <div class="cat-grid" id="categoryGrid">
-      <button class="category" type="button" data-category="Grocery"><span class="emoji">🛒</span><strong data-i18n="grocery">البقالة</strong></button>
-      <button class="category" type="button" data-category="Fashion"><span class="emoji">👗</span><strong data-i18n="fashion">الأزياء</strong></button>
-      <button class="category" type="button" data-category="Food"><span class="emoji">🥘</span><strong data-i18n="food">الطعام</strong></button>
-      <button class="category" type="button" data-category="Electronics"><span class="emoji">📱</span><strong data-i18n="electronics">الإلكترونيات</strong></button>
-      <button class="category" type="button" data-category="Home"><span class="emoji">🏡</span><strong data-i18n="home">المنزل</strong></button>
-      <button class="category" type="button" data-category="Beauty"><span class="emoji">🌷</span><strong data-i18n="beauty">الجمال</strong></button>
-      <button class="category" type="button" data-category="Services"><span class="emoji">🧰</span><strong data-i18n="services">الخدمات</strong></button>
-      <button class="category" type="button" data-category="Wholesale"><span class="emoji">📦</span><strong data-i18n="wholesale">الجملة</strong></button>
+      <button class="category" type="button" data-category="Grocery"><span class="emoji"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-2 11H6L4 9Zm4 0 4-6 4 6M9 12v5m6-5v5"/></svg></span><strong data-i18n="grocery">البقالة</strong></button>
+      <button class="category" type="button" data-category="Fashion"><span class="emoji"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 4-5 4 3 4 2-2v10h8V10l2 2 3-4-5-4c0 4-8 4-8 0Z"/></svg></span><strong data-i18n="fashion">الأزياء</strong></button>
+      <button class="category" type="button" data-category="Food"><span class="emoji"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v6c0 4 5 4 5 0V3M6.5 3v18M19 21V3c-5 4-5 10 0 10"/></svg></span><strong data-i18n="food">الطعام</strong></button>
+      <button class="category" type="button" data-category="Electronics"><span class="emoji"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 5h4m-3 14h2"/></svg></span><strong data-i18n="electronics">الإلكترونيات</strong></button>
+      <button class="category" type="button" data-category="Home"><span class="emoji"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2 11 10-8 10 8M5 9v12h14V9m-10 12v-8h6v8"/></svg></span><strong data-i18n="home">المنزل</strong></button>
+      <button class="category" type="button" data-category="Beauty"><span class="emoji"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9h10v12H7zM9 9V4l6-2v7M7 13h10"/></svg></span><strong data-i18n="beauty">الجمال</strong></button>
+      <button class="category" type="button" data-category="Services"><span class="emoji"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3a6 6 0 0 0-7 8l-5 5a3 3 0 0 0 4 4l5-5a6 6 0 0 0 8-7l-4 4-4-4 3-5Z"/></svg></span><strong data-i18n="services">الخدمات</strong></button>
+      <button class="category" type="button" data-category="Wholesale"><span class="emoji"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 9-4 9 4v11l-9 4-9-4V7Zm0 0 9 4 9-4m-9 4v11M7 5l10 4"/></svg></span><strong data-i18n="wholesale">الجملة</strong></button>
     </div>
     <div class="category-spotlight" id="categorySpotlight" hidden role="region" aria-label="Category preview">
       <span class="spotlight-emoji" id="spotlightEmoji" aria-hidden="true">🛍️</span>
@@ -341,6 +423,16 @@
       <details><summary data-i18n="faq3Q">هل يوجد تطبيق للجوال؟</summary><p data-i18n="faq3A">يوجد تطبيق Android تجريبي للاختبار، وليس إصداراً تجارياً في المتاجر الرسمية بعد.</p></details>
       <details><summary data-i18n="faq4Q">هل الأسعار بالريال السعودي؟</summary><p data-i18n="faq4A">الريال السعودي هو العملة المستهدفة، لكن أسعار المنتجات الحقيقية لم تُنشر بعد.</p></details>
     </div>
+  </div></section>
+  <section class="app-install" id="install-app" aria-labelledby="installTitle"><div class="container app-install-inner">
+    <div class="app-install-copy"><h2 id="installTitle" data-i18n="installTitle">جو سعودي على كل أجهزتك</h2><p data-i18n="installDesc">افتح الموقع على iPhone أو Android أو الكمبيوتر. أضفه إلى الشاشة الرئيسية للوصول السريع.</p></div>
+    <button class="btn btn-primary" id="installApp" type="button" data-i18n="installButton">أضف إلى الشاشة الرئيسية</button>
+    <details id="installGuide"><summary data-i18n="installGuideTitle">طريقة التثبيت</summary><ol>
+      <li data-i18n="installIos">iPhone / iPad: افتح الرابط في Safari، ثم مشاركة ← إضافة إلى الشاشة الرئيسية ← إضافة. فعّل «فتح كتطبيق ويب» إذا ظهر.</li>
+      <li data-i18n="installAndroid">Android: افتح قائمة Chrome واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».</li>
+      <li data-i18n="installDesktop">الكمبيوتر: استخدم زر التثبيت في Chrome أو Edge، أو «إضافة إلى Dock» في Safari إذا توفر. يمكنك أيضاً استخدام الموقع في المتصفح.</li>
+    </ol><p data-i18n="installOffline">يلزم الاتصال للبيانات الحديثة والتسجيل. عند انقطاع الشبكة تظهر صفحة توضح ذلك؛ لا يتم إرسال الطلبات دون اتصال.</p></details>
+    <p id="installStatus" role="status" hidden></p>
   </div></section>
   </main>
   <footer><div class="container footer-inner"><div class="brand" style="color:#fff"><span class="logo" style="background:#167657">GS</span> GO SAUDI</div><small data-i18n="footer">Go Saudi · مفهوم ما قبل الإطلاق · لا توجد مدفوعات مفعّلة</small><div class="footer-mini-nav"><a href="#categories" data-i18n="footerBrowse">الفئات</a><a href="#cities" data-i18n="footerCities">المدن</a><a href="#sell" data-i18n="footerSell">التجار</a><a href="/vendor" data-i18n="vendorPanel">لوحة التاجر</a><a href="/privacy">الخصوصية / Privacy</a></div><small>© 2026 AASAA · Go Saudi</small></div></footer>
@@ -463,14 +555,53 @@
       spotlightKicker:"CATEGORY PREVIEW",spotlightCity:"Explore cities",spotlightSave:"♡ Save interest",spotlightSaved:"♥ Saved",favoritesSuffix:"saved categories",favoritesSingular:"saved category",
       spotlightNotice:"Real merchant and product listings will only be available after launch. Purchases and payments are not enabled."
     });
-    let lang = localStorage.getItem("goSaudiLang") === "en" ? "en" : "ar";
+    Object.assign(tr.ar,{
+      installTitle:"جو سعودي على كل أجهزتك",installDesc:"افتح الموقع على iPhone أو Android أو الكمبيوتر. أضفه إلى الشاشة الرئيسية للوصول السريع.",
+      installButton:"أضف إلى الشاشة الرئيسية",installGuideTitle:"طريقة التثبيت",
+      installIos:"iPhone / iPad: افتح الرابط في Safari، ثم مشاركة ← إضافة إلى الشاشة الرئيسية ← إضافة. فعّل «فتح كتطبيق ويب» إذا ظهر.",
+      installAndroid:"Android: افتح قائمة Chrome واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».",
+      installDesktop:"الكمبيوتر: استخدم زر التثبيت في Chrome أو Edge، أو «إضافة إلى Dock» في Safari إذا توفر. يمكنك أيضاً استخدام الموقع في المتصفح.",
+      installOffline:"يلزم الاتصال للبيانات الحديثة والتسجيل. عند انقطاع الشبكة تظهر صفحة توضح ذلك؛ لا يتم إرسال الطلبات دون اتصال.",
+      installed:"تستخدم جو سعودي كتطبيق ويب.",installAccepted:"تم قبول طلب التثبيت. أكمل أي تعليمات من المتصفح.",
+      offlineNotice:"أنت غير متصل. البيانات قد لا تكون حديثة؛ أعد الاتصال قبل التسجيل.",
+      faq3A:"استخدم تطبيق الويب على iPhone أو Android أو الكمبيوتر، وأضفه إلى الشاشة الرئيسية. الطلبات والمدفوعات لم تُفعّل بعد."
+    });
+    Object.assign(tr.en,{
+      installTitle:"Go Saudi, on every device",installDesc:"Open on iPhone, Android or your computer. Add it to your home screen for quick access.",
+      installButton:"Add to home screen",installGuideTitle:"How to install",
+      installIos:"iPhone / iPad: open this link in Safari, tap Share → Add to Home Screen → Add. Turn on Open as Web App if shown.",
+      installAndroid:"Android: open the Chrome menu and choose Install app or Add to Home screen.",
+      installDesktop:"Computer: use Install in Chrome or Edge, or Add to Dock in Safari where available. You can also keep using your browser.",
+      installOffline:"A connection is needed for current data and registration. If the network drops, an offline page explains what to do. No requests are queued offline.",
+      installed:"You are using Go Saudi as a web app.",installAccepted:"Install request accepted. Complete any remaining browser instructions.",
+      offlineNotice:"You are offline. Data may be out of date; reconnect before registering.",
+      faq3A:"Use the web app on iPhone, Android or your computer, and add it to your home screen. Orders and payments are not enabled yet."
+    });
+    Object.assign(tr.ar,{
+      headline:"حياة أجمل. اختيارات أقرب.",heroDesc:"من تفاصيل بيتك إلى أساسيات يومك. اكتشف عالماً من الفئات، صُمّم للحياة في السعودية.",
+      prelaunch:"اكتشف جو سعودي · معاينة ما قبل الإطلاق",browse:"اكتشف ما يناسبك ↗",startSelling:"لأصحاب الأعمال",
+      editorialTag:"إلهام للمنزل",editorialTitle:"كل التفاصيل، على ذوقك.",editorialCaption:"إلهام للحياة اليومية · صور توضيحية",zeroCommission:"عمولة على المبيعات",
+      discoveryKicker:"مجموعات ملهمة",discoveryTitle:"اكتشافات تستحق وقتك",discoverySubtitle:"منزل، أسلوب، أساسيات، وتقنية. اختر الفئة التي تعكس يومك.",
+      discoveryDisclosure:"صور توضيحية للإلهام فقط. هذه معاينة للفئات، وليست منتجات أو عروضاً متاحة للشراء.",
+      join:"للتجار",trust1:"صُمّم للسعودية",trust2:"فئات للاستكشاف",trust3:"عمولة المبيعات",trust4:"عربي وإنجليزي"
+    });
+    Object.assign(tr.en,{
+      headline:"A little more life. A little more local.",heroDesc:"From the details of your home to your everyday essentials. Discover a world of possibilities, made for life in Saudi Arabia.",
+      prelaunch:"DISCOVER GO SAUDI · PRELAUNCH PREVIEW",browse:"Find your inspiration ↗",startSelling:"For your business",
+      editorialTag:"THE HOME EDIT",editorialTitle:"Make room for beautiful.",editorialCaption:"Everyday inspiration · illustrative photography",zeroCommission:"Sales commission",
+      discoveryKicker:"THE EVERYDAY EDIT",discoveryTitle:"Good things, waiting to be discovered.",discoverySubtitle:"Home, style, essentials and technology. Explore the categories that feel like you.",
+      discoveryDisclosure:"Illustrative photography for inspiration. Category previews only — no products or offers are available to buy.",
+      join:"For merchants",trust1:"Made for Saudi Arabia",trust2:"Categories to explore",trust3:"Sales commission",trust4:"Arabic & English"
+    });
+    let lang="ar";
+    try{lang=localStorage.getItem("goSaudiLang")==="en"?"en":"ar"}catch(_ignore){}
     function renderLanguage(){
       document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
       document.getElementById("langBtn").textContent=lang==="ar"?"English":"العربية";
       document.querySelectorAll("[data-i18n]").forEach(el=>{const key=el.dataset.i18n;if(tr[lang][key])el.textContent=tr[lang][key]});
       document.getElementById("business").placeholder=lang==="ar"?"مثال: متجر الندى":"e.g. Al Nada Store";
       document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{const key=el.dataset.i18nPlaceholder;if(tr[lang][key])el.placeholder=tr[lang][key]});
-      renderSpotlight();renderFavoritesHint();
+      renderSpotlight();renderFavoritesHint();renderAppState();
     }
 
     // Preview-only shopper discovery. Saved categories stay on this device and are not sent to the server.
@@ -519,7 +650,7 @@
     });
     document.querySelectorAll("[data-discover]").forEach(el=>el.addEventListener("click",()=>openCategoryPreview(el.dataset.discover)));
     document.getElementById("langBtn").addEventListener("click",()=>{
-      lang=lang==="ar"?"en":"ar";localStorage.setItem("goSaudiLang",lang);renderLanguage();
+      lang=lang==="ar"?"en":"ar";try{localStorage.setItem("goSaudiLang",lang)}catch(_ignore){}renderLanguage();
     });
     document.querySelectorAll("#categoryGrid [data-category]").forEach(el=>el.addEventListener("click",()=>openCategoryPreview(el.dataset.category)));
     document.getElementById("sellerForm").addEventListener("submit",async e=>{
@@ -564,6 +695,32 @@
       searchStatus.textContent=tr[lang].searchCityNote;
       document.getElementById("explore").scrollIntoView({behavior:"smooth"});
     }));
+    let deferredInstall=null;
+    const standaloneQuery=window.matchMedia("(display-mode: standalone)");
+    function renderAppState(){
+      const standalone=standaloneQuery.matches||navigator.standalone===true;
+      document.getElementById("installApp").hidden=standalone;
+      const status=document.getElementById("installStatus");
+      status.hidden=!standalone;status.textContent=standalone?tr[lang].installed:"";
+      const notice=document.getElementById("networkNotice");
+      notice.hidden=navigator.onLine!==false;notice.textContent=tr[lang].offlineNotice;
+    }
+    window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();deferredInstall=event});
+    window.addEventListener("appinstalled",()=>{deferredInstall=null;renderAppState()});
+    if(standaloneQuery.addEventListener)standaloneQuery.addEventListener("change",renderAppState);
+    window.addEventListener("online",renderAppState);window.addEventListener("offline",renderAppState);
+    document.getElementById("installApp").addEventListener("click",async()=>{
+      if(deferredInstall){
+        const prompt=deferredInstall;deferredInstall=null;
+        try{await prompt.prompt();const result=await prompt.userChoice;
+          if(result.outcome==="accepted"){const status=document.getElementById("installStatus");status.hidden=false;status.textContent=tr[lang].installAccepted;return}
+        }catch(_ignore){}
+      }
+      const guide=document.getElementById("installGuide");guide.open=true;guide.scrollIntoView({block:"center",behavior:"smooth"});guide.querySelector("summary").focus();
+    });
+    if("serviceWorker" in navigator&&window.isSecureContext){
+      window.addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{scope:"/",updateViaCache:"none"}).catch(()=>{/* Browser mode remains available when installation is restricted. */})});
+    }
     renderLanguage();
     // Seller PII collection stays disabled in production until the Saudi
     // privacy notice, retention controls and transfer assessment are signed off.

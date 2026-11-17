@@ -39,6 +39,7 @@ jobs:
       - run: npm run test:saudi
       - run: npm run test:saudi:mobile
       - run: npm run test:saudi:release
+      - run: npm run test:saudi:pwa
       - run: npm run test:revenue
       - run: npm run test:saudi:integration
       - run: npm run test:saudi:commerce:e2e

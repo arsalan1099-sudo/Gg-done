@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import {sql} from "drizzle-orm";
 import {createServer} from "node:http";
 import {db,pool} from "./db";
+import {registerSaudiPwa} from "./saudiPwa";
 import {registerSaudiMarket} from "./saudiMarket";
 import {isSaudiAdminKeyConfigured} from "./saudiAdminAuth";
 
@@ -58,6 +59,7 @@ app.get("/api/health",async(_req,res)=>{
     return res.status(503).json({status:"unhealthy",service:"go-saudi",database:"unavailable"});
   }
 });
+registerSaudiPwa(app);
 registerSaudiMarket(app);
 app.use((_req,res)=>res.status(404).json({error:"Go Saudi route not found"}));
 app.use((err:unknown,_req:express.Request,res:express.Response,_next:express.NextFunction)=>{

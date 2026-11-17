@@ -65,6 +65,21 @@ async function smoke() {
     "Unexpected Next.js assets on Saudi static prelaunch page");
   console.log("PASS: Homepage serves complete branded HTML and inline CSS");
 
+  const manifestResponse = await fetch(new URL("/manifest.webmanifest", origin), {signal: AbortSignal.timeout(20_000)});
+  assert.equal(manifestResponse.status, 200);
+  assert.ok((manifestResponse.headers.get("content-type") || "").includes("application/manifest+json"));
+  const manifest = await manifestResponse.json();
+  assert.equal(manifest.display, "standalone");
+  assert.equal(manifest.start_url, "/");
+  assert.ok(homepage.includes('rel="manifest"'));
+  for (const path of ["/sw.js", "/offline.html", "/pwa/apple-touch-icon.png", ...manifest.icons.map(icon => icon.src), "/editorial/home.jpg", "/editorial/fashion.jpg", "/editorial/grocery.jpg", "/editorial/tech.jpg"]) {
+    const asset = await fetch(new URL(path, origin), {signal: AbortSignal.timeout(20_000)});
+    assert.equal(asset.status, 200, `Missing web app asset: ${path}`);
+    if (path === "/sw.js") assert.equal(asset.headers.get("service-worker-allowed"), "/");
+    await asset.arrayBuffer();
+  }
+  console.log("PASS: Installable web app manifest, worker, icons and editorial images");
+
   const privacyResponse=await fetch(new URL("/privacy",origin),{
     method:"GET",redirect:"error",signal:AbortSignal.timeout(20_000)
   });
