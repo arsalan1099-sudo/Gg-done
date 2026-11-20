@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 90
     env:
       CI: '1'
-      EXPO_PUBLIC_SAUDI_API_URL: ''
+      EXPO_PUBLIC_SAUDI_API_URL: ${{ vars.GO_SAUDI_API_URL }}
       EXPO_PUBLIC_SAUDI_STAGE: PRELAUNCH
     steps:
       - uses: actions/checkout@v4
@@ -47,7 +47,14 @@ jobs:
             throw Error('Unsafe Play internal-release configuration');
           NODE
       - run: npm ci --no-audit --no-fund
+      - name: Regenerate Saudi-only app icons and splash before EAS upload
+        run: npm run brand:saudi
       - run: npm run test:saudi:mobile
+      - run: npm run test:saudi:release
+      - name: Validate production backend and app identity
+        env:
+          EAS_BUILD_PROFILE: production
+        run: npm run eas-build-post-install
       - uses: expo/expo-github-action@v8
         with:
           eas-version: 27.5.0

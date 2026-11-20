@@ -1,0 +1,111 @@
+name: Go Saudi - Google Play API Internal Draft (owner-authorized)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'GitHub Actions run ID containing an owner-signed production AAB'
+        required: true
+        type: string
+      source_artifact_name:
+        description: 'Exact signed AAB artifact name from that run (NOT a test/debug build)'
+        required: true
+        type: string
+      submit_draft:
+        description: 'Commit a DRAFT on the INTERNAL test track (never Production)'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: go-saudi-play-internal-draft
+  cancel-in-progress: false
+
+jobs:
+  validate-and-upload:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CI: '1'
+      GH_TOKEN: ${{ github.token }}
+      EXPECTED_SHA1: ${{ vars.GO_SAUDI_UPLOAD_CERT_SHA1 }}
+      SUBMIT_DRAFT: ${{ inputs.submit_draft }}
+    steps:
+      - name: Checkout owner-approved release branch
+        uses: actions/checkout@v4
+
+      - name: Refuse test-only artifacts and enforce owner signing verification
+        env:
+          ARTIFACT_NAME: ${{ inputs.source_artifact_name }}
+        run: |
+          set -euo pipefail
+          if echo "$ARTIFACT_NAME" | grep -Eiq 'test.only|internal.sharing|debug|preview'; then
+            echo "::error::A test/debug/internal-sharing bundle cannot be used as Play upload bundle."
+            exit 1
+          fi
+          if [ -z "$EXPECTED_SHA1" ]; then
+            echo "::error::Set GitHub Actions variable GO_SAUDI_UPLOAD_CERT_SHA1 to the registered Play Console upload-certificate SHA1."
+            exit 1
+          fi
+
+      - name: Download the owner-signed AAB from a prior Actions run
+        env:
+          RUN_ID: ${{ inputs.source_run_id }}
+          ARTIFACT_NAME: ${{ inputs.source_artifact_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/go-saudi-aab
+          gh run download "$RUN_ID" --name "$ARTIFACT_NAME" --dir /tmp/go-saudi-aab --repo "$GITHUB_REPOSITORY"
+          mapfile -t files < <(find /tmp/go-saudi-aab -type f -name '*.aab')
+          if [ "${#files[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one signed .aab in the downloaded artifact."
+            exit 1
+          fi
+          echo "AAB_PATH=${files[0]}" >> "$GITHUB_ENV"
+
+      - name: Verify bundle was signed by the registered Play upload certificate
+        run: |
+          set -euo pipefail
+          ACTUAL=$(keytool -printcert -jarfile "$AAB_PATH" | sed -n 's/^[[:space:]]*SHA1:[[:space:]]*//p' | head -n 1)
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::Unable to read a signed certificate from app bundle."
+            exit 1
+          fi
+          if [ "${ACTUAL^^}" != "${EXPECTED_SHA1^^}" ]; then
+            echo "::error::AAB signed with a different key than GO_SAUDI_UPLOAD_CERT_SHA1."
+            exit 1
+          fi
+          echo "Registered upload certificate SHA1 verified."
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install official Google Play API client libraries
+        run: python -m pip install --disable-pip-version-check google-auth google-api-python-client
+
+      - name: Verify bundle and optionally upload as INTERNAL DRAFT
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GO_SAUDI_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          if [ "$SUBMIT_DRAFT" = "true" ]; then
+            if [ -z "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:-}" ]; then
+              echo "::error::Configure secret GO_SAUDI_PLAY_SERVICE_ACCOUNT_JSON, with Play Console app-level release permissions."
+              exit 1
+            fi
+            python scripts/go_saudi_play_internal.py "$AAB_PATH" --submit-draft
+          else
+            python scripts/go_saudi_play_internal.py "$AAB_PATH"
+            echo "Preflight passed; no API upload was attempted."
+          fi
+
+# IMPORTANT:
+# 1. Initial upload for a brand-new Play app must be made through Play Console.
+# 2. This workflow needs the owner's Google Cloud service account + Play permissions.
+# 3. Go Saudi production EAS project/signing configuration must be linked first.
+# 4. Only INTERNAL DRAFT status is allowed here; no public production rollout.

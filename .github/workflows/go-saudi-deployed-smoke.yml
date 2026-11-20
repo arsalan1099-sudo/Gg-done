@@ -1,0 +1,40 @@
+name: Go Saudi - deployed prelaunch smoke (read-only)
+
+on:
+  pull_request:
+    branches: [go-saudi]
+    paths:
+      - scripts/saudi-deployed-smoke.mjs
+      - .github/workflows/go-saudi-deployed-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    name: Validate deployed smoke test syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check script
+        run: node --check scripts/saudi-deployed-smoke.mjs
+
+  remote:
+    name: Verify dedicated Saudi Render prelaunch (read-only GET)
+    if: github.event_name == 'workflow_dispatch'
+    needs: syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Saudi backend and fail-closed commerce
+        env:
+          GO_SAUDI_SMOKE_ORIGIN: https://go-saudi-prelaunch.onrender.com
+        run: node scripts/saudi-deployed-smoke.mjs
