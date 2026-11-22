@@ -17,6 +17,8 @@ export const pool = new Pool({
   allowExitOnIdle: false,
   keepAlive: true,
   keepAliveInitialDelayMillis: 10_000,
+  // PostgreSQL applies this to each new connection, before its first query.
+  statement_timeout: IS_PRODUCTION ? 30000 : 60000,
 });
 
 pool.on("error", (err) => {
@@ -26,13 +28,6 @@ pool.on("error", (err) => {
   } else {
     console.error("Database pool connection error (non-fatal, pool will reconnect):", err.message);
   }
-});
-
-pool.on("connect", () => {
-  // Set statement timeout to avoid slow queries blocking the pool
-  // 30s for production, 60s for dev
-  const timeout = IS_PRODUCTION ? 30000 : 60000;
-  pool.query(`SET statement_timeout = ${timeout}`).catch(() => {});
 });
 
 export const db = drizzle(pool, { schema });

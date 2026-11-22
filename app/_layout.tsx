@@ -9,6 +9,7 @@ export default function RootLayout() {
   return (
     <Stack screenOptions={{headerShown:false,animation:"none"}}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="privacy" />
       <Stack.Protected guard={false}>
         <Stack.Screen name="(admin)" />
         <Stack.Screen name="(customer)" />
@@ -41,7 +42,6 @@ export default function RootLayout() {
         <Stack.Screen name="notifications" />
         <Stack.Screen name="order/[id]" />
         <Stack.Screen name="payment" />
-        <Stack.Screen name="privacy" />
         <Stack.Screen name="product/[id]" />
         <Stack.Screen name="store/[id]" />
         <Stack.Screen name="subcategory/[id]" />

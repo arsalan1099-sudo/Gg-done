@@ -8,6 +8,8 @@ const expo=read("app.json").expo;
 const eas=read("eas.json");
 const entry=fs.readFileSync("app/index.tsx","utf8");
 const layout=fs.readFileSync("app/_layout.tsx","utf8");
+const nativePrivacy=fs.readFileSync("app/privacy.tsx","utf8");
+const shop=fs.readFileSync("components/saudi/SaudiPremiumShop.tsx","utf8");
 const fail=(message)=>{throw Error("Go Saudi mobile gate: "+message)};
 if(expo.name!=="Go Saudi"||expo.slug!=="go-saudi")fail("incorrect app branding");
 if(expo.android?.package!=="com.aasaa.gosaudi"||expo.ios?.bundleIdentifier!=="com.aasaa.gosaudi")
@@ -35,4 +37,9 @@ if(/getApiUrl|EXPO_PUBLIC_API_URL|go-bharat\.onrender\.com/.test(entry))
 if(!layout.includes("<Stack.Protected guard={false}>")||!layout.includes('name="(customer)"')||
    !layout.includes('name="(vendor)"')||!layout.includes('name="payment"'))
   fail("inherited Indian routes are not blocked");
-console.log("[SAUDI_MOBILE] Config and route isolation pass. Store publication is deliberately BLOCKED.");
+if(!layout.includes('<Stack.Screen name="privacy" />')||
+   !shop.includes('router.push("/privacy")'))fail("Saudi privacy screen must be accessible from Account");
+if(!/Go Saudi/.test(nativePrivacy)||!/PRELAUNCH/.test(nativePrivacy)||
+   /Go Bharat|Aadhaar|DPDP Act|gobharatservice/i.test(nativePrivacy))
+  fail("Saudi privacy notice has inherited India content or missing prelaunch disclosure");
+console.log("[SAUDI_MOBILE] Config, route isolation and privacy disclosure pass. Store publication remains gated.");
