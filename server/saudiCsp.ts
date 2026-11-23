@@ -38,7 +38,7 @@ export function sendSaudiStaticPage(res:Response, name:"go-saudi-privacy.html"):
   res.setHeader("Content-Security-Policy",saudiStaticHtmlCsp());
   res.type("html").send(html);
 }
-export function sendSaudiPage(res:Response, name:"go-saudi.html"|"go-saudi-admin.html"|"go-saudi-vendor.html"):void {
+export function sendSaudiPage(res:Response, name:"go-saudi.html"|"go-saudi-admin.html"|"go-saudi-vendor.html"|"go-saudi-franchise.html"|"go-saudi-marketing.html"|"go-saudi-delivery.html"):void {
   const safePath=path.resolve(process.cwd(),"server","templates",name);
   const html=fs.readFileSync(safePath,"utf8");
   res.setHeader("Cache-Control","private, no-store");

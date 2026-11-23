@@ -85,3 +85,17 @@ export async function fetchAndVerifySaudiPayment(
   });
  return verifyMoyasarPayment(p,{id:paymentId,amount:expected.amount,currency:"SAR",orderId:expected.orderId});
 }
+
+export async function fetchSaudiInvoice(invoiceId:string):Promise<unknown>{
+ if(!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(invoiceId))throw Error("Invalid invoice ID");
+ return providerFetch("https://api.moyasar.com/v1/invoices/"+invoiceId,{
+   method:"GET",headers:{Authorization:"Basic "+Buffer.from(moyasarKey()+":").toString("base64"),Accept:"application/json"}
+ });
+}
+
+export async function membershipProvider(path:string,body?:object){
+ return await providerFetch("https://api.moyasar.com/v1/"+path,{
+   method:body?"POST":"GET",headers:{Authorization:"Basic "+Buffer.from(moyasarKey()+":").toString("base64"),
+     "Content-Type":"application/json"},body:body?JSON.stringify(body):undefined
+ }) as Record<string,unknown>;
+}

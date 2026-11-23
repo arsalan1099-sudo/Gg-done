@@ -40,3 +40,23 @@ test("saved interests stay device-local and never require purchase", () => {
   assert.match(html, /data-i18n="spotlightCity"/);
   assert.match(html, /role="region" aria-label="Category preview"/);
 });
+
+test("delivery notification works with the page closed and opens the delivery desk on tap",async()=>{
+ const vm=require("node:vm"),handlers={},shown=[],opened=[];
+ const self={
+   addEventListener:(type,handler)=>{handlers[type]=handler},
+   location:{origin:"https://saudi.example"},
+   registration:{showNotification:async(title,options)=>shown.push({title,...options})},
+   clients:{matchAll:async()=>[],openWindow:async path=>opened.push(path)}
+ };
+ vm.runInNewContext(require("node:fs").readFileSync("server/public/pwa/sw.js","utf8"),{self,URL});
+ let finished;
+ const event={waitUntil(promise){finished=promise}};
+ handlers.push(event);
+ await finished;
+ assert.equal(shown[0].tag,"go-saudi-delivery");
+ assert.ok(shown[0].vibrate.length>0);
+ handlers.notificationclick({...event,notification:{tag:shown[0].tag,close(){}}});
+ await finished;
+ assert.deepEqual(opened,["/delivery"]);
+});

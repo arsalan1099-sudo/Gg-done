@@ -1,3 +1,7 @@
+import {runMembershipAutomation} from "./saudiMembershipAutomation";
+import {rankedDeliveries,refreshDeliveryOffers} from "./saudiDelivery";
+import {notifyDeliveryPartners} from "./saudiDeliveryPush";
+import {logSaudiError} from "./saudiLog";
 import express from "express";
 import helmet from "helmet";
 import compression from "compression";
@@ -23,7 +27,7 @@ if(process.env.NODE_ENV==="production"){
 }
 // Verify Saudi DB marker BEFORE listening: never boot against a Go Bharat database.
 const marker=await db.execute(sql`SELECT market,schema_version FROM saudi_market_metadata WHERE market='go-saudi'`);
-if(marker.rows[0]?.schema_version!==6) throw Error("Invalid Saudi DB marker/schema; run the isolated Saudi migration");
+if(marker.rows[0]?.schema_version!==7) throw Error("Invalid Saudi DB marker/schema; run the isolated Saudi migration");
 
 const app=express();
 app.disable("x-powered-by");
@@ -51,7 +55,7 @@ app.use("/api/saudi",(req,res,next)=>{
 app.get("/api/health",async(_req,res)=>{
   try{
     const h=await db.execute(sql`SELECT schema_version FROM saudi_market_metadata WHERE market='go-saudi'`);
-    if(h.rows[0]?.schema_version!==6)throw Error('Saudi DB marker missing');
+    if(h.rows[0]?.schema_version!==7)throw Error('Saudi DB marker missing');
     res.setHeader("Cache-Control","no-store");
     return res.status(200).json({status:"healthy",service:"go-saudi",mode:"PRELAUNCH",
       database:"connected",payments:false,orders:false});
@@ -72,10 +76,27 @@ const port=Number(process.env.PORT||"5000");
 if(!Number.isInteger(port)||port<1||port>65535)throw Error("Invalid PORT");
 const server=createServer(app);
 server.listen(port,"0.0.0.0",()=>console.log("[SAUDI] Secure prelaunch server listening",port));
+let sending=false;
+const notifications=setInterval(async()=>{
+  if(sending)return;
+  sending=true;
+  try{await refreshDeliveryOffers();await notifyDeliveryPartners(rankedDeliveries);}
+  catch(err){logSaudiError("DELIVERY_PUSH",err);}
+  finally{sending=false;}
+},5000);
+notifications.unref();
+let billingBusy=false;
+const billing=setInterval(async()=>{
+  if(billingBusy)return;
+  billingBusy=true;
+  try{await runMembershipAutomation();}catch(err){logSaudiError("SAUDI_AUTO_BILLING",err);}
+  finally{billingBusy=false;}
+},60_000);
+billing.unref();
 let closing=false;
 for(const signal of ["SIGTERM","SIGINT"]){
   process.once(signal,()=>{
-    if(closing)return;closing=true;
+    if(closing)return;closing=true;clearInterval(notifications);clearInterval(billing);
     server.close(async()=>{try{await pool.end();process.exit(0);}catch{process.exit(1);}});
     setTimeout(()=>process.exit(1),10_000).unref();
   });

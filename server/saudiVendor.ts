@@ -4,7 +4,8 @@ import crypto from "node:crypto";
 import {sendSaudiPage} from "./saudiCsp";
 import rateLimit from "express-rate-limit";
 import {and, eq, gt, isNull, sql, desc} from "drizzle-orm";
-import {db} from "./db";
+import {db,pool} from "./db";
+import {saudiPaymentsReady} from "./saudiCommerceRules";
 import {sellerEnquiries,saudiVendorAccounts,saudiVendorInvites,saudiVendorSessions,saudiVendorDraftProducts} from "@shared/schema";
 import {draftProduct,safeShopDescription,safeVendorToken,sha256Token,SAUDI_DRAFT_LIMIT} from "./saudiVendorRules";
 
@@ -159,6 +160,13 @@ export function registerSaudiVendor(app:Express):void{
   });
 
   app.use("/api/saudi/vendor",vendorLimiter,vendorAuthorized);
+
+  app.get("/api/saudi/vendor/membership",async(_req,res)=>{
+    const id=requestVendor(res).enquiryId;
+    const receipt=await pool.query("SELECT valid_until FROM saudi_membership_receipts WHERE enquiry_id=$1 ORDER BY term DESC LIMIT 1",[id]);
+    const invoice=await pool.query("SELECT checkout_url FROM saudi_vendor_invoices WHERE enquiry_id=$1 AND state='open' AND term>(SELECT COALESCE(max(term),0) FROM saudi_membership_receipts WHERE enquiry_id=$1)",[id]);
+    return res.json({validUntil:receipt.rows[0]?.valid_until||null,checkoutUrl:saudiPaymentsReady(process.env)?invoice.rows[0]?.checkout_url||null:null});
+  });
 
   app.get("/api/saudi/vendor/me",async(_req,res)=>{
     noCache(res);
