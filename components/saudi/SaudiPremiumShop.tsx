@@ -6,6 +6,7 @@ import {useSafeAreaInsets} from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg,{Path,Rect,Circle,Line} from "react-native-svg";
 import SaudiCategoryExplorer from "./SaudiCategoryExplorer";
+import { Link } from "expo-router";
 import SaudiCustomerAuth from "./SaudiCustomerAuth";
 import {saudiMainCategories,saudiSubcategories,matchesSaudiCategory,SaudiGroupId} from "../../lib/saudiCategories";
 import {SaudiProduct,CartLine,safeSaudiProduct,safeSaudiCart,changeSaudiCart,saudiCartTotal,sar} from "../../lib/saudiCart";
@@ -247,7 +248,10 @@ export default function SaudiPremiumShop({lang,setLang,origin,onSell}:Props){
      onGroupChange={setGroup} onSubcategory={id=>applyGroup(group,id)}
      onBrowseGroup={id=>applyGroup(id,null)}
      search={subcategorySearch} onSearchChange={setSubcategorySearch}/>}
-    {tab==="account"&&<SaudiCustomerAuth lang={lang} origin={origin}/>}
+    {tab==="account"&&<>
+      <Link href="/privacy" style={{color:GREEN,padding:12,textDecorationLine:"underline"}}>{lang==="ar"?"سياسة الخصوصية":"Privacy policy"}</Link>
+      <SaudiCustomerAuth lang={lang} origin={origin}/>
+    </>}
     {tab==="wishlist"&&<><Text style={s.pageTitle}>{t.wishlist}</Text>
      {saved.length?<View style={s.productGrid}>{saved.map(productCard)}</View>:emptyCard("wishlist")}</>}
     {tab==="cart"&&<><Text style={s.pageTitle}>{t.cart}</Text>
