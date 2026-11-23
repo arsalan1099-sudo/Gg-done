@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Go Saudi · Delivery offers</title>
+<style>
+*{box-sizing:border-box}body{max-width:44rem;margin:auto;padding:1.5rem;font:1rem/1.5 system-ui;color:#153c30;background:#f6faf7}
+section,form{margin:1rem 0}section{padding:1.3rem;background:white;border:1px solid #d5e4dc;border-radius:.8rem}
+label{display:block;margin:.7rem 0}input,select,button{font:inherit;padding:.65rem;border-radius:.4rem}input,select{width:100%;border:1px solid #91aa9d}button{border:0;background:#14573f;color:white;cursor:pointer}li{margin:.5rem 0;overflow-wrap:anywhere}
+</style></head><body><main><h1>Delivery offers · طلبات التوصيل</h1>
+<p>Partner pay: SAR 5 per completed delivery under 20 km. The rate for 20 km or more is pending confirmation. <span lang="ar" dir="rtl">أجر المندوب: ٥ ريالات لكل توصيل مكتمل لمسافة أقل من ٢٠ كم. تعرفة ٢٠ كم فأكثر بانتظار التأكيد.</span></p>
+<form id="login"><label>Delivery partner key<input id="key" type="password" required autocomplete="off"></label>
+<p>Going online shares your current location to match nearby pickups. Keep this page open for sound alerts.</p>
+<button id="start">Go online and enable alerts</button></form>
+<section id="desk" hidden><button id="stop" type="button">Go offline</button><button type="button" id="push">Enable phone notifications</button><p id="pushState" role="status"></p>
+<label><input type="checkbox" id="parked" style="width:auto"> I am waiting at this spot. Match me here for up to 30 minutes after my last GPS update.</label><h2>My deliveries</h2><div id="orders"></div></section>
+<p id="status" role="status"></p></main><script>
+const el=id=>document.getElementById(id);
+let key="",timer,audio,known=new Set(),lastFix=0;
+async function api(path,body,token=key){
+ const response=await fetch("/api/saudi/delivery/"+path,{method:body?"POST":"GET",cache:"no-store",
+ headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify(body)});
+ const data=await response.json();if(!response.ok)throw Error(data.error||"Request failed");return data;
+}
+function buzz(){
+ if(audio && audio.state==="running"){
+   const oscillator=audio.createOscillator(),gain=audio.createGain();
+   oscillator.frequency.value=790;gain.gain.value=0.12;oscillator.connect(gain);gain.connect(audio.destination);
+   oscillator.start();oscillator.stop(audio.currentTime+0.45);
+ }
+ if(navigator.vibrate)navigator.vibrate([180,80,180]);
+}
+async function update(token){
+ if(!token||token!==key)return;
+ try{
+   if(Date.now()-lastFix>20000){
+     const pos=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{maximumAge:0,timeout:10000,enableHighAccuracy:true}));
+     if(token!==key)return;
+     await api("location",{latitude:pos.coords.latitude,longitude:pos.coords.longitude,parked:el("parked").checked},token);
+     lastFix=Date.now();
+   }
+   const data=await api("offers",undefined,token);
+   if(token!==key)return;
+   const ids=new Set(data.offers.map(row=>row.order_id));
+   if([...ids].some(id=>!known.has(id)))buzz();
+   known=ids;el("orders").replaceChildren();
+   for(const [active,rows] of [[true,data.active],[false,data.offers]]){
+     for(const row of rows){
+       const card=document.createElement("section"),title=document.createElement("h3");
+       title.textContent=(active?"Accepted order":"New pickup")+" · "+row.order_id;
+       const pickup=document.createElement("p");pickup.textContent=(row.business_name||"Pickup")+" · "+row.pickup_lat+", "+row.pickup_lon;
+       const action=document.createElement("button");action.textContent=active?"Mark delivery complete":"Accept order";
+       action.onclick=async()=>{
+         if(active&&!confirm("Mark this order delivered?"))return;
+         action.disabled=true;
+         try{await api(active?"complete":"accept",{orderId:row.order_id},token);action.textContent=active?"Completed":"Accepted";}
+         catch(err){el("status").textContent=err.message;}
+       };
+       card.append(title,pickup,action);
+       if(!active){
+         const expiry=document.createElement("p");expiry.textContent="Offer expires at "+new Date(row.offer_until).toLocaleTimeString();
+         const decline=document.createElement("button");decline.textContent="Decline · رفض";
+         decline.onclick=async()=>{
+           decline.disabled=true;action.disabled=true;
+           try{await api("decline",{orderId:row.order_id},token);card.remove();}
+           catch(err){el("status").textContent=err.message;}
+         };
+         card.append(expiry,decline);
+       }
+       el("orders").append(card);
+     }
+   }
+   el("status").textContent=data.active.length||ids.size?"Online":"Online · waiting for nearby pickups";
+ }catch(err){if(token===key)el("status").textContent=err.message;}
+ finally{if(token===key)timer=setTimeout(()=>update(token),5000);}
+}
+el("login").onsubmit=async event=>{
+ event.preventDefault();key=el("key").value.trim();el("login").reset();
+ el("login").hidden=true;el("desk").hidden=false;el("status").textContent="Getting current location…";
+ try{audio=audio||new AudioContext();await audio.resume();}catch{}
+ update(key);
+};
+el("parked").onchange=()=>{lastFix=0;};
+el("push").onclick=async()=>{
+ const partner=key;
+ try{
+   if(!("Notification" in window)||!("PushManager" in window)||!("serviceWorker" in navigator))
+     throw Error("Phone notifications are unavailable in this browser.");
+   if(await Notification.requestPermission()!=="granted")throw Error("Notification permission is required.");
+   await navigator.serviceWorker.register("/sw.js");
+   const worker=await navigator.serviceWorker.ready;
+   const {publicKey}=await api("push-key",undefined,partner);
+   const bytes=Uint8Array.from(atob(publicKey.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
+   let sub=await worker.pushManager.getSubscription();
+   if(sub && String(new Uint8Array(sub.options.applicationServerKey))!==String(bytes)){
+     await sub.unsubscribe();sub=null;
+   }
+   sub=sub||await worker.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:bytes});
+   if(partner!==key)return;
+   await api("push",{endpoint:sub.endpoint},partner);
+   el("pushState").textContent="Phone alerts enabled. Notification sound follows your phone settings.";
+ }catch(err){el("pushState").textContent=err.message;}
+};
+el("stop").onclick=async()=>{
+ const old=key;key="";clearTimeout(timer);known.clear();lastFix=0;el("parked").checked=false;el("pushState").textContent="";
+ el("orders").replaceChildren();el("desk").hidden=true;el("login").hidden=false;
+ try{await api("location",{offline:true},old);el("status").textContent="Offline";}
+ catch(err){el("status").textContent=err.message+" · Matching expires after 90 seconds without a location update.";}
+};
+</script></body></html>

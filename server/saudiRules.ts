@@ -1,7 +1,8 @@
 // Go Saudi: pure, testable input validation. No payment credentials or secrets.
 export const SAUDI_CITIES = ["Riyadh","Jeddah","Makkah","Madinah","Dammam","Khobar","Dhahran","Taif","Tabuk","Abha","Jazan","Hail","Other"] as const;
 export const SAUDI_CATEGORIES = ["Grocery","Fashion","Food","Electronics","Home","Beauty","Services","Wholesale","Other"] as const;
-export const REFERRAL_PERCENT = 33; // Policy proposal; never accrued until captured, verified settlement.
+export const ANNUAL_VENDOR_FEE_SAR = 999;
+export const REFERRAL_PERCENT = 15; // Executive commission on a paid vendor onboarding.
 export function normalizeSaudiMobile(raw: unknown): string | null {
   if (typeof raw !== "string" || raw.length > 40) return null;
   const d = raw.replace(/[^0-9]/g, "");

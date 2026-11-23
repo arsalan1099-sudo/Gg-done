@@ -33,3 +33,21 @@ self.addEventListener("fetch", event => {
     })());
   }
 });
+
+self.addEventListener("push",event=>{
+  event.waitUntil(self.registration.showNotification("Go Saudi · New delivery offer",{
+    body:"Open your delivery dashboard to check this pickup.",
+    tag:"go-saudi-delivery",renotify:true,vibrate:[200,100,200],
+    icon:"/pwa/icon-192.png"
+  }));
+});
+self.addEventListener("notificationclick",event=>{
+  if(event.notification.tag!=="go-saudi-delivery")return;
+  event.notification.close();
+  event.waitUntil((async()=>{
+    const windows=await self.clients.matchAll({type:"window",includeUncontrolled:true});
+    const desk=windows.find(client=>new URL(client.url).origin===self.location.origin && new URL(client.url).pathname==="/delivery");
+    if(desk)return desk.focus();
+    return self.clients.openWindow("/delivery");
+  })());
+});

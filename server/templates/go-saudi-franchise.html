@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Go Saudi · Franchise team</title>
+<style>
+*{box-sizing:border-box}body{max-width:44rem;margin:auto;padding:1.5rem;font:1rem/1.5 system-ui;color:#153c30;background:#f6faf7}
+section,form{margin:1rem 0}section{padding:1.3rem;background:white;border:1px solid #d5e4dc;border-radius:.8rem}
+label{display:block;margin:.7rem 0}input,select,button{font:inherit;padding:.65rem;border-radius:.4rem}input,select{width:100%;border:1px solid #91aa9d}button{border:0;background:#14573f;color:white;cursor:pointer}li{margin:.5rem 0;overflow-wrap:anywhere}
+</style></head><body><main><h1>Go Saudi franchise team</h1>
+<form id="login"><label>Franchise owner key<input required type="password" id="key" autocomplete="off"></label><button>Open team</button></form>
+<section id="workspace" hidden><h2 id="city"></h2>
+<p>Franchise fee: SAR 500,000 (non-refundable). <span lang="ar" dir="rtl">رسوم الامتياز: ٥٠٠٬٠٠٠ ريال سعودي، غير قابلة للاسترداد.</span></p><button type="button" id="logout">Lock dashboard</button>
+<form id="hire"><h3>Record a hire</h3><label>Team member name<input id="member" minlength="2" maxlength="120" required></label>
+<label>Saudi mobile<input type="tel" id="mobile" placeholder="05XXXXXXXX" required></label>
+<label>Role<select id="role"><option value="MARKETING_EXECUTIVE">Marketing executive</option><option value="DELIVERY_PARTNER">Delivery partner</option></select></label>
+<button id="save">Add to team</button></form><h3>City team</h3><ul id="list"></ul><output id="issued" style="overflow-wrap:anywhere"></output><p><a href="/marketing">Marketing executive form</a> · <a href="/delivery">Delivery partner dashboard</a></p></section>
+<p role="status" id="message"></p></main><script>
+const el=id=>document.getElementById(id);
+let key="";
+function lock(){
+  key="";el("issued").textContent="";el("key").value="";el("hire").reset();el("list").replaceChildren();el("city").textContent="";
+  el("workspace").hidden=true;el("login").hidden=false;el("message").textContent="";
+}
+async function request(body,suffix=""){
+  const response=await fetch("/api/saudi/franchise/team"+suffix,{method:body?"POST":"GET",cache:"no-store",
+    headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const data=await response.json();
+  if(!response.ok){if(response.status===401)lock();throw Error(data.error||"Request failed");}
+  return data;
+}
+async function refresh(){
+  const current=key,data=await request();
+  if(current!==key)return;
+  el("city").textContent=data.city;el("list").replaceChildren();
+  for(const member of data.members){
+    const row=document.createElement("li");
+    row.textContent=member.name+" · "+(member.role==="MARKETING_EXECUTIVE"?"Marketing executive":"Delivery partner")+" · "+member.mobile;
+    {
+      const delivery=member.role==="DELIVERY_PARTNER";
+      const issue=document.createElement("button");
+      issue.type="button";issue.textContent=delivery?"Issue delivery key":"Issue executive key";
+      issue.onclick=async()=>{
+        if(!confirm("Issue a private key for "+member.name+"? Their previous key will expire."))return;
+        issue.disabled=true;el("issued").textContent="";
+        try{
+          const result=await request({memberId:member.id},delivery?"/delivery-key":"/executive-key");
+          if(current===key)el("issued").textContent=member.name+" · Private key: "+result.token;
+        }catch(error){el("message").textContent=error.message;}finally{issue.disabled=false;}
+      };
+      row.append(" ",issue);
+    }
+    el("list").append(row);
+  }
+  if(!data.members.length)el("list").textContent="No team members yet.";
+  el("workspace").hidden=false;el("login").hidden=true;
+}
+el("login").onsubmit=async event=>{
+  event.preventDefault();key=el("key").value.trim();el("message").textContent="";
+  try{await refresh();el("key").value="";}catch(error){el("message").textContent=error.message;}
+};
+el("hire").onsubmit=async event=>{
+  event.preventDefault();el("save").disabled=true;el("message").textContent="";
+  try{
+    await request({name:el("member").value,mobile:el("mobile").value,role:el("role").value});
+    if(key){el("hire").reset();el("message").textContent="Team member added.";await refresh();}
+  }catch(error){el("message").textContent=error.message;}finally{el("save").disabled=false;}
+};
+el("logout").onclick=lock;
+</script></body></html>

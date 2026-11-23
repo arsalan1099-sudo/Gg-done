@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import {normalizeSaudiMobile, validateSaudiEnquiry, referralHalalas} from "../saudiRules";
+import {ANNUAL_VENDOR_FEE_SAR, normalizeSaudiMobile, validateSaudiEnquiry, referralHalalas} from "../saudiRules";
 
 test("KSA mobile normalization only accepts Saudi mobile formats", () => {
   assert.equal(normalizeSaudiMobile("0501234567"), "+966501234567");
@@ -16,7 +16,8 @@ test("enquiry requires valid consent and location", () => {
   assert.equal(validateSaudiEnquiry({...body,city:"Mumbai"}).valid, false);
 });
 test("referrals use integer halalas (not floating point SAR)", () => {
-  assert.equal(referralHalalas(10000), 3300);
+  assert.equal(ANNUAL_VENDOR_FEE_SAR, 999);
+  assert.equal(referralHalalas(ANNUAL_VENDOR_FEE_SAR * 100), 14985);
   assert.equal(referralHalalas(0), 0);
   assert.throws(()=>referralHalalas(-1));
   assert.throws(()=>referralHalalas(100, 101));

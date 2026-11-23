@@ -71,7 +71,9 @@ textarea.input{min-height:92px;resize:vertical}.formrow{display:grid;grid-templa
     <button class="navbtn" type="button" data-view="store"><span class="symbol">⚙</span><span data-t="settings">إعداد المتجر</span></button>
   </aside>
   <div class="main">
-    <section class="page" id="page-overview">
+    <section class="page" id="page-overview"><div class="panel"><strong>Annual membership · العضوية السنوية · SAR 999</strong>
+      <p id="membershipStatus" role="status"></p><a id="membershipPay" class="btn hidden" rel="noreferrer">Pay securely · دفع آمن</a>
+      <button id="refreshMembership" type="button">Refresh · تحديث</button></div>
       <div class="headerline">
         <div><h1 id="shopHeading">—</h1><p class="sub" data-t="overviewCaption">إدارة متجرك وكتالوج منتجاتك قبل الإطلاق.</p></div>
         <span class="badge" data-t="draftStatus">مسودات فقط · غير منشور</span>
@@ -121,6 +123,11 @@ textarea.input{min-height:92px;resize:vertical}.formrow{display:grid;grid-templa
     <section class="page hidden" id="page-orders">
       <div class="headerline"><div><h1 data-t="orders">الطلبات</h1><p class="sub" data-t="ordersSubtitle">الطلبات والمدفوعات سيتم تفعيلها عند إطلاق السوق.</p></div><span class="badge" data-t="comingSoon">قريباً</span></div>
       <div class="panel empty"><div class="giant">🛒</div><h2 data-t="noOrders">لا توجد طلبات</h2><p data-t="ordersWarning">الطلبات الحقيقية غير متاحة في المرحلة الحالية. لا توجد مبيعات أو أرباح حتى الآن.</p></div>
+      <form id="dispatch" class="panel"><h2>Request delivery · طلب توصيل</h2>
+        <label>Paid order ID <input class="input" id="deliveryOrder" required pattern="SO_[a-f0-9]{30}"></label>
+        <label><input type="checkbox" required> The customer requested delivery and I am at the pickup shop.</label>
+        <button class="btn">Use shop GPS and request partner</button><p id="dispatchStatus" role="status"></p>
+      </form>
     </section>
 
     <section class="page hidden" id="page-store">
@@ -181,6 +188,17 @@ const api=async(url,opts={})=>{
  }
  if(!response.ok)throw Error(data.error||words[lang].unexpected);
  return data;
+};
+$("dispatch").onsubmit=async event=>{
+ event.preventDefault();
+ const form=event.currentTarget,button=form.querySelector("button");
+ button.disabled=true;
+ try{
+   const pos=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{maximumAge:0,timeout:15000,enableHighAccuracy:true}));
+   await api("/api/saudi/vendor/delivery-requests",{method:"POST",body:JSON.stringify({orderId:$("deliveryOrder").value.trim(),
+     latitude:pos.coords.latitude,longitude:pos.coords.longitude,requestedByCustomer:true})});
+   form.reset();$("dispatchStatus").textContent="Delivery requested. Waiting for an available partner.";
+ }catch(err){$("dispatchStatus").textContent=err.message;}finally{button.disabled=false;}
 };
 function opt(value,label){
  const el=document.createElement("option");el.value=value;el.textContent=label;return el;
@@ -271,10 +289,19 @@ const loadProducts=async()=>{
  catalogSubmissions=moderation.submissions||[];
  renderProducts();renderOverview();
 };
+async function loadMembership(){
+ const link=$("membershipPay");link.classList.add("hidden");link.removeAttribute("href");
+ try{
+   const status=await api("/api/saudi/vendor/membership");
+   $("membershipStatus").textContent=status.validUntil?"Membership valid through "+new Date(status.validUntil).toLocaleDateString():"Annual membership pending";
+   if(status.checkoutUrl){link.href=status.checkoutUrl;link.classList.remove("hidden");}
+ }catch(err){$("membershipStatus").textContent=err.message;}
+}
+$("refreshMembership").onclick=loadMembership;
 const loadAll=async()=>{
  await loadTaxonomy();
  const data=await api("/api/saudi/vendor/me");store=data.store;
- await loadProducts();renderOverview();
+ await loadProducts();renderOverview();await loadMembership();
  $("activation").classList.add("hidden");$("workspace").classList.remove("hidden");$("logout").classList.remove("hidden");
  view("overview");
 };

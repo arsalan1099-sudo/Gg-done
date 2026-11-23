@@ -4,6 +4,9 @@ import crypto from "node:crypto";
 import express from "express";
 import type {Server} from "node:http";
 import {pool} from "../db";
+import webpush from "web-push";
+import {notifyDeliveryPartners} from "../saudiDeliveryPush";
+import {rankedDeliveries} from "../saudiDelivery";
 import {registerSaudiMarket} from "../saudiMarket";
 
 let server:Server,base="",adminToken="";
@@ -285,5 +288,233 @@ test("CSP prevents arbitrary inline script injection",async()=>{
   assert.match(csp,/script-src 'sha256-/);
   assert.doesNotMatch(csp,/script-src 'unsafe-inline'/);
   assert.match(csp,/frame-ancestors 'none'/);
+ }
+});
+
+test("only admins can assign an available city to one franchise operator", async () => {
+ const path="/api/saudi/admin/franchises";
+ const operatorName="CI "+crypto.randomUUID();
+ const application={city:"Jeddah",operatorName};
+ assert.equal((await json(path)).res.status,401);
+ assert.equal((await post(path,application)).res.status,401);
+ assert.equal((await post(path,{...application,city:"Other"},adminHeaders())).res.status,400);
+ assert.equal((await post(path,{...application,operatorName:" "},adminHeaders())).res.status,400);
+ try {
+   const results=await Promise.all([post(path,application,adminHeaders()),post(path,application,adminHeaders())]);
+   assert.deepEqual(results.map(result=>result.res.status).sort(),[201,409]);
+   const list=await json(path,{headers:adminHeaders()});
+   assert.equal(list.res.status,200);
+   assert.ok(list.data.cities.includes(application.city));
+   assert.deepEqual(list.data.franchises.filter((row:any)=>row.city===application.city),[application]);
+ } finally {
+   await pool.query("DELETE FROM saudi_city_franchises WHERE city=$1 AND operator_name=$2",[application.city,operatorName]);
+ }
+});
+
+test("franchise owners hire both roles within their own city and lose access on key rotation",async()=>{
+ const owner=crypto.randomUUID(),team="/api/saudi/franchise/team",admin="/api/saudi/admin/franchises";
+ const application={name:"Test member",role:"MARKETING_EXECUTIVE",mobile:"0551234567"};
+ const ownerHeaders=(token:string)=>({Authorization:"Bearer "+token});
+ try {
+  const keys:string[]=[];
+  for(const city of ["Jeddah","Riyadh"]){
+   assert.equal((await post(admin,{city,operatorName:owner},adminHeaders())).res.status,201);
+   const issue=admin+"/"+city+"/owner-key";
+   assert.equal((await post(issue,{})).res.status,401);
+   const key=await post(issue,{},adminHeaders());
+   assert.equal(key.res.status,200);
+   keys.push(key.data.token);
+  }
+  const first=ownerHeaders(keys[0]),second=ownerHeaders(keys[1]);
+  assert.equal((await post(team,application)).res.status,401);
+  assert.equal((await post(admin+"/Jeddah/owner-key",{},first)).res.status,401);
+  assert.equal((await post(team,{...application,city:"Riyadh"},first)).res.status,400);
+  assert.equal((await post(team,{...application,role:"ADMIN"},first)).res.status,400);
+  for(const role of ["MARKETING_EXECUTIVE","DELIVERY_PARTNER"]){
+   const created=await post(team,{...application,role},first);
+   assert.equal(created.res.status,201);
+   assert.equal(created.data.member.city,"Jeddah");
+  }
+  assert.equal((await post(team,{...application,mobile:"+966551234567"},first)).res.status,409);
+  assert.equal((await json(team,{headers:first})).data.members.length,2);
+  assert.deepEqual((await json(team+"?city=Jeddah",{headers:second})).data.members,[]);
+  const next=await post(admin+"/Jeddah/owner-key",{},adminHeaders());
+  assert.equal((await json(team,{headers:first})).res.status,401);
+  assert.equal((await json(team,{headers:ownerHeaders(next.data.token)})).data.members.length,2);
+ }finally{
+  await pool.query("DELETE FROM saudi_franchise_team WHERE city IN (SELECT city FROM saudi_city_franchises WHERE operator_name=$1)",[owner]);
+  await pool.query("DELETE FROM saudi_city_franchises WHERE operator_name=$1",[owner]);
+ }
+});
+
+test("marketing executive submits a consented city-bound application to the admin queue",async()=>{
+ const operator=crypto.randomUUID(),name="Executive Test",city="Jeddah";
+ const businessName="Shop "+crypto.randomUUID();
+ const team="/api/saudi/franchise/team",admin="/api/saudi/admin/franchises";
+ const route="/api/saudi/marketing/seller-enquiries";
+ const form={businessName,category:"Food",phone:"0558765432",consent:true,city:"Riyadh",status:"APPROVED",executiveName:"Other"};
+ const headers=(key:string)=>({Authorization:"Bearer "+key});
+ try{
+  assert.equal((await post(admin,{city,operatorName:operator},adminHeaders())).res.status,201);
+  const owner=headers((await post(admin+"/"+city+"/owner-key",{},adminHeaders())).data.token);
+  for(const role of ["MARKETING_EXECUTIVE","DELIVERY_PARTNER"]){
+   assert.equal((await post(team,{role,name,mobile:"0559876543"},owner)).res.status,201);
+  }
+  const members=(await json(team,{headers:owner})).data.members;
+  const issue=(role:string)=>post(team+"/executive-key",{memberId:members.find((m:any)=>m.role===role).id},owner);
+  assert.equal((await issue("DELIVERY_PARTNER")).res.status,404);
+  const executive=headers((await issue("MARKETING_EXECUTIVE")).data.token);
+  assert.equal((await post(route,form,owner)).res.status,401);
+  assert.equal((await post(route,{...form,consent:false},executive)).res.status,400);
+  assert.equal((await post(route,form,executive)).res.status,201);
+  assert.equal((await post(route,form,executive)).data.deduplicated,true);
+  const queue=(await json("/api/saudi/admin/seller-enquiries?status=NEW",{headers:adminHeaders()})).data.leads;
+  const matches=queue.filter((row:any)=>row.businessName===businessName);
+  assert.equal(matches.length,1);
+  assert.equal(matches[0].city,city);
+  assert.equal(matches[0].executiveName,name);
+  assert.equal((await patch("/api/saudi/admin/seller-enquiries/"+matches[0].id,{status:"APPROVED"},executive)).res.status,401);
+  await issue("MARKETING_EXECUTIVE");
+  assert.equal((await post(route,form,executive)).res.status,401);
+ }finally{
+  await pool.query("DELETE FROM seller_enquiries WHERE business_name=$1",[businessName]);
+  await pool.query("DELETE FROM saudi_franchise_team WHERE city IN (SELECT city FROM saudi_city_franchises WHERE operator_name=$1)",[operator]);
+  await pool.query("DELETE FROM saudi_city_franchises WHERE operator_name=$1",[operator]);
+ }
+});
+
+test("delivery request is offered only to the nearest fresh same-city partner and claimed once",async()=>{
+ const id=crypto.randomBytes(15).toString("hex"),order="SO_"+id;
+ const first=crypto.randomBytes(32).toString("hex"),second=crypto.randomBytes(32).toString("hex");
+ const session=crypto.randomBytes(32).toString("hex");
+ const hash=(s:string)=>crypto.createHash("sha256").update(s).digest("hex");
+ const headers=(key:string)=>({Authorization:"Bearer "+key});
+ const root="/api/saudi/delivery",city="Taif";
+ try {
+   await pool.query("INSERT INTO saudi_city_franchises(city,operator_name) VALUES($1,$2)",[city,id]);
+   for(const [key,mobile] of [[first,"+966511111111"],[second,"+966522222222"]]){
+     await pool.query("INSERT INTO saudi_franchise_team(city,name,mobile,role,delivery_key_hash) VALUES($1,'Partner',$2,'DELIVERY_PARTNER',$3)",[city,mobile,hash(key)]);
+   }
+   await pool.query("INSERT INTO seller_enquiries(id,business_name,city,category,phone,status) VALUES($1,'Test shop',$2,'Food','+966511111111','APPROVED')",[id,city]);
+   await pool.query("INSERT INTO saudi_vendor_accounts(id,enquiry_id) VALUES($1,$1)",[id]);
+   await pool.query("INSERT INTO saudi_vendor_sessions(id,vendor_id,token_hash,expires_at) VALUES($1,$1,$2,now()+interval '1 hour')",[id,hash(session)]);
+   await pool.query("INSERT INTO saudi_customer_accounts(id,phone_hash,phone_encrypted) VALUES($1,$1,'fixture')",[id]);
+   await pool.query("INSERT INTO saudi_orders(id,customer_id,vendor_id,idempotency_key,subtotal_halalas,expires_at) VALUES($1,$2,$2,$2,100,now())",[order,id]);
+   const payload={orderId:order,latitude:21.27,longitude:40.41,requestedByCustomer:true};
+   const vendor={Cookie:"__Host-go_saudi_vendor="+session};
+   const dispatch=()=>post("/api/saudi/vendor/delivery-requests",payload,vendor);
+   assert.equal((await dispatch()).res.status,409);
+   await pool.query("UPDATE saudi_orders SET status='PAID' WHERE id=$1",[order]);
+   assert.equal((await dispatch()).res.status,201);
+   const location=(key:string,latitude:number)=>post(root+"/location",{latitude,longitude:40.41},headers(key));
+   const offers=async(key:string)=>(await json(root+"/offers",{headers:headers(key)})).data.offers.map((r:any)=>r.order_id);
+   assert.equal((await location(first,21.28)).res.status,200);
+   assert.equal((await location(second,21.9)).res.status,200);
+   const endpoint="https://fcm.googleapis.com/fcm/send/test-subscription";
+   assert.equal((await post(root+"/push",{endpoint:"https://example.org"},headers(first))).res.status,400);
+   assert.equal((await post(root+"/push",{endpoint},headers(first))).res.status,200);
+   const notified:string[]=[];
+   const send:typeof webpush.sendNotification=async(sub,payload,options)=>{
+     const request=webpush.generateRequestDetails(sub,payload,options);
+     assert.equal(request.endpoint,endpoint);
+     assert.match(String(request.headers.Authorization),/^vapid /);
+     notified.push(sub.endpoint);
+     return {statusCode:201,headers:{},body:""};
+   };
+   await offers(first);
+   await notifyDeliveryPartners(rankedDeliveries,send);
+   await notifyDeliveryPartners(rankedDeliveries,send);
+   assert.deepEqual(notified,[endpoint]);
+   assert.deepEqual(await offers(first),[order]);assert.deepEqual(await offers(second),[]);
+   await pool.query("UPDATE saudi_franchise_team SET located_at=now()-interval '2 minutes' WHERE delivery_key_hash=$1",[hash(first)]);
+   assert.deepEqual(await offers(second),[order]);
+   assert.equal((await post(root+"/accept",{orderId:order},headers(first))).res.status,409);
+   const claim=()=>post(root+"/accept",{orderId:order},headers(second));
+   assert.deepEqual((await Promise.all([claim(),claim()])).map(x=>x.res.status).sort(),[200,409]);
+   assert.equal((await post(root+"/complete",{orderId:order},headers(first))).res.status,409);
+   assert.equal((await post(root+"/complete",{orderId:order},headers(second))).res.status,200);
+   const nextOrder="SO_"+crypto.randomBytes(15).toString("hex");
+   await pool.query("INSERT INTO saudi_orders(id,customer_id,vendor_id,idempotency_key,subtotal_halalas,expires_at,status) VALUES($1,$2,$2,$1,100,now(),'PAID')",[nextOrder,id]);
+   assert.equal((await location(first,21.28)).res.status,200);
+   assert.equal((await post("/api/saudi/vendor/delivery-requests",{...payload,orderId:nextOrder},vendor)).res.status,201);
+   assert.deepEqual(await offers(first),[nextOrder]);
+   const decline=(key:string)=>post(root+"/decline",{orderId:nextOrder},headers(key));
+   assert.equal((await decline(second)).res.status,409);
+   assert.equal((await decline(first)).res.status,200);
+   assert.deepEqual(await offers(second),[nextOrder]);
+   await pool.query("UPDATE saudi_delivery_requests SET offer_until=now()-interval '1 second' WHERE order_id=$1",[nextOrder]);
+   assert.equal((await post(root+"/accept",{orderId:nextOrder},headers(second))).res.status,409);
+   assert.deepEqual(await offers(first),[]);
+   assert.deepEqual(await offers(second),[]);
+ } finally {
+   await pool.query("DELETE FROM saudi_delivery_requests WHERE order_id IN (SELECT id FROM saudi_orders WHERE customer_id=$1)",[id]);
+   await pool.query("DELETE FROM saudi_orders WHERE customer_id=$1",[id]);
+   await pool.query("DELETE FROM saudi_customer_accounts WHERE id=$1",[id]);
+   await pool.query("DELETE FROM seller_enquiries WHERE id=$1",[id]);
+   await pool.query("DELETE FROM saudi_franchise_team WHERE delivery_key_hash IN ($1,$2)",[hash(first),hash(second)]);
+   await pool.query("DELETE FROM saudi_city_franchises WHERE operator_name=$1",[id]);
+ }
+});
+
+test("verified membership is credited once and renewal carries no onboarding commission",async()=>{
+ const {SAUDI_COMMERCE_GATES}=await import("../saudiCommerceRules");
+ const id="SL_"+crypto.randomBytes(15).toString("hex"),invoiceId=crypto.randomUUID(),paymentId=crypto.randomUUID();
+ const path="/api/saudi/admin/seller-enquiries/"+id+"/membership";
+ const env:Record<string,string>={...Object.fromEntries(SAUDI_COMMERCE_GATES.map(k=>[k,"true"])),GO_SAUDI_PAYMENTS_ENABLED:"true",
+   MOYASAR_SECRET_KEY:"sk_live_"+"x".repeat(20),MOYASAR_PUBLISHABLE_KEY:"pk_live_"+"x".repeat(20),
+   MOYASAR_WEBHOOK_SECRET_TOKEN:"x".repeat(32),APP_PUBLIC_URL:"https://example.test",TWILIO_VERIFY_SERVICE_SID:"VA"+"a".repeat(32),
+   TWILIO_API_KEY:"SK"+"a".repeat(32),TWILIO_ACCOUNT_SID:"AC"+"a".repeat(32),TWILIO_API_SECRET:"test",GO_SAUDI_CUSTOMER_ENCRYPTION_KEY:"a".repeat(64)};
+ const autoId="SL_"+crypto.randomBytes(15).toString("hex"),executive=crypto.randomUUID(),source=crypto.randomUUID();
+ Object.assign(env,{GO_SAUDI_EXECUTIVE_PAYOUTS_ENABLED:"true",MOYASAR_PAYOUT_SOURCE_ID:source,
+   GO_SAUDI_VERIFIED_BENEFICIARIES_JSON:JSON.stringify({[executive]:{iban:"SA"+"0".repeat(22),name:"Fixture",city:"Jeddah",mobile:"0551234567"}})});
+ const original=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]]));
+ const originalFetch=globalThis.fetch;
+ const invoice={id:invoiceId,status:"paid",currency:"SAR",amount:99900,description:"",payments:[{id:paymentId,status:"paid",currency:"SAR",amount:99900,refunded:0,updated_at:new Date().toISOString()}]};
+ try{
+   await pool.query("INSERT INTO seller_enquiries(id,business_name,city,category,phone,status,executive_id) VALUES($1,'Test','Jeddah','Food','+966511111111','APPROVED',$2)",[id,crypto.randomUUID()]);
+   Object.assign(process.env,env);
+   globalThis.fetch=(input,init)=>String(input).startsWith("https://api.moyasar.com/v1/invoices/")
+     ? Promise.resolve(Response.json(invoice)):originalFetch(input,init);
+   const verify=(term:number)=>post(path,{invoiceId:invoice.id,term},adminHeaders());
+   assert.equal((await verify(1)).res.status,409);
+   invoice.description=(await json(path,{headers:adminHeaders()})).data.reference;
+   const pair=await Promise.all([verify(1),verify(1)]);
+   assert.deepEqual(pair.map(r=>r.res.status).sort(),[200,201]);
+   assert.equal(pair[0].data.commission_halalas,14985);
+   const firstUntil=pair[0].data.valid_until;
+   invoice.id=crypto.randomUUID();invoice.payments[0].id=crypto.randomUUID();
+   invoice.description=(await json(path,{headers:adminHeaders()})).data.reference;
+   const renewal=await verify(2);
+   assert.equal(renewal.res.status,201);assert.equal(renewal.data.commission_halalas,0);
+   assert.ok(renewal.data.valid_until>firstUntil);
+   await pool.query("INSERT INTO seller_enquiries(id,business_name,city,category,phone,status,executive_id) VALUES($1,'Auto Test','Jeddah','Food','+966511111111','APPROVED',$2)",[autoId,executive]);
+   const invoices=new Map<string,any>(),payoutIds:string[]=[];
+   globalThis.fetch=async(input,init)=>{
+     const url=String(input),body=JSON.parse(String(init?.body||"{}"));
+     if(url==="https://api.moyasar.com/v1/invoices"){
+       const generated={...body,id:crypto.randomUUID(),status:"paid",url:"https://moyasar.com/test-invoice",payments:[{...invoice.payments[0],id:crypto.randomUUID()}]};
+       invoices.set(generated.id,generated);return Response.json(generated);
+     }
+     if(url.startsWith("https://api.moyasar.com/v1/invoices/"))return Response.json(invoices.get(url.split("/").pop()!)||invoice);
+     if(url==="https://api.moyasar.com/v1/payouts"){
+       payoutIds.push(body.given_id);
+       if(payoutIds.length===1)throw Error("Simulated lost response");
+       return Response.json({id:body.given_id,source_id:source,amount:body.amount,currency:"SAR",status:"paid"});
+     }
+     return originalFetch(input,init);
+   };
+   const {runMembershipAutomation}=await import("../saudiMembershipAutomation");
+   await runMembershipAutomation();await runMembershipAutomation();await runMembershipAutomation();
+   assert.equal([...invoices.values()].filter(i=>i.description.includes(autoId)).length,1);
+   assert.equal(payoutIds.length,2);assert.equal(new Set(payoutIds).size,1);
+   const autoReceipt=await pool.query("SELECT term,commission_halalas,payout_state FROM saudi_membership_receipts WHERE enquiry_id=$1",[autoId]);
+   assert.deepEqual(autoReceipt.rows,[{term:1,commission_halalas:14985,payout_state:"paid"}]);
+ }finally{
+   globalThis.fetch=originalFetch;
+   for(const [k,v] of Object.entries(original)){if(v===undefined)delete process.env[k];else process.env[k]=v;}
+   await pool.query("DELETE FROM saudi_vendor_invoices WHERE enquiry_id=$1",[autoId]);
+   await pool.query("DELETE FROM saudi_membership_receipts WHERE enquiry_id IN ($1,$2)",[id,autoId]);
+   await pool.query("DELETE FROM seller_enquiries WHERE id=$1",[autoId]);
+   await pool.query("DELETE FROM seller_enquiries WHERE id=$1",[id]);
  }
 });

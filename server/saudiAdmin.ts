@@ -1,10 +1,13 @@
+import {registerSaudiMembership} from "./saudiMembership";
 import {logSaudiError} from "./saudiLog";
 import type { Express, Request, Response, NextFunction } from "express";
 import crypto from "node:crypto";
 import {sendSaudiPage} from "./saudiCsp";
 import rateLimit from "express-rate-limit";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { db } from "./db";
+import { registerSaudiFranchiseTeam } from "./saudiFranchiseTeam";
+import { SAUDI_CITIES } from "./saudiRules";
+import { db, pool } from "./db";
 import { sellerEnquiries, saudiSellerReviewEvents } from "@shared/schema";
 import { isSaudiLeadStatus, reviewTransition, SAUDI_LEAD_STATUSES } from "./saudiAdminRules";
 import { isSaudiAdminKeyConfigured, verifySaudiAdminAuthorization } from "./saudiAdminAuth";
@@ -43,6 +46,37 @@ export function registerSaudiAdmin(app: Express): void {
 
   app.use("/api/saudi/admin", adminLimiter, secureAdminAccess);
 
+  registerSaudiFranchiseTeam(app);
+  registerSaudiMembership(app);
+  const franchiseCities = SAUDI_CITIES.filter(city => city !== "Other");
+  const franchisePath = "/api/saudi/admin/franchises";
+  app.get(franchisePath, async (_req, res) => {
+    try {
+      const result = await pool.query('SELECT city, operator_name AS "operatorName" FROM saudi_city_franchises ORDER BY city');
+      return res.json({cities: franchiseCities, franchises: result.rows});
+    } catch (err) {
+      logSaudiError("SAUDI_FRANCHISE_LIST", err);
+      return res.status(503).json({error:"Could not load city franchises"});
+    }
+  });
+  app.post(franchisePath, async (req, res) => {
+    const city = franchiseCities.find(name => name === req.body?.city);
+    const operatorName = typeof req.body?.operatorName === "string" ? req.body.operatorName.trim() : "";
+    if (!city || operatorName.length < 2 || operatorName.length > 120 || /[\u0000-\u001f\u007f]/.test(operatorName))
+      return res.status(400).json({error:"Choose a supported city and enter a franchise operator name (2–120 characters)"});
+    try {
+      const result = await pool.query(
+        'INSERT INTO saudi_city_franchises (city, operator_name) VALUES ($1,$2) ON CONFLICT (city) DO NOTHING RETURNING city, operator_name AS "operatorName"',
+        [city, operatorName]
+      );
+      if (!result.rowCount) return res.status(409).json({error:"This city already has a franchise"});
+      return res.status(201).json({franchise:result.rows[0]});
+    } catch (err) {
+      logSaudiError("SAUDI_FRANCHISE_CREATE", err);
+      return res.status(503).json({error:"Could not create city franchise"});
+    }
+  });
+
   app.get("/api/saudi/admin/seller-enquiries", async (req,res)=>{
     try {
       const rawStatus = typeof req.query.status === "string" ? req.query.status : "ALL";
@@ -59,6 +93,7 @@ export function registerSaudiAdmin(app: Express): void {
         db.select({
           id:sellerEnquiries.id, businessName:sellerEnquiries.businessName,
           city:sellerEnquiries.city, category:sellerEnquiries.category,
+          executiveName:sql<string|null>`executive_name`,
           phone:sellerEnquiries.phone, consent:sellerEnquiries.consent,
           status:sellerEnquiries.status, source:sellerEnquiries.source,
           createdAt:sellerEnquiries.createdAt, updatedAt:sellerEnquiries.updatedAt

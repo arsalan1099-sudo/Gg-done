@@ -44,6 +44,21 @@
 <section id="dashboard" class="hidden">
   <div class="subhead"><div><h1>Vendor Onboarding Pipeline</h1><p>Saudi enquiries only. Admin reviews are logged; approving an enquiry does not make a store live.</p></div><button class="button button-outline" id="refresh">Refresh</button></div>
   <div class="stats" id="stats" aria-label="Seller statuses"></div>
+  <section class="panel">
+    <div class="subhead"><h2>City franchises</h2><button class="button button-outline" id="refreshFranchises" type="button">Refresh franchises</button></div>
+<p>Franchise fee: SAR 500,000 (non-refundable). <span lang="ar" dir="rtl">رسوم الامتياز: ٥٠٠٬٠٠٠ ريال سعودي، غير قابلة للاسترداد.</span></p>
+    <form id="franchiseForm">
+      <label class="label" for="franchiseCity">City</label>
+      <select class="input" id="franchiseCity" required></select>
+      <label class="label" for="franchiseOperator">Franchise operator or company</label>
+      <input class="input" id="franchiseOperator" required minlength="2" maxlength="120">
+      <button class="button" id="createFranchise" disabled>Create franchise</button>
+    </form>
+    <p role="status" id="franchiseMessage"></p>
+    <ul id="franchiseList"></ul>
+    <output id="ownerKey" style="overflow-wrap:anywhere"></output>
+    <a href="/franchise">Franchise owner dashboard</a>
+  </section>
   <div class="panel" id="catalogReviewPanel">
     <div class="subhead">
       <div><h2>Product catalog moderation</h2><p class="hint">Merchant draft submissions require manual approval and verified Saudi merchant/privacy checks. An approved item is NOT automatically public.</p></div>
@@ -86,6 +101,12 @@
       <div>
         <div class="detail" id="sellerDetails"></div>
         <div id="invitationPanel" class="notice hidden">
+          <h3>Annual membership · SAR 999</h3>
+          <p>Billing automatically issues the invoice when enabled. Use the reference below to reconcile a provider invoice requiring review.</p>
+          <output id="membershipRef"></output>
+          <label for="membershipInvoice">Moyasar invoice ID</label><input class="input" id="membershipInvoice">
+          <button type="button" class="button" id="checkMembership" disabled>Verify paid invoice</button>
+          <p id="membershipResult" role="status"></p>
           <strong>Approved seller invitation</strong>
           <p style="font-size:12px">Generate a single-use invitation only after confirming this seller's identity. Expires in 24 hours. Deliver privately, not in a URL or public chat.</p>
           <button class="button button-secondary" id="issueInvite" type="button">Generate seller invitation</button>
@@ -138,7 +159,7 @@
   const fmtDate=value=>value?new Date(value).toLocaleString():"—";
   const hasAccess=()=>token.length>=32;
   const lock=()=>{
-    token="";selected=null;items=[];$("adminToken").value="";
+    $("ownerKey").textContent="";token="";selected=null;items=[];$("adminToken").value="";
     $("dashboard").classList.add("hidden");$("reviewPanel").classList.add("hidden");
     $("login").classList.remove("hidden");$("lock").classList.add("hidden");
     $("loginError").textContent="";$("loadError").textContent="";
@@ -171,6 +192,7 @@
     filtered.forEach(row=>{
       const tr=make("tr");
       const shop=make("td");shop.append(make("div","shop",row.businessName),make("div","muted",row.id.slice(-8)));
+      if(row.executiveName)shop.append(make("div","muted","Executive: "+row.executiveName));
       tr.append(shop,make("td","",row.city),make("td","",row.category),make("td","",row.phone),make("td","",fmtDate(row.createdAt)));
       const status=make("td");status.append(make("span","pill "+(row.status==="APPROVED"?"approved":row.status==="REJECTED"?"rejected":row.status==="UNDER_REVIEW"?"review":""),label[row.status]||row.status));tr.append(status);
       const actions=make("td");const btn=make("button","button button-outline","Review");btn.type="button";
@@ -192,6 +214,55 @@
       if(e.message.toLowerCase().includes("token"))lock();
     }finally{loading=false;$("refresh").disabled=false;}
   }
+  async function loadFranchises() {
+    const button=$("createFranchise"), city=$("franchiseCity"), list=$("franchiseList");
+    button.disabled=true;
+    try {
+      const data=await api("/api/saudi/admin/franchises");
+      const assigned=new Set(data.franchises.map(row=>row.city));
+      city.replaceChildren(new Option("Choose a city",""));
+      data.cities.filter(name=>!assigned.has(name)).forEach(name=>city.add(new Option(name,name)));
+      list.replaceChildren(...data.franchises.map(row=>{
+        const item=make("li","",row.city+" — "+row.operatorName+" ");
+        const issue=make("button","button button-outline","Issue owner access key");
+        issue.type="button";
+        issue.onclick=async()=>{
+          if(!window.confirm("Issue a private key for "+row.city+"? Any previous owner key will expire."))return;
+          issue.disabled=true;
+          $("ownerKey").textContent="";
+          try {
+            const data=await api("/api/saudi/admin/franchises/"+encodeURIComponent(row.city)+"/owner-key",{method:"POST"});
+            if(hasAccess())$("ownerKey").textContent=row.city+" owner key (copy privately): "+data.token;
+          } catch(err){$("franchiseMessage").textContent=err.message;}
+          finally{issue.disabled=false;}
+        };
+        item.append(issue);
+        return item;
+      }));
+      if (!assigned.size) list.append(make("li","","No franchises created yet."));
+      button.disabled=city.options.length<=1;
+    } catch(err) {
+      $("franchiseMessage").textContent=err.message;
+    }
+  }
+  $("refreshFranchises").addEventListener("click",()=>{
+    $("franchiseMessage").textContent="";
+    loadFranchises();
+  });
+  $("franchiseForm").addEventListener("submit",async event=>{
+    event.preventDefault();
+    $("createFranchise").disabled=true;
+    try {
+      const data=await api("/api/saudi/admin/franchises",{method:"POST",body:JSON.stringify({
+        city:$("franchiseCity").value, operatorName:$("franchiseOperator").value.trim()
+      })});
+      $("franchiseMessage").textContent="Franchise created for "+data.franchise.city+".";
+      $("franchiseOperator").value="";
+    } catch(err) {
+      $("franchiseMessage").textContent=err.message;
+    }
+    await loadFranchises();
+  });
   async function loadCatalogQueue(){
     const target=$("catalogQueue");$("catalogError").textContent="";
     try {
@@ -280,7 +351,7 @@
   }
   function fillDetails(row){
     const box=$("sellerDetails");box.replaceChildren();
-    [["Business",row.businessName],["Saudi city",row.city],["Category",row.category],["Phone",row.phone],
+    [["Business",row.businessName],["Submitted by",row.executiveName||"Seller form"],["Saudi city",row.city],["Category",row.category],["Phone",row.phone],
       ["Status",label[row.status]||row.status],["Submitted",fmtDate(row.createdAt)],["Consent",row.consent?"Yes":"No"]]
       .forEach(([key,value])=>{
         const d=make("div","kv");d.append(make("span","",key),make("span","",value));box.append(d);
@@ -303,6 +374,7 @@
   }
   function selectLead(row){
     selected=row;
+    loadMembership(row);
     $("invitationPanel").classList.toggle("hidden",row.status!=="APPROVED");
     $("inviteDisplay").classList.add("hidden");
     $("inviteTokenOutput").value="";
@@ -325,6 +397,7 @@
       const data=await api("/api/saudi/admin/seller-enquiries?page=1");
       $("adminToken").value="";$("login").classList.add("hidden");$("dashboard").classList.remove("hidden");$("lock").classList.remove("hidden");
       page=1;items=data.leads;total=data.pagination.total;summary=data.summary;paintStats();renderTable();
+      loadFranchises();
       loadDeletionRequests();
       loadCatalogQueue();
     }catch(e){token="";$("loginError").textContent=e.message;}finally{$("unlock").disabled=false;}
@@ -339,6 +412,30 @@
   $("prev").addEventListener("click",()=>{if(page>1){page--;load()}});
   $("next").addEventListener("click",()=>{if(page*50<total){page++;load()}});
   $("closeReview").addEventListener("click",()=>{$("reviewPanel").classList.add("hidden");selected=null});
+  async function loadMembership(row){
+    const button=$("checkMembership");button.disabled=true;button.onclick=null;
+    $("membershipRef").textContent="";$("membershipInvoice").value="";$("membershipResult").textContent="";
+    if(row.status!=="APPROVED")return;
+    const path="/api/saudi/admin/seller-enquiries/"+encodeURIComponent(row.id)+"/membership";
+    try{
+      const info=await api(path);
+      if(selected!==row)return;
+      $("membershipRef").textContent=info.reference;
+      if(info.latest)$("membershipResult").textContent="Latest verified term: "+info.latest.term+" · Valid until "+fmtDate(info.latest.valid_until);
+      if(info.latest?.commission_halalas)$("membershipResult").textContent+=" · Payout: "+(info.latest.payout_state||"pending");
+      if(info.invoiceState)$("membershipResult").textContent+=" · Invoice: "+info.invoiceState;
+      button.disabled=false;
+      button.onclick=async()=>{
+        button.disabled=true;
+        try{
+          const paid=await api(path,{method:"POST",body:JSON.stringify({invoiceId:$("membershipInvoice").value.trim(),term:info.term})});
+          if(selected!==row)return;
+          await loadMembership(row);
+          if(selected===row)$("membershipResult").textContent="Verified term "+paid.term+" · Valid until "+fmtDate(paid.valid_until)+" · Executive commission SAR "+(paid.commission_halalas/100).toFixed(2);
+        }catch(err){if(selected===row){$("membershipResult").textContent=err.message;button.disabled=false;}}
+      };
+    }catch(err){if(selected===row)$("membershipResult").textContent=err.message;}
+  }
   $("issueInvite").addEventListener("click",async()=>{
     if(!selected||selected.status!=="APPROVED")return;
     $("inviteFeedback").textContent="";

@@ -9,7 +9,7 @@ BEGIN
    RAISE EXCEPTION 'Dedicated Saudi database marker required';
  END IF;
  SELECT schema_version INTO v FROM saudi_market_metadata WHERE market='go-saudi';
- IF v NOT IN (5,6) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
+ IF v NOT IN (5,6,7) OR (SELECT count(*) FROM saudi_market_metadata)<>1 THEN
    RAISE EXCEPTION 'Saudi webhook migration requires schema version 5 or 6';
  END IF;
  IF to_regclass('public.saudi_orders') IS NULL THEN

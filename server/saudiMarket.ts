@@ -1,12 +1,13 @@
 import {logSaudiError} from "./saudiLog";
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import crypto from "node:crypto";
 import {sendSaudiPage,sendSaudiStaticPage} from "./saudiCsp";
 import rateLimit from "express-rate-limit";
 import { and, eq, gte, sql } from "drizzle-orm";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { sellerEnquiries } from "@shared/schema";
-import { SAUDI_CITIES, SAUDI_CATEGORIES, validateSaudiEnquiry, REFERRAL_PERCENT } from "./saudiRules";
+import { SAUDI_CITIES, SAUDI_CATEGORIES, validateSaudiEnquiry, ANNUAL_VENDOR_FEE_SAR, REFERRAL_PERCENT } from "./saudiRules";
+import {registerSaudiDelivery} from "./saudiDelivery";
 import { registerSaudiAdmin } from "./saudiAdmin";
 import { registerSaudiVendor } from "./saudiVendor";
 import { registerSaudiDataRights } from "./saudiDataRights";
@@ -22,6 +23,7 @@ import {registerSaudiMoyasarWebhook} from "./saudiMoyasarWebhook";
 export function registerSaudiMarket(app: Express): void {
   registerSaudiAdmin(app);
   registerSaudiVendor(app);
+  registerSaudiDelivery(app);
   registerSaudiDataRights(app);
   registerSaudiCatalog(app);
   registerSaudiCustomerAuth(app);
@@ -44,8 +46,8 @@ export function registerSaudiMarket(app: Express): void {
       categories: SAUDI_CATEGORIES,
       status: "PRELAUNCH", paymentsEnabled: false,
       sellerEnquiriesOpen: process.env.NODE_ENV!=="production" || process.env.GO_SAUDI_PRIVACY_APPROVED==="true",
-      membershipPriceSar: null, referralPercentProposed: REFERRAL_PERCENT,
-      note: "Membership pricing and any commission require approval. No payments accepted."
+      membershipPriceSar: ANNUAL_VENDOR_FEE_SAR, membershipInterval: "year", referralPercentProposed: REFERRAL_PERCENT,
+      note: "Annual vendor membership is SAR 999. Enquiries are free. Payments are closed during preview."
     });
   });
 
@@ -84,13 +86,14 @@ export function registerSaudiMarket(app: Express): void {
     windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false,
     message: { error: "Too many enquiries. Try again later." }
   });
-  app.post("/api/saudi/seller-enquiries", enquiryLimiter, async (req, res) => {
+  const submitEnquiry:RequestHandler=async (req, res) => {
     // No personal data collection in production until legal privacy documents,
     // retention/deletion process and Saudi cross-border/hosting review are signed off.
     if(process.env.NODE_ENV==="production" && process.env.GO_SAUDI_PRIVACY_APPROVED!=="true")
       return res.status(503).json({error:"Seller enquiries are closed pending privacy readiness"});
     if (req.body?.website) return res.json({success:true}); // bot honeypot
-    const parsed = validateSaudiEnquiry(req.body && typeof req.body === "object" ? req.body : {});
+    const executive=res.locals.executive;
+    const parsed=validateSaudiEnquiry({...req.body,city:executive?.city ?? req.body?.city});
     if (!parsed.valid) return res.status(400).json({error:"Valid seller name, Saudi city, category, Saudi mobile and consent required."});
     try {
       const inserted = await db.transaction(async(tx)=>{
@@ -107,11 +110,15 @@ export function registerSaudiMarket(app: Express): void {
             gte(sellerEnquiries.createdAt, new Date(Date.now() - 86400000))
           )).limit(1);
         if(existing)return false;
+        const id="SL_"+crypto.randomBytes(15).toString("hex");
         await tx.insert(sellerEnquiries).values({
-          id:"SL_"+crypto.randomBytes(15).toString("hex"),
+          id,
           businessName:parsed.businessName, city:parsed.city, category:parsed.category,
           phone:parsed.phone!, consent:true, status:"NEW", source:"SAUDI_LANDING"
         });
+        if(executive){
+          await tx.execute(sql`UPDATE seller_enquiries SET executive_id=${executive.id}::uuid, executive_name=${executive.name} WHERE id=${id}`);
+        }
         return true;
       });
       res.setHeader("Cache-Control", "no-store");
@@ -121,7 +128,28 @@ export function registerSaudiMarket(app: Express): void {
       logSaudiError("SAUDI_LEAD",err);
       return res.status(503).json({error:"Enquiry service unavailable. No submission was saved."});
     }
+  };
+  app.post("/api/saudi/seller-enquiries",enquiryLimiter,submitEnquiry);
+  app.get("/marketing",(_req,res)=>sendSaudiPage(res,"go-saudi-marketing.html"));
+  const executivePath="/api/saudi/marketing";
+  app.use(executivePath,rateLimit({windowMs:60000,max:60,standardHeaders:true,legacyHeaders:false}),async(req,res,next)=>{
+    res.setHeader("Cache-Control","private, no-store");
+    const match=/^Bearer ([a-f0-9]{64})$/.exec(req.get("Authorization")||"");
+    if(!match)return res.status(401).json({error:"Marketing executive key required"});
+    try{
+      const result=await pool.query(
+        "SELECT member_id AS id,city,name FROM saudi_franchise_team WHERE executive_key_hash=$1 AND role='MARKETING_EXECUTIVE'",
+        [crypto.createHash("sha256").update(match[1]).digest("hex")]);
+      if(!result.rowCount)return res.status(401).json({error:"Invalid or expired executive key"});
+      res.locals.executive=result.rows[0];
+      next();
+    }catch(err){
+      logSaudiError("SAUDI_EXECUTIVE_AUTH",err);
+      return res.status(503).json({error:"Executive access unavailable"});
+    }
   });
+  app.get(executivePath+"/me",(_req,res)=>res.json({city:res.locals.executive.city,name:res.locals.executive.name,categories:SAUDI_CATEGORIES}));
+  app.post(executivePath+"/seller-enquiries",submitEnquiry);
 
   // Other write APIs are Indian-origin and cannot be exposed as working Saudi
   // commerce without complete KSA business-logic/payment/auth migration.

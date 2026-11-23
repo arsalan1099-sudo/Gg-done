@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Go Saudi · Vendor onboarding</title>
+<style>
+*{box-sizing:border-box}body{max-width:44rem;margin:auto;padding:1.5rem;font:1rem/1.5 system-ui;color:#153c30;background:#f6faf7}
+section,form{margin:1rem 0}section{padding:1.3rem;background:white;border:1px solid #d5e4dc;border-radius:.8rem}
+label{display:block;margin:.7rem 0}input,select,button{font:inherit;padding:.65rem;border-radius:.4rem}input,select{width:100%;border:1px solid #91aa9d}button{border:0;background:#14573f;color:white;cursor:pointer}li{margin:.5rem 0;overflow-wrap:anywhere}
+</style></head><body><main>
+<h1>Vendor onboarding · طلب انضمام تاجر</h1>
+<p>Executive commission: SAR 149.85 per paid vendor onboarding (15% of the SAR 999 annual membership). <span lang="ar" dir="rtl">عمولة المندوب: ١٤٩٫٨٥ ريالاً لكل تاجر ينضم ويسدد رسوم العضوية السنوية البالغة ٩٩٩ ريالاً (١٥٪).</span></p>
+<form id="login"><label>Executive key · مفتاح المندوب<input id="key" type="password" required autocomplete="off"></label><button>Open form · فتح النموذج</button></form>
+<section hidden id="workspace"><h2 id="identity"></h2><button id="lock" type="button">Sign out · خروج</button>
+<form id="vendor">
+<label>Shop name · اسم المتجر<input id="shop" minlength="2" maxlength="100" required></label>
+<label>Business category · نوع النشاط<select id="category" required></select></label>
+<label>Vendor mobile · جوال التاجر<input id="phone" type="tel" placeholder="05XXXXXXXX" maxlength="40" required></label>
+<label><input style="width:auto" id="consent" type="checkbox" required> The vendor agrees to share these details with Go Saudi for onboarding and follow-up. وافق التاجر على مشاركة هذه البيانات مع جو سعودي للتسجيل والتواصل.</label>
+<button id="submit">Send for admin review · إرسال للإدارة</button></form></section>
+<p id="message" role="status"></p></main><script>
+const el=id=>document.getElementById(id);
+let key="";
+function lock(){
+  key="";el("login").reset();el("vendor").reset();el("identity").textContent="";
+  el("workspace").hidden=true;el("login").hidden=false;el("message").textContent="";
+}
+async function request(path,body){
+  const response=await fetch("/api/saudi/marketing/"+path,{method:body?"POST":"GET",cache:"no-store",
+    headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const result=await response.json();
+  if(!response.ok){if(response.status===401)lock();throw Error(result.error||"Request failed");}
+  return result;
+}
+el("login").onsubmit=async event=>{
+  event.preventDefault();key=el("key").value.trim();
+  try{
+    const profile=await request("me");
+    el("identity").textContent=profile.name+" · "+profile.city;
+    el("category").replaceChildren(new Option("Choose category · اختر الفئة",""),...profile.categories.map(c=>new Option(c,c)));
+    el("workspace").hidden=false;el("login").hidden=true;el("login").reset();el("message").textContent="";
+  }catch(error){el("message").textContent=error.message;}
+};
+el("vendor").onsubmit=async event=>{
+  event.preventDefault();el("submit").disabled=true;el("message").textContent="";
+  try{
+    const result=await request("seller-enquiries",{businessName:el("shop").value.trim(),category:el("category").value,
+      phone:el("phone").value,consent:el("consent").checked});
+    if(key){
+      el("vendor").reset();
+      el("message").textContent=result.deduplicated?"This request was already received. تم استلام هذا الطلب مسبقاً.":"Sent to the admin for review. أُرسل الطلب إلى الإدارة للمراجعة.";
+    }
+  }catch(error){el("message").textContent=error.message;}finally{el("submit").disabled=false;}
+};
+el("lock").onclick=lock;
+</script></body></html>
